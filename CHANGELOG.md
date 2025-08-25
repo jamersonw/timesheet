@@ -1,5 +1,46 @@
 # Changelog - Módulo Timesheet
 
+
+## [1.3.1] - 2025-08-25
+
+### 🔧 ALTERAÇÕES
+- Sistema de build automatizado implementado
+
+
+## [1.3.0] - 2025-01-24
+
+### 🚀 SISTEMA DE BUILD AUTOMATIZADO
+- **Script de build**: Sistema completo de versionamento automático
+- **Geração de ZIP**: Criação automática de releases com estrutura correta
+- **Controle de versão**: Incremento automático de versões (major/minor/patch)
+- **Migration automática**: Criação automática de arquivos de migração
+
+### 🔧 FERRAMENTAS DE DESENVOLVIMENTO
+- **build.php**: Script PHP para automatizar todo o processo de release
+- **release.sh**: Script shell para facilitar o uso via linha de comando
+- **README.md**: Documentação completa com instruções de instalação e uso
+- **Versionamento semântico**: Seguindo padrão MAJOR.MINOR.PATCH
+
+### 📋 FUNCIONALIDADES DO BUILD SYSTEM
+- Atualização automática de versão em todos os arquivos
+- Geração automática de changelog com timestamp
+- Criação de ZIP com estrutura `/timesheet/` correta
+- Logs detalhados do processo de build
+- Suporte a diferentes tipos de versão (patch, minor, major)
+
+### 🎯 MELHORIAS DE DOCUMENTAÇÃO
+- Instruções completas de instalação
+- Guia de desenvolvimento e contribuição
+- Documentação de troubleshooting
+- Links para documentação oficial do Perfex CRM
+
+### 🔄 USO DO SISTEMA
+```bash
+# Exemplo de uso
+php build.php patch "Correção crítica de bug"
+./release.sh minor "Nova funcionalidade de relatórios"
+```
+
 ## [1.2.0] - 2025-08-24
 
 ### 🎯 SINCRONIZAÇÃO BIDIRECIONAL DEFINITIVA
