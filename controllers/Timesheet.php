@@ -171,55 +171,32 @@ class Timesheet extends AdminController
      */
     public function approve_reject()
     {
-        // ================== INÍCIO DO CÓDIGO DE DEPURAÇÃO FORÇADA ==================
-        // Ativa a exibição de todos os erros PHP diretamente na saída.
-        // ATENÇÃO: Remova ou comente este bloco em um ambiente de produção!
-        ini_set('display_errors', 1);
-        ini_set('display_startup_errors', 1);
-        error_reporting(E_ALL);
-        // =================== FIM DO CÓDIGO DE DEPURAÇÃO FORÇADA ====================
+        if (!has_permission('timesheet', '', 'edit')) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
 
-        try {
-            if (!has_permission('timesheet', '', 'edit')) {
-                // Usamos 'throw new Exception' para que o erro seja pego pelo nosso 'catch'
-                throw new Exception('Access denied');
-            }
+        $approval_id = $this->input->post('approval_id');
+        $action = $this->input->post('action');
+        $reason = $this->input->post('reason');
 
-            $approval_id = $this->input->post('approval_id');
-            $action = $this->input->post('action');
-            $reason = $this->input->post('reason');
+        if (empty($approval_id) || empty($action) || !in_array($action, ['approved', 'rejected'])) {
+            echo json_encode(['success' => false, 'message' => 'Invalid parameters']);
+            return;
+        }
 
-            log_activity('[Timesheet APPROVAL] Início do processo. Ação: ' . $action . '. ID de Aprovação: ' . $approval_id);
+        if ($action === 'rejected' && empty($reason)) {
+            echo json_encode(['success' => false, 'message' => 'Rejection reason is required']);
+            return;
+        }
 
-            $result = $this->timesheet_model->approve_reject_timesheet($approval_id, $action, get_staff_user_id(), $reason);
+        $result = $this->timesheet_model->approve_reject_timesheet($approval_id, $action, get_staff_user_id(), $reason);
 
-            if ($result) {
-                $message = $action == 'approved' ? _l('timesheet_approved_successfully') : _l('timesheet_rejected_successfully');
-                echo json_encode(['success' => true, 'message' => $message]);
-            } else {
-                throw new Exception('O método approve_reject_timesheet no Model retornou false.');
-            }
-
-        } catch (Throwable $e) {
-            // Se qualquer erro (Exception ou Error) ocorrer no bloco 'try', ele será capturado aqui.
-            
-            // Registra o erro no log de atividades para garantir que tenhamos um registro.
-            log_activity('[Timesheet FATAL ERROR] Erro capturado na função approve_reject: ' . $e->getMessage() . ' no arquivo ' . $e->getFile() . ' na linha ' . $e->getLine());
-
-            // Garante que a resposta seja JSON para o javascript.
-            header('Content-Type: application/json');
-            
-            // Envia uma resposta de erro detalhada para o navegador.
-            echo json_encode([
-                'success' => false,
-                'message' => 'Ocorreu um erro fatal no servidor.',
-                'error_details' => [
-                    'message' => $e->getMessage(),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                    'trace' => $e->getTraceAsString() // Fornece o "caminho" do erro
-                ]
-            ]);
+        if ($result) {
+            $message = $action == 'approved' ? _l('timesheet_approved_successfully') : _l('timesheet_rejected_successfully');
+            echo json_encode(['success' => true, 'message' => $message]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Error processing approval']);
         }
     }
 

@@ -97,41 +97,22 @@ function timesheet_init_all()
     ];
     register_staff_capabilities('timesheet', $capabilities, _l('timesheet'));
 
-    // ================== INÍCIO DOS HOOKS DE SINCRONIZAÇÃO COM LOGS ==================
-    
-    // Hook para quando um timer de tarefa é INICIADO no núcleo do Perfex
-    // Dados: ['task_id' => $task_id, 'timer_id' => $_new_timer_id]
+    // Hooks de sincronização com o sistema de timers do Perfex
     hooks()->add_action('task_timer_started', 'timesheet_sync_from_core_timer_started');
-    
-    // Hook para quando um timer de tarefa é DELETADO no núcleo do Perfex
-    // Dados: $timesheet (objeto do timer)
     hooks()->add_action('task_timer_deleted', 'timesheet_sync_from_core_timer_deleted');
-
-    // LOG DE CONFIRMAÇÃO: Registra que os hooks foram carregados com sucesso.
-    log_activity('[Timesheet Sync] Hooks de sincronização registrados: task_timer_started, task_timer_deleted');
-    
-    // =================== FIM DOS HOOKS DE SINCRONIZAÇÃO COM LOGS =====================
 }
 
 /**
  * Função de callback para o hook de INÍCIO de timer.
- * É chamada pelo Perfex quando um timer é iniciado.
- * @param array $data Dados passados pelo hook: ['task_id' => $task_id, 'timer_id' => $_new_timer_id]
  */
 function timesheet_sync_from_core_timer_started($data)
 {
-    // LOG DE EXECUÇÃO: Confirma que o hook foi disparado.
-    log_activity('[Timesheet Sync] Hook "task_timer_started" DISPARADO. Dados: ' . json_encode($data));
-    
     $CI = &get_instance();
     $task_id = $data['task_id'] ?? null;
-    $timer_id = $data['timer_id'] ?? null;
-
-    if ($task_id && $timer_id) {
-        log_activity('[Timesheet Sync] Timer iniciado - Task ID: ' . $task_id . ', Timer ID: ' . $timer_id);
-        // Por enquanto apenas logamos. A sincronização real acontece quando o timer é finalizado.
-    } else {
-        log_activity('[Timesheet Sync ERROR] Dados incompletos no hook task_timer_started: ' . json_encode($data));
+    
+    if ($task_id) {
+        $CI->load->model('timesheet/timesheet_model');
+        // A sincronização é feita quando o timer é finalizado
     }
 }
 

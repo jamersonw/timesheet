@@ -178,7 +178,11 @@ class Timesheet_model extends App_Model
             return;
         }
         
-        $week_dates = timesheet_get_week_dates($week_start_date);
+        // Calcular as datas da semana
+        $week_dates = [];
+        for ($i = 0; $i < 7; $i++) {
+            $week_dates[] = date('Y-m-d', strtotime($week_start_date . ' +' . $i . ' days'));
+        }
 
         foreach ($entries as $entry) {
             if (!empty($entry->task_id) && $entry->hours > 0) {

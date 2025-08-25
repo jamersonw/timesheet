@@ -124,6 +124,36 @@ if (!function_exists('timesheet_can_manage_project')) {
 }
 
 /**
+ * Format hours for display
+ */
+if (!function_exists('timesheet_format_hours')) {
+    function timesheet_format_hours($hours)
+    {
+        if (empty($hours) || $hours == 0) {
+            return '';
+        }
+        return str_replace('.', ',', number_format((float)$hours, 2));
+    }
+}
+
+/**
+ * Get timesheet status badge HTML
+ */
+if (!function_exists('timesheet_status_badge')) {
+    function timesheet_status_badge($status)
+    {
+        $badges = [
+            'draft' => '<span class="label label-default">Rascunho</span>',
+            'pending' => '<span class="label label-warning">Pendente</span>',
+            'approved' => '<span class="label label-success">Aprovado</span>',
+            'rejected' => '<span class="label label-danger">Rejeitado</span>',
+        ];
+        
+        return isset($badges[$status]) ? $badges[$status] : '<span class="label label-default">' . $status . '</span>';
+    }
+}
+
+/**
  * Get timesheet status badge HTML
  */
 if (!function_exists('timesheet_status_badge')) {
