@@ -1,6 +1,40 @@
 # Changelog - Módulo Timesheet
 
 
+
+## [1.3.3] - 2025-08-25
+
+### 🔧 ALTERAÇÕES
+- Atualizações e melhorias gerais
+
+
+## [1.3.2] - 2025-01-17
+
+### 🚨 CORREÇÃO CRÍTICA - SINCRONIZAÇÃO DE HORAS
+- **Problema resolvido**: Quadro de tempo do Perfex agora recebe TODAS as horas da semana aprovada
+- **Bug corrigido**: Anteriormente apenas um dia era sincronizado, agora todos os dias com horas são processados
+- **Melhoria na detecção**: Verificação de timers existentes para evitar duplicação
+- **Logs detalhados**: Rastreamento completo do processo de sincronização
+
+### 🔧 MELHORIAS TÉCNICAS
+- Função `log_approved_hours_to_tasks` completamente reescrita
+- Cálculo correto das datas de cada dia da semana
+- Inserção direta na tabela `taskstimers` para melhor controle
+- Adicionada coluna `perfex_timer_id` para rastrear referências
+- Logs mais detalhados para debugging
+
+### ⚡ FUNCIONALIDADES MELHORADAS
+- Sincronização bidirecional mais robusta
+- Prevenção de duplicação de timers
+- Horários padrão configurados (9:00 AM como início)
+- Notas descritivas nos timers criados
+
+### 🎯 VALIDAÇÕES ADICIONAIS
+- Apenas entradas com horas > 0 são processadas
+- Verificação de task_id válido antes da criação
+- Tratamento de erros melhorado
+
+
 ## [1.3.1] - 2025-08-25
 
 ### 🔧 ALTERAÇÕES
@@ -279,4 +313,3 @@ ALTER TABLE timesheet_entries ADD COLUMN perfex_timer_id INT(11) NULL;
 - ⚠️ **Versão com problemas**
 - 🚫 **Não recomendada para uso**
 - 🎉 **Marco importante**
-

@@ -7,12 +7,13 @@ defined('BASEPATH') or exit('No direct script access allowed');
 /*
 Module Name: Timesheet
 Description: Sistema de apontamento de horas com aprovação para profissionais e gerentes de projeto
-Version: 1.3.1
+Version: 1.3.3
 Requires at least: 2.3.*
 Author: Perfex CRM Module Developer
 */
 
 define('TIMESHEET_MODULE_NAME', 'timesheet');
+define('TIMESHEET_MODULE_VERSION', '1.3.2');
 
 /**
  * Register activation hook
@@ -43,11 +44,11 @@ register_uninstall_hook(TIMESHEET_MODULE_NAME, 'timesheet_uninstall_hook');
 function timesheet_uninstall_hook()
 {
     $CI = &get_instance();
-    
+
     // Apaga as tabelas do módulo
     $CI->db->query('DROP TABLE IF EXISTS `' . db_prefix() . 'timesheet_entries`');
     $CI->db->query('DROP TABLE IF EXISTS `' . db_prefix() . 'timesheet_approvals`');
-    
+
     // Remove as opções do módulo
     $CI->db->where('name LIKE', 'timesheet_%');
     $CI->db->delete(db_prefix() . 'options');
@@ -77,7 +78,7 @@ function timesheet_init_all()
             'position' => 30,
         ]);
     }
-    
+
     if (is_admin() || timesheet_can_manage_any_project(get_staff_user_id())) {
         $CI->app_menu->add_sidebar_menu_item('timesheet_manage', [
             'name'     => _l('timesheet_approvals'),
@@ -109,7 +110,7 @@ function timesheet_sync_from_core_timer_started($data)
 {
     $CI = &get_instance();
     $task_id = $data['task_id'] ?? null;
-    
+
     if ($task_id) {
         $CI->load->model('timesheet/timesheet_model');
         // A sincronização é feita quando o timer é finalizado
@@ -125,21 +126,21 @@ function timesheet_sync_from_core_timer_deleted($timesheet)
 {
     // LOG DE EXECUÇÃO: Confirma que o hook foi disparado.
     log_activity('[Timesheet Sync] Hook "task_timer_deleted" DISPARADO. Timer ID: ' . ($timesheet->id ?? 'N/A'));
-    
+
     $CI = &get_instance();
-    
+
     if (isset($timesheet->id)) {
         $timer_id = $timesheet->id;
-        
+
         // Buscar entrada do timesheet que referencia este timer
         $CI->db->where('perfex_timer_id', $timer_id);
         $entry = $CI->db->get(db_prefix() . 'timesheet_entries')->row();
-        
+
         if ($entry) {
             // Remover referência do timer (não deletar a entrada, apenas limpar a referência)
             $CI->db->where('id', $entry->id);
             $CI->db->update(db_prefix() . 'timesheet_entries', ['perfex_timer_id' => null]);
-            
+
             log_activity('[Timesheet Sync] Referência do timer ' . $timer_id . ' removida da entrada ' . $entry->id);
         } else {
             log_activity('[Timesheet Sync] Timer ' . $timer_id . ' deletado, mas não encontrada entrada correspondente no timesheet');
@@ -157,13 +158,13 @@ function timesheet_can_manage_any_project($staff_id)
     if (is_admin($staff_id)) {
         return true;
     }
-    
+
     $CI = &get_instance();
     $CI->db->select('COUNT(*) as count');
     $CI->db->from(db_prefix() . 'projects');
     $CI->db->where('addedfrom', $staff_id);
     $result = $CI->db->get()->row();
-    
+
     return $result && $result->count > 0;
 }
 
