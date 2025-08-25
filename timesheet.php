@@ -185,4 +185,4 @@ function timesheet_load_admin_assets()
  * Carrega o helper do módulo.
  */
 $CI = &get_instance();
-$CI->load->helper(TIMESHEET_MODULE_NAME . '/timesheet');
+$CI->load->helper('timesheet/timesheet_helper');
