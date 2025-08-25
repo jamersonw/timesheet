@@ -194,15 +194,86 @@ class Migration_Version_{$versionNumber} extends App_module_migration
         $zipName = "timesheet-v{$this->newVersion}.zip";
         $zipPath = __DIR__ . "/{$zipName}";
         
-        $zip = new ZipArchive();
-        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== TRUE) {
-            throw new Exception("Não foi possível criar o arquivo ZIP");
+        // Remover ZIP anterior se existir
+        if (file_exists($zipPath)) {
+            unlink($zipPath);
         }
         
-        $this->addFilesToZip($zip, __DIR__, 'timesheet');
-        $zip->close();
+        $zip = new ZipArchive();
+        $result = $zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
         
-        echo "📦 ZIP gerado: {$zipName}\n";
+        if ($result !== TRUE) {
+            $error = match($result) {
+                ZipArchive::ER_OK => 'No error',
+                ZipArchive::ER_MULTIDISK => 'Multi-disk zip archives not supported',
+                ZipArchive::ER_RENAME => 'Renaming temporary file failed',
+                ZipArchive::ER_CLOSE => 'Closing zip archive failed',
+                ZipArchive::ER_SEEK => 'Seek error',
+                ZipArchive::ER_READ => 'Read error',
+                ZipArchive::ER_WRITE => 'Write error',
+                ZipArchive::ER_CRC => 'CRC error',
+                ZipArchive::ER_ZIPCLOSED => 'Containing zip archive was closed',
+                ZipArchive::ER_NOENT => 'No such file',
+                ZipArchive::ER_EXISTS => 'File already exists',
+                ZipArchive::ER_OPEN => 'Can not open file',
+                ZipArchive::ER_TMPOPEN => 'Failure to create temporary file',
+                ZipArchive::ER_ZLIB => 'Zlib error',
+                ZipArchive::ER_MEMORY => 'Memory allocation failure',
+                ZipArchive::ER_CHANGED => 'Entry has been changed',
+                ZipArchive::ER_COMPNOTSUPP => 'Compression method not supported',
+                ZipArchive::ER_EOF => 'Premature EOF',
+                ZipArchive::ER_INVAL => 'Invalid argument',
+                ZipArchive::ER_NOZIP => 'Not a zip archive',
+                ZipArchive::ER_INTERNAL => 'Internal error',
+                ZipArchive::ER_INCONS => 'Zip archive inconsistent',
+                ZipArchive::ER_REMOVE => 'Can not remove file',
+                ZipArchive::ER_DELETED => 'Entry has been deleted',
+                default => "Unknown error code: {$result}"
+            };
+            throw new Exception("Não foi possível criar o arquivo ZIP: {$error}");
+        }
+        
+        // Verificar se o diretório está acessível
+        if (!is_readable(__DIR__)) {
+            throw new Exception("Diretório não acessível para leitura");
+        }
+        
+        $filesAdded = 0;
+        foreach ($this->moduleFiles as $file) {
+            $fullPath = __DIR__ . '/' . $file;
+            
+            if (is_file($fullPath)) {
+                if (is_readable($fullPath)) {
+                    $zip->addFile($fullPath, 'timesheet/' . $file);
+                    $filesAdded++;
+                    echo "✓ Arquivo adicionado: {$file}\n";
+                } else {
+                    echo "⚠️  Arquivo não legível: {$file}\n";
+                }
+            } elseif (is_dir($fullPath)) {
+                $dirFilesAdded = $this->addDirectoryToZip($zip, $fullPath, 'timesheet/' . $file);
+                $filesAdded += $dirFilesAdded;
+                echo "✓ Diretório adicionado: {$file} ({$dirFilesAdded} arquivos)\n";
+            } else {
+                echo "⚠️  Arquivo/diretório não encontrado: {$file}\n";
+            }
+        }
+        
+        if ($filesAdded === 0) {
+            throw new Exception("Nenhum arquivo foi adicionado ao ZIP");
+        }
+        
+        if (!$zip->close()) {
+            throw new Exception("Erro ao fechar o arquivo ZIP");
+        }
+        
+        // Verificar se o arquivo foi criado
+        if (!file_exists($zipPath)) {
+            throw new Exception("Arquivo ZIP não foi criado");
+        }
+        
+        $fileSize = filesize($zipPath);
+        echo "📦 ZIP gerado: {$zipName} ({$filesAdded} arquivos, " . round($fileSize/1024, 2) . " KB)\n";
         return $zipPath;
     }
     
@@ -221,21 +292,35 @@ class Migration_Version_{$versionNumber} extends App_module_migration
     
     private function addDirectoryToZip($zip, $dirPath, $zipPrefix)
     {
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($dirPath, RecursiveDirectoryIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::SELF_FIRST
-        );
+        $filesAdded = 0;
         
-        foreach ($iterator as $file) {
-            $filePath = $file->getRealPath();
-            $relativePath = substr($filePath, strlen($dirPath) + 1);
-            
-            if ($file->isDir()) {
-                $zip->addEmptyDir($zipPrefix . '/' . $relativePath);
-            } elseif ($file->isFile()) {
-                $zip->addFile($filePath, $zipPrefix . '/' . $relativePath);
-            }
+        if (!is_dir($dirPath) || !is_readable($dirPath)) {
+            echo "⚠️  Diretório não acessível: {$dirPath}\n";
+            return $filesAdded;
         }
+        
+        try {
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($dirPath, RecursiveDirectoryIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::SELF_FIRST
+            );
+            
+            foreach ($iterator as $file) {
+                $filePath = $file->getRealPath();
+                $relativePath = substr($filePath, strlen($dirPath) + 1);
+                
+                if ($file->isDir()) {
+                    $zip->addEmptyDir($zipPrefix . '/' . $relativePath);
+                } elseif ($file->isFile() && is_readable($filePath)) {
+                    $zip->addFile($filePath, $zipPrefix . '/' . $relativePath);
+                    $filesAdded++;
+                }
+            }
+        } catch (Exception $e) {
+            echo "⚠️  Erro ao processar diretório {$dirPath}: " . $e->getMessage() . "\n";
+        }
+        
+        return $filesAdded;
     }
 }
 
