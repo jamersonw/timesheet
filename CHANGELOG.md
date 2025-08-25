@@ -7,6 +7,13 @@
 
 
 
+
+## [1.3.9] - 2025-08-25
+
+### 🔧 ALTERAÇÕES
+- Correção da geração do ZIP com debug detalhado
+
+
 ## [1.3.8] - 2025-08-25
 
 ### 🔧 ALTERAÇÕES

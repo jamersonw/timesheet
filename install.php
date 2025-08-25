@@ -66,9 +66,9 @@ if (!get_option('timesheet_auto_submit_weeks')) {
 
 // Set module version
 if (!get_option('timesheet_module_version')) {
-    add_option('timesheet_module_version', '1.3.8', 1);
+    add_option('timesheet_module_version', '1.3.9', 1);
 } else {
-    update_option('timesheet_module_version', '1.3.8');
+    update_option('timesheet_module_version', '1.3.9');
 }
 ?>
 
