@@ -8,6 +8,20 @@
 
 
 
+
+
+## [1.3.11] - 2025-08-25
+
+### 🔧 ALTERAÇÕES
+- Novo build para download
+
+
+## [1.3.10] - 2025-08-25
+
+### 🔧 ALTERAÇÕES
+- Novo build para download
+
+
 ## [1.3.9] - 2025-08-25
 
 ### 🔧 ALTERAÇÕES
