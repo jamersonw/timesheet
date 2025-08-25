@@ -7,7 +7,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 /*
 Module Name: Timesheet
 Description: Sistema de apontamento de horas com aprovação para profissionais e gerentes de projeto
-Version: 1.3.11
+Version: 1.3.12
 Requires at least: 2.3.*
 Author: Perfex CRM Module Developer
 */
@@ -185,4 +185,4 @@ function timesheet_load_admin_assets()
  * Carrega o helper do módulo.
  */
 $CI = &get_instance();
-$CI->load->helper(TIMESHEET_MODULE_NAME . '/timesheet_helper');
+$CI->load->helper('timesheet_helper');
