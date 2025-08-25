@@ -2,6 +2,34 @@
 
 
 
+
+
+
+
+## [1.3.7] - 2025-08-25
+
+### 🔧 ALTERAÇÕES
+- Correção do carregamento do helper do módulo
+
+
+## [1.3.6] - 2025-08-25
+
+### 🔧 ALTERAÇÕES
+- Correção do carregamento do helper do módulo
+
+
+## [1.3.5] - 2025-08-25
+
+### 🔧 ALTERAÇÕES
+- Correção do carregamento do helper do módulo
+
+
+## [1.3.4] - 2025-08-25
+
+### 🔧 ALTERAÇÕES
+- Atualizações e melhorias gerais
+
+
 ## [1.3.3] - 2025-08-25
 
 ### 🔧 ALTERAÇÕES
