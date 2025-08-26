@@ -363,6 +363,120 @@ class Timesheet_model extends App_Model
         return true;
     }
 
+    /**
+     * Sincroniza alterações do Perfex CRM de volta para o timesheet
+     * Chamada quando um timer é alterado/excluído no quadro de horas
+     */
+    public function sync_from_perfex_timer($timer_id, $action = 'update')
+    {
+        try {
+            log_activity('[Timesheet Bidirectional] Iniciando sincronização - Timer ID: ' . $timer_id . ', Ação: ' . $action);
+            
+            // Buscar entradas do timesheet que referenciam este timer
+            $this->db->where('perfex_timer_id', $timer_id);
+            $timesheet_entries = $this->db->get(db_prefix() . 'timesheet_entries')->result();
+            
+            if (empty($timesheet_entries)) {
+                log_activity('[Timesheet Bidirectional] Nenhuma entrada do timesheet encontrada para timer ID: ' . $timer_id);
+                return true;
+            }
+            
+            foreach ($timesheet_entries as $entry) {
+                if ($action == 'delete') {
+                    // Timer foi deletado, limpar referência na entrada
+                    $this->db->where('id', $entry->id);
+                    $this->db->update(db_prefix() . 'timesheet_entries', ['perfex_timer_id' => null]);
+                    log_activity('[Timesheet Bidirectional] Referência removida da entrada ID: ' . $entry->id);
+                } else {
+                    // Timer foi atualizado, recalcular horas da tarefa
+                    $this->recalculate_task_hours($entry->task_id, $entry->staff_id);
+                    log_activity('[Timesheet Bidirectional] Horas recalculadas para tarefa: ' . $entry->task_id);
+                }
+            }
+            
+            return true;
+            
+        } catch (Exception $e) {
+            log_activity('[Timesheet Bidirectional ERROR] Erro na sincronização: ' . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Recalcula todas as horas de uma tarefa baseado nos timers do Perfex
+     */
+    public function recalculate_task_hours($task_id, $staff_id)
+    {
+        try {
+            log_activity('[Timesheet Sync] Recalculando horas - Tarefa: ' . $task_id . ', Staff: ' . $staff_id);
+            
+            // Buscar todos os timers ativos para esta tarefa e staff
+            $this->db->where('task_id', $task_id);
+            $this->db->where('staff_id', $staff_id);
+            $this->db->where('end_time IS NOT NULL');
+            $timers = $this->db->get(db_prefix() . 'taskstimers')->result();
+            
+            // Agrupar por data
+            $daily_hours = [];
+            foreach ($timers as $timer) {
+                $start_time = is_numeric($timer->start_time) ? $timer->start_time : strtotime($timer->start_time);
+                $end_time = is_numeric($timer->end_time) ? $timer->end_time : strtotime($timer->end_time);
+                $date = date('Y-m-d', $start_time);
+                
+                if (!isset($daily_hours[$date])) {
+                    $daily_hours[$date] = 0;
+                }
+                
+                $duration_hours = ($end_time - $start_time) / 3600;
+                $daily_hours[$date] += $duration_hours;
+            }
+            
+            // Atualizar entradas do timesheet para esta tarefa
+            $this->load->helper('timesheet/timesheet');
+            foreach ($daily_hours as $date => $total_hours) {
+                $week_start = timesheet_get_week_start($date);
+                $day_of_week = date('N', strtotime($date));
+                
+                // Verificar se já existe entrada para este dia
+                $this->db->where('staff_id', $staff_id);
+                $this->db->where('task_id', $task_id);
+                $this->db->where('week_start_date', $week_start);
+                $this->db->where('day_of_week', $day_of_week);
+                $existing = $this->db->get(db_prefix() . 'timesheet_entries')->row();
+                
+                $hours_rounded = round($total_hours, 2);
+                
+                if ($existing) {
+                    // Atualizar entrada existente
+                    $this->db->where('id', $existing->id);
+                    $this->db->update(db_prefix() . 'timesheet_entries', ['hours' => $hours_rounded]);
+                } else if ($hours_rounded > 0) {
+                    // Criar nova entrada
+                    $task = $this->tasks_model->get($task_id);
+                    if ($task) {
+                        $data = [
+                            'staff_id'        => $staff_id,
+                            'project_id'      => $task->rel_id,
+                            'task_id'         => $task_id,
+                            'week_start_date' => $week_start,
+                            'day_of_week'     => $day_of_week,
+                            'hours'           => $hours_rounded,
+                            'status'          => 'draft'
+                        ];
+                        $this->db->insert(db_prefix() . 'timesheet_entries', $data);
+                    }
+                }
+            }
+            
+            log_activity('[Timesheet Sync] Recálculo finalizado para tarefa ' . $task_id);
+            return true;
+            
+        } catch (Exception $e) {
+            log_activity('[Timesheet Sync ERROR] Erro no recálculo: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     public function get_pending_approvals($manager_id)
     {
         $this->db->select('ta.*, s.firstname, s.lastname, s.email');

@@ -101,6 +101,8 @@ function timesheet_init_all()
     // Hooks de sincronização com o sistema de timers do Perfex
     hooks()->add_action('task_timer_started', 'timesheet_sync_from_core_timer_started');
     hooks()->add_action('task_timer_deleted', 'timesheet_sync_from_core_timer_deleted');
+    hooks()->add_action('task_timer_stopped', 'timesheet_sync_from_core_timer_stopped');
+    hooks()->add_action('task_timer_updated', 'timesheet_sync_from_core_timer_updated');
 }
 
 /**
@@ -113,6 +115,7 @@ function timesheet_sync_from_core_timer_started($data)
 
     if ($task_id) {
         $CI->load->model('timesheet/timesheet_model');
+        log_activity('[Timesheet Hook] Timer iniciado para tarefa: ' . $task_id);
         // A sincronização é feita quando o timer é finalizado
     }
 }
@@ -120,33 +123,53 @@ function timesheet_sync_from_core_timer_started($data)
 /**
  * Função de callback para o hook de EXCLUSÃO de timer.
  * É chamada pelo Perfex quando um timer é deletado.
- * @param object $timesheet Objeto do timer que foi deletado
  */
-function timesheet_sync_from_core_timer_deleted($timesheet)
+function timesheet_sync_from_core_timer_deleted($data)
 {
-    // LOG DE EXECUÇÃO: Confirma que o hook foi disparado.
-    log_activity('[Timesheet Sync] Hook "task_timer_deleted" DISPARADO. Timer ID: ' . ($timesheet->id ?? 'N/A'));
-
     $CI = &get_instance();
+    $timer_id = $data['id'] ?? null;
 
-    if (isset($timesheet->id)) {
-        $timer_id = $timesheet->id;
+    if ($timer_id) {
+        $CI->load->model('timesheet/timesheet_model');
+        log_activity('[Timesheet Hook] Timer deletado - ID: ' . $timer_id);
 
-        // Buscar entrada do timesheet que referencia este timer
-        $CI->db->where('perfex_timer_id', $timer_id);
-        $entry = $CI->db->get(db_prefix() . 'timesheet_entries')->row();
+        // Usar a nova função de sincronização
+        $CI->timesheet_model->sync_from_perfex_timer($timer_id, 'delete');
+    }
+}
 
-        if ($entry) {
-            // Remover referência do timer (não deletar a entrada, apenas limpar a referência)
-            $CI->db->where('id', $entry->id);
-            $CI->db->update(db_prefix() . 'timesheet_entries', ['perfex_timer_id' => null]);
+/**
+ * Hook para quando timer é parado/finalizado
+ */
+function timesheet_sync_from_core_timer_stopped($data)
+{
+    $CI = &get_instance();
+    $timer_id = $data['id'] ?? null;
+    $task_id = $data['task_id'] ?? null;
 
-            log_activity('[Timesheet Sync] Referência do timer ' . $timer_id . ' removida da entrada ' . $entry->id);
-        } else {
-            log_activity('[Timesheet Sync] Timer ' . $timer_id . ' deletado, mas não encontrada entrada correspondente no timesheet');
-        }
-    } else {
-        log_activity('[Timesheet Sync ERROR] Dados incompletos no hook task_timer_deleted');
+    if ($timer_id && $task_id) {
+        $CI->load->model('timesheet/timesheet_model');
+        log_activity('[Timesheet Hook] Timer finalizado - ID: ' . $timer_id . ', Tarefa: ' . $task_id);
+
+        // Usar a nova função de sincronização
+        $CI->timesheet_model->sync_from_perfex_timer($timer_id, 'update');
+    }
+}
+
+/**
+ * Hook para quando timer é editado
+ */
+function timesheet_sync_from_core_timer_updated($data)
+{
+    $CI = &get_instance();
+    $timer_id = $data['id'] ?? null;
+
+    if ($timer_id) {
+        $CI->load->model('timesheet/timesheet_model');
+        log_activity('[Timesheet Hook] Timer atualizado - ID: ' . $timer_id);
+
+        // Usar a nova função de sincronização
+        $CI->timesheet_model->sync_from_perfex_timer($timer_id, 'update');
     }
 }
 
