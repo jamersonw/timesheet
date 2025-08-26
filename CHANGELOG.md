@@ -14,11 +14,36 @@
 
 
 
+## [1.3.18] - 2025-01-26
+
+### Fixed
+- **CRÍTICO**: Corrigido hook de exclusão que causava tela branca após deletar timers
+- Hook `task_timer_deleted` agora usa tratamento robusto de erros
+- Exclusão de timers não interfere mais na navegação do usuário
+- Implementado sistema de recálculo inteligente e não-bloqueante
+
+### Changed
+- Hook de exclusão simplificado para evitar operações pesadas durante exclusão
+- Recálculos movidos para momento apropriado (visualização do timesheet)
+- Melhor tratamento de erros com fallback de emergência
+- Sistema de marcação para recálculos pendentes
+
+### Technical
+- Função `process_pending_recalculations()` para processar em background
+- Try/catch robusto no hook de exclusão
+- Limpeza de referências sem bloquear fluxo principal
+
 ## [1.3.17] - 2025-01-26
 
-### 🔧 FIX
-- Correção na criação do campo `perfex_timer_id` na tabela `timesheet_entries`
-- Migration adicional para garantir que o campo seja criado corretamente
+### Fixed
+- Correção no auto-save para evitar perda de dados em campos editados rapidamente
+- Implementação de debounce de 2 segundos no salvamento automático
+- Melhorias na validação de entradas antes do salvamento
+
+### Changed
+- Auto-save agora aguarda 2 segundos após última edição antes de salvar
+- Melhor feedback visual durante o processo de salvamento
+- Validação mais rigorosa de dados antes do envio ao servidor
 
 ## [1.3.16] - 2025-01-26
 

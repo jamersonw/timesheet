@@ -17,6 +17,9 @@ class Timesheet extends AdminController
             access_denied('timesheet');
         }
 
+        // Processar recálculos pendentes de exclusões
+        $this->process_pending_recalculations();
+
         // Disparar verificação automática de sincronização
         hooks()->do_action('after_timesheet_viewed');
 
@@ -327,5 +330,48 @@ class Timesheet extends AdminController
         $data['title'] = _l('timesheet_approvals') . ' - ' . $approval->firstname . ' ' . $approval->lastname;
 
         $this->load->view('timesheet/view_approval', $data);
+    }
+
+    /**
+     * Processa recálculos pendentes de forma não-bloqueante
+     * Chamado quando usuário visualiza o timesheet
+     */
+    private function process_pending_recalculations()
+    {
+        try {
+            // Buscar tarefas marcadas para recálculo
+            $this->db->like('name', 'timesheet_recalc_needed_');
+            $pending_options = $this->db->get(db_prefix() . 'options')->result();
+            
+            if (empty($pending_options)) {
+                return; // Nenhum recálculo pendente
+            }
+
+            log_activity('[Timesheet] Processando ' . count($pending_options) . ' recálculos pendentes');
+            
+            foreach ($pending_options as $option) {
+                // Extrair task_id do nome da opção
+                $task_id = str_replace('timesheet_recalc_needed_', '', $option->name);
+                
+                if (is_numeric($task_id)) {
+                    // Executar recálculo para todos os staffs desta tarefa
+                    $this->db->select('DISTINCT staff_id');
+                    $this->db->where('task_id', $task_id);
+                    $staff_members = $this->db->get(db_prefix() . 'timesheet_entries')->result();
+                    
+                    foreach ($staff_members as $staff) {
+                        $result = $this->timesheet_model->recalculate_task_hours($task_id, $staff->staff_id);
+                        log_activity('[Timesheet] Recálculo pendente executado - Task: ' . $task_id . ', Staff: ' . $staff->staff_id . ' - ' . ($result ? 'SUCESSO' : 'FALHA'));
+                    }
+                    
+                    // Remover marcação de pendência
+                    delete_option($option->name);
+                    log_activity('[Timesheet] Recálculo pendente finalizado para tarefa ' . $task_id);
+                }
+            }
+            
+        } catch (Exception $e) {
+            log_activity('[Timesheet] Erro no processamento de recálculos pendentes: ' . $e->getMessage());
+        }
     }
 }

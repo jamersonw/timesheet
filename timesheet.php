@@ -14,7 +14,7 @@ Author: Perfex CRM Module Developer
 */
 
 define('TIMESHEET_MODULE_NAME', 'timesheet');
-define('TIMESHEET_MODULE_VERSION', '1.3.2');
+define('TIMESHEET_MODULE_VERSION', '1.3.18');
 
 /**
  * Register activation hook
@@ -138,31 +138,62 @@ function timesheet_sync_from_core_timer_started($data)
 
 /**
  * Função de callback para o hook de EXCLUSÃO de timer.
+ * Versão robusta com tratamento de erro para evitar tela branca
  */
 function timesheet_sync_from_core_timer_deleted($data)
 {
-    $CI = &get_instance();
-    log_activity('[Timesheet Hook DEBUG] task_timer_deleted CHAMADO! Dados recebidos: ' . json_encode($data));
-    
-    $timer_id = $data['id'] ?? null;
-    $task_id = $data['task_id'] ?? null;
+    try {
+        $CI = &get_instance();
+        log_activity('[Timesheet Hook DEBUG] task_timer_deleted CHAMADO! Dados recebidos: ' . json_encode($data));
+        
+        $timer_id = $data['id'] ?? null;
+        $task_id = $data['task_id'] ?? null;
 
-    if ($timer_id && $task_id) {
-        $CI->load->model('timesheet/timesheet_model');
+        if (!$timer_id || !$task_id) {
+            log_activity('[Timesheet Hook] Dados insuficientes - Timer ID: ' . $timer_id . ', Task ID: ' . $task_id);
+            return; // Sair silenciosamente sem quebrar o fluxo
+        }
+
         log_activity('[Timesheet Hook] Timer deletado - ID: ' . $timer_id . ', Tarefa: ' . $task_id);
 
+        // APENAS limpar referências - SEM operações pesadas
         $CI->db->where('perfex_timer_id', $timer_id);
         $entries = $CI->db->get(db_prefix() . 'timesheet_entries')->result();
         
         if ($entries) {
             log_activity('[Timesheet Hook] Encontradas ' . count($entries) . ' entradas vinculadas ao timer deletado');
+            
+            // Limpar referências sem recálculo pesado
             foreach ($entries as $entry) {
                 $CI->db->where('id', $entry->id);
                 $CI->db->update(db_prefix() . 'timesheet_entries', ['perfex_timer_id' => null]);
-                
-                $result = $CI->timesheet_model->recalculate_task_hours($task_id, $entry->staff_id);
-                log_activity('[Timesheet Hook] Recálculo após exclusão: ' . ($result ? 'SUCESSO' : 'FALHA'));
+                log_activity('[Timesheet Hook] Referência removida da entrada ID: ' . $entry->id);
             }
+            
+            // Marcar para recálculo posterior (não bloquear exclusão)
+            update_option('timesheet_recalc_needed_' . $task_id, time());
+            log_activity('[Timesheet Hook] Tarefa ' . $task_id . ' marcada para recálculo posterior');
+        } else {
+            log_activity('[Timesheet Hook] Nenhuma entrada vinculada ao timer ' . $timer_id);
+        }
+
+        log_activity('[Timesheet Hook] Processamento de exclusão finalizado com sucesso');
+
+    } catch (Exception $e) {
+        // Log do erro mas NÃO interromper o fluxo de exclusão
+        log_activity('[Timesheet Hook ERROR] Erro durante exclusão: ' . $e->getMessage() . ' - mas exclusão prosseguiu normalmente');
+        
+        // Em caso de erro, apenas limpar referências básicas
+        try {
+            $CI = &get_instance();
+            $timer_id = $data['id'] ?? null;
+            if ($timer_id) {
+                $CI->db->where('perfex_timer_id', $timer_id);
+                $CI->db->update(db_prefix() . 'timesheet_entries', ['perfex_timer_id' => null]);
+                log_activity('[Timesheet Hook] Limpeza de emergência executada para timer ' . $timer_id);
+            }
+        } catch (Exception $fallback_error) {
+            log_activity('[Timesheet Hook CRITICAL] Falha na limpeza de emergência: ' . $fallback_error->getMessage());
         }
     }
 }
