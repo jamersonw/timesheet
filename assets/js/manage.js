@@ -13,29 +13,38 @@ $(document).ready(function() {
     $(document).on('click', '.approve-btn', function() {
         var approvalId = $(this).data('approval-id');
         
-        if (confirm('Are you sure you want to approve this timesheet? This action cannot be undone.')) {
-            approveRejectTimesheet(approvalId, 'approved');
-        }
+        TimesheetModals.confirm({
+            title: 'Aprovar Timesheet',
+            message: 'Tem certeza que deseja aprovar este timesheet? Esta ação não pode ser desfeita.',
+            icon: 'fa-check-circle',
+            confirmText: 'Aprovar',
+            cancelText: 'Cancelar',
+            confirmClass: 'timesheet-modal-btn-success'
+        }).then(function(confirmed) {
+            if (confirmed) {
+                approveRejectTimesheet(approvalId, 'approved');
+            }
+        });
     });
     
     // Reject button click
     $(document).on('click', '.reject-btn', function() {
-        currentApprovalId = $(this).data('approval-id');
-        $('#rejection-reason').val('');
-        $('#rejection-modal').modal('show');
-    });
-    
-    // Confirm rejection
-    $('#confirm-rejection').click(function() {
-        var reason = $('#rejection-reason').val().trim();
+        var approvalId = $(this).data('approval-id');
         
-        if (!reason) {
-            alert('Please provide a reason for rejection.');
-            return;
-        }
-        
-        approveRejectTimesheet(currentApprovalId, 'rejected', reason);
-        $('#rejection-modal').modal('hide');
+        TimesheetModals.prompt({
+            title: 'Rejeitar Timesheet',
+            message: 'Por favor, informe o motivo da rejeição:',
+            placeholder: 'Digite o motivo da rejeição...',
+            icon: 'fa-times-circle',
+            confirmText: 'Rejeitar',
+            cancelText: 'Cancelar',
+            confirmClass: 'timesheet-modal-btn-danger',
+            required: true
+        }).then(function(reason) {
+            if (reason) {
+                approveRejectTimesheet(approvalId, 'rejected', reason);
+            }
+        });
     });
     
     function loadTotalHours(approvalId, staffId, weekStartDate) {

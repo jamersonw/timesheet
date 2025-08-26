@@ -134,69 +134,90 @@ $(document).ready(function() {
             setTimeout(function() {
                 $saveIndicator.html('<i class="fa fa-check text-success"></i> Todas as entradas salvas');
                 
-                if (confirm(timesheet_data.confirm_submit)) {
-                    $saveIndicator.html('<i class="fa fa-spinner fa-spin"></i> Enviando para aprovação...');
-                    
-                    var data = {};
-                    data.week_start = timesheet_data.week_start;
-                    data[csrfData.token_name] = csrfData.hash;
-                    
-                    $.post(timesheet_data.admin_url + 'timesheet/submit_week', data).done(function(response) {
-                        try {
-                            response = typeof response === 'string' ? JSON.parse(response) : response;
-                        } catch (e) {
-                            console.error("Erro ao parsear resposta da submissão:", response);
-                            alert_float('danger', 'Erro de comunicação com o servidor');
-                            $btn.prop('disabled', false);
-                            $saveIndicator.html('');
-                            return;
-                        }
+                // Usar modal elegante ao invés de confirm()
+                TimesheetModals.confirm({
+                    title: 'Enviar para Aprovação',
+                    message: timesheet_data.confirm_submit || 'Tem certeza que deseja enviar este timesheet para aprovação? Esta ação não pode ser desfeita.',
+                    icon: 'fa-paper-plane',
+                    confirmText: 'Enviar',
+                    cancelText: 'Cancelar',
+                    confirmClass: 'timesheet-modal-btn-success'
+                }).then(function(confirmed) {
+                    if (confirmed) {
+                        $saveIndicator.html('<i class="fa fa-spinner fa-spin"></i> Enviando para aprovação...');
                         
-                        if (response.success) {
-                            $saveIndicator.html('<i class="fa fa-check text-success"></i> Enviado com sucesso!');
-                            alert_float('success', response.message);
-                            setTimeout(function(){ location.reload(); }, 1500);
-                        } else {
-                            $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro na submissão');
-                            alert_float('danger', response.message);
+                        var data = {};
+                        data.week_start = timesheet_data.week_start;
+                        data[csrfData.token_name] = csrfData.hash;
+                        
+                        $.post(timesheet_data.admin_url + 'timesheet/submit_week', data).done(function(response) {
+                            try {
+                                response = typeof response === 'string' ? JSON.parse(response) : response;
+                            } catch (e) {
+                                console.error("Erro ao parsear resposta da submissão:", response);
+                                TimesheetModals.error('Erro de comunicação com o servidor');
+                                $btn.prop('disabled', false);
+                                $saveIndicator.html('');
+                                return;
+                            }
+                            
+                            if (response.success) {
+                                $saveIndicator.html('<i class="fa fa-check text-success"></i> Enviado com sucesso!');
+                                TimesheetModals.success(response.message, 'Timesheet Enviado!').then(function() {
+                                    location.reload();
+                                });
+                            } else {
+                                $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro na submissão');
+                                TimesheetModals.error(response.message, 'Erro na Submissão');
+                                $btn.prop('disabled', false);
+                                setTimeout(function() { $saveIndicator.html(''); }, 3000);
+                            }
+                        }).fail(function(jqXHR) {
+                            console.error("Falha na requisição de submissão:", jqXHR.responseText);
+                            $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro de conexão');
+                            TimesheetModals.error('Erro de conexão ao enviar para aprovação', 'Erro de Conexão');
                             $btn.prop('disabled', false);
                             setTimeout(function() { $saveIndicator.html(''); }, 3000);
-                        }
-                    }).fail(function(jqXHR) {
-                        console.error("Falha na requisição de submissão:", jqXHR.responseText);
-                        $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro de conexão');
-                        alert_float('danger', 'Erro de conexão ao enviar para aprovação');
+                        });
+                    } else {
                         $btn.prop('disabled', false);
-                        setTimeout(function() { $saveIndicator.html(''); }, 3000);
-                    });
-                } else {
-                    $btn.prop('disabled', false);
-                    setTimeout(function() { $saveIndicator.html(''); }, 2000);
-                }
+                        setTimeout(function() { $saveIndicator.html(''); }, 2000);
+                    }
+                });
             }, 500); // Aguardar 500ms para o servidor processar
         }).catch(function() {
             $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro ao salvar');
-            alert_float('danger', 'Falha ao salvar as horas antes do envio. Tente novamente.');
+            TimesheetModals.error('Falha ao salvar as horas antes do envio. Tente novamente.', 'Erro ao Salvar');
             $btn.prop('disabled', false);
             setTimeout(function() { $saveIndicator.html(''); }, 3000);
         });
     });
 
     $('#cancel-submission').on('click', function() {
-        if (confirm(timesheet_data.confirm_cancel_submission)) {
-            var data = {};
-            data.week_start = timesheet_data.week_start;
-            data[csrfData.token_name] = csrfData.hash;
-            $.post(timesheet_data.admin_url + 'timesheet/cancel_submission', data).done(function(response) {
-                response = JSON.parse(response);
-                if (response.success) {
-                    alert_float('success', response.message);
-                    setTimeout(function(){ location.reload(); }, 1500);
-                } else {
-                    alert_float('danger', response.message);
-                }
-            });
-        }
+        TimesheetModals.confirm({
+            title: 'Cancelar Submissão',
+            message: timesheet_data.confirm_cancel_submission || 'Tem certeza que deseja cancelar a submissão deste timesheet? Ele voltará ao status de rascunho.',
+            icon: 'fa-undo',
+            confirmText: 'Cancelar Submissão',
+            cancelText: 'Manter Como Está',
+            confirmClass: 'timesheet-modal-btn-warning'
+        }).then(function(confirmed) {
+            if (confirmed) {
+                var data = {};
+                data.week_start = timesheet_data.week_start;
+                data[csrfData.token_name] = csrfData.hash;
+                $.post(timesheet_data.admin_url + 'timesheet/cancel_submission', data).done(function(response) {
+                    response = JSON.parse(response);
+                    if (response.success) {
+                        TimesheetModals.success(response.message, 'Submissão Cancelada').then(function() {
+                            location.reload();
+                        });
+                    } else {
+                        TimesheetModals.error(response.message, 'Erro ao Cancelar');
+                    }
+                });
+            }
+        });
     });
     
     $('#add-project-row').on('click', function() {
@@ -227,12 +248,12 @@ $(document).ready(function() {
         var taskName = $('#task-select').find('option:selected').text();
         
         if(!projectId || !taskId) {
-            alert('Por favor, selecione um projeto E uma tarefa.');
+            TimesheetModals.warning('Por favor, selecione um projeto E uma tarefa.', 'Seleção Obrigatória');
             return;
         }
 
         if ($('tr[data-project-id="'+projectId+'"][data-task-id="'+taskId+'"]').length > 0) {
-            alert('Este projeto/tarefa já foi adicionado à sua planilha.');
+            TimesheetModals.warning('Este projeto/tarefa já foi adicionado à sua planilha.', 'Projeto Duplicado');
             return;
         }
 
@@ -252,10 +273,20 @@ $(document).ready(function() {
     });
 
     $(document).on('click', '.remove-row', function(){
-        if(confirm('Tem certeza que deseja remover esta linha? Todas as horas lançadas nela serão perdidas.')){
-            $(this).closest('tr').remove();
-            updateTotals();
-        }
+        var $row = $(this).closest('tr');
+        TimesheetModals.confirm({
+            title: 'Remover Linha',
+            message: 'Tem certeza que deseja remover esta linha? Todas as horas lançadas nela serão perdidas.',
+            icon: 'fa-trash',
+            confirmText: 'Remover',
+            cancelText: 'Cancelar',
+            confirmClass: 'timesheet-modal-btn-danger'
+        }).then(function(confirmed) {
+            if (confirmed) {
+                $row.remove();
+                updateTotals();
+            }
+        });
     });
 
     function updateTotals() {

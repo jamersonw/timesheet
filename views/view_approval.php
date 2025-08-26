@@ -1,7 +1,6 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
-
 <?php init_head(); ?>
-
+<link rel="stylesheet" href="<?php echo module_dir_url('timesheet', 'assets/css/timesheet_modals.css'); ?>">
 <div id="wrapper">
     <div class="content">
         <div class="row">
@@ -15,7 +14,7 @@
                         </h3>
                     </div>
                     <div class="panel-body">
-                        
+
                         <!-- Staff and Week Info -->
                         <div class="row mb-3">
                             <div class="col-md-6">
@@ -53,7 +52,7 @@
                                             </small>
                                         </span>
                                     <?php endif; ?>
-                                    
+
                                     <?php if ($approval->status == 'rejected' && $approval->rejection_reason): ?>
                                         <br><br>
                                         <strong>Rejection Reason:</strong><br>
@@ -189,6 +188,42 @@
     </div>
 </div>
 
+<!-- Custom Modals -->
+<div id="custom-confirm-modal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Confirmation</h4>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirm-yes">Yes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="custom-alert-modal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Alert</h4>
+            </div>
+            <div class="modal-body">
+                <p id="alert-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 var approval_data = {
     admin_url: '<?php echo admin_url(); ?>',
@@ -197,8 +232,7 @@ var approval_data = {
 </script>
 
 <?php init_tail(); ?>
-<link rel="stylesheet" href="<?php echo module_dir_url('timesheet', 'assets/css/timesheet.css'); ?>">
+<script src="<?php echo module_dir_url('timesheet', 'assets/js/timesheet_modals.js'); ?>"></script>
 <script src="<?php echo module_dir_url('timesheet', 'assets/js/manage.js'); ?>"></script>
 </body>
 </html>
-

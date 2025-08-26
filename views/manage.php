@@ -1,7 +1,6 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
-
 <?php init_head(); ?>
-
+<link rel="stylesheet" href="<?php echo module_dir_url('timesheet', 'assets/css/timesheet_modals.css'); ?>">
 <div id="wrapper">
     <div class="content">
         <div class="row">
@@ -13,14 +12,14 @@
                         </h3>
                     </div>
                     <div class="panel-body">
-                        
+
                         <?php if (empty($pending_approvals)): ?>
                             <div class="alert alert-info">
                                 <i class="fa fa-info-circle"></i> 
                                 No pending timesheet approvals at this time.
                             </div>
                         <?php else: ?>
-                            
+
                             <div class="table-responsive">
                                 <table class="table table-striped table-bordered">
                                     <thead>
@@ -76,9 +75,9 @@
                                     </tbody>
                                 </table>
                             </div>
-                            
+
                         <?php endif; ?>
-                        
+
                     </div>
                 </div>
             </div>
@@ -122,4 +121,3 @@ var manage_data = {
 <script src="<?php echo module_dir_url('timesheet', 'assets/js/manage.js'); ?>"></script>
 </body>
 </html>
-

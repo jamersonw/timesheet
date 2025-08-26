@@ -1,9 +1,8 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
-
 <?php init_head(); ?>
-
+<link rel="stylesheet" href="<?php echo module_dir_url('timesheet', 'assets/css/timesheet_modals.css'); ?>">
 <div id="wrapper">
-    <div class="content">
+    <div class="content"><?php echo form_open($this->uri->uri_string(), array('id' => 'timesheet-form')); ?>
         <div class="row">
             <div class="col-md-12">
                 <div class="panel panel-default">
@@ -13,7 +12,7 @@
                         </h3>
                     </div>
                     <div class="panel-body">
-                        
+
                         <div class="row mbot15">
                             <div class="col-md-6">
                                 <h4><?php echo _l('timesheet_week_of') . ' ' . _d($week_start) . ' - ' . _d($week_end); ?></h4>
@@ -96,7 +95,7 @@
                         <div class="row m-t-20">
                             <div class="col-md-12 text-right">
                                 <span id="save-indicator" class="text-muted" style="margin-right: 15px; font-style: italic;"></span>
-                                
+
                                 <?php if ($approval_status && $approval_status->status == 'pending'): ?>
                                     <div class="alert alert-info pull-left" style="margin-top: -10px;"><?php echo _l('timesheet_status_pending_message'); ?></div>
                                     <button type="button" class="btn btn-warning" id="cancel-submission"><i class="fa fa-undo"></i> <?php echo _l('timesheet_cancel_submission'); ?></button>
@@ -163,5 +162,6 @@ var timesheet_data = {
 
 <?php init_tail(); ?>
 <script src="<?php echo module_dir_url('timesheet', 'assets/js/timesheet.js'); ?>"></script>
+<script src="<?php echo module_dir_url('timesheet', 'assets/js/timesheet_modals.js'); ?>"></script>
 </body>
 </html>
