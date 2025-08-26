@@ -16,6 +16,10 @@ class Timesheet extends AdminController
         if (!has_permission('timesheet', '', 'view')) {
             access_denied('timesheet');
         }
+        
+        // Disparar verificação automática de sincronização
+        hooks()->do_action('after_timesheet_viewed');
+        
         $week_start = $this->input->get('week') ?: timesheet_get_week_start();
         $data['week_start'] = $week_start;
         $data['week_end'] = timesheet_get_week_end($week_start);
@@ -204,6 +208,13 @@ class Timesheet extends AdminController
         } else {
             echo json_encode(['success' => false, 'message' => 'Error processing approval']);
         }
+    }
+
+    /**
+     * Endpoint AJAX para sincronização automática quando timer é alterado
+     */
+    public function ajax_sync() {
+        timesheet_ajax_sync_endpoint();
     }
 
     /**
