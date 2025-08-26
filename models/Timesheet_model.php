@@ -49,6 +49,8 @@ class Timesheet_model extends App_Model
         $this->db->where('te.week_start_date', $week_start_date);
         $entries = $this->db->get()->result();
 
+        log_activity('[Timesheet Debug] Buscando entradas para staff ' . $staff_id . ' na semana ' . $week_start_date . ' - Encontradas: ' . count($entries));
+
         $grouped = [];
         foreach ($entries as $entry) {
             $key = $entry->project_id . '_' . ($entry->task_id ?: '0');
@@ -103,6 +105,11 @@ class Timesheet_model extends App_Model
      */
     public function save_entry($data)
     {
+        // Garantir que o status sempre seja definido
+        if (!isset($data['status']) || empty($data['status'])) {
+            $data['status'] = 'draft';
+        }
+
         $this->db->where('staff_id', $data['staff_id']);
         $this->db->where('project_id', $data['project_id']);
         $this->db->where('task_id', $data['task_id']);
@@ -112,13 +119,23 @@ class Timesheet_model extends App_Model
 
         if ($existing) {
             if (empty($data['hours']) || (float)$data['hours'] == 0) {
+                log_activity('[Timesheet] Removendo entrada ID: ' . $existing->id . ' (0 horas)');
                 return $this->db->delete(db_prefix() . 'timesheet_entries', ['id' => $existing->id]);
             } else {
+                $update_data = [
+                    'hours' => $data['hours'],
+                    'status' => $data['status']
+                ];
                 $this->db->where('id', $existing->id);
-                return $this->db->update(db_prefix() . 'timesheet_entries', ['hours' => $data['hours']]);
+                $result = $this->db->update(db_prefix() . 'timesheet_entries', $update_data);
+                log_activity('[Timesheet] Entrada atualizada ID: ' . $existing->id . ' com ' . $data['hours'] . 'h, status: ' . $data['status']);
+                return $result;
             }
         } elseif ((float)$data['hours'] > 0) {
-            return $this->db->insert(db_prefix() . 'timesheet_entries', $data);
+            $result = $this->db->insert(db_prefix() . 'timesheet_entries', $data);
+            $entry_id = $this->db->insert_id();
+            log_activity('[Timesheet] Nova entrada criada ID: ' . $entry_id . ' com ' . $data['hours'] . 'h, status: ' . $data['status']);
+            return $result;
         }
 
         return true;

@@ -81,7 +81,7 @@ class Timesheet extends AdminController
             'week_start_date' => $week_start,
             'day_of_week'     => $day_of_week,
             'hours'           => $hours,
-            'status'          => 'draft' // Campo restaurado para segurança
+            'status'          => 'draft'
         ];
 
         if ($this->timesheet_model->save_entry($data)) {
@@ -218,6 +218,34 @@ class Timesheet extends AdminController
     }
 
     /**
+     * Função para corrigir registros sem status
+     */
+    public function fix_missing_status() {
+        if (!is_admin()) {
+            echo json_encode(['error' => 'Apenas administradores podem usar esta função']);
+            return;
+        }
+
+        // Buscar entradas sem status ou com status vazio
+        $this->db->where('(status IS NULL OR status = "")');
+        $entries_without_status = $this->db->get(db_prefix() . 'timesheet_entries')->result();
+
+        $fixed_count = 0;
+        foreach ($entries_without_status as $entry) {
+            $this->db->where('id', $entry->id);
+            $this->db->update(db_prefix() . 'timesheet_entries', ['status' => 'draft']);
+            $fixed_count++;
+            log_activity('[Timesheet Fix] Entrada ID ' . $entry->id . ' corrigida - status definido como draft');
+        }
+
+        echo json_encode([
+            'success' => true, 
+            'message' => 'Corrigidas ' . $fixed_count . ' entradas sem status',
+            'fixed_count' => $fixed_count
+        ]);
+    }
+
+    /**
      * Endpoint de debug para testar sincronização manualmente
      */
     public function debug_sync() {
@@ -252,8 +280,29 @@ class Timesheet extends AdminController
                 echo json_encode(['success' => true, 'message' => 'Verifique o log de atividades']);
                 break;
 
+            case 'fix_status':
+                $this->fix_missing_status();
+                return;
+
+            case 'check_entries':
+                $staff_id = $this->input->get('staff_id') ?: get_staff_user_id();
+                $week_start = $this->input->get('week_start') ?: timesheet_get_week_start();
+                
+                $this->db->where('staff_id', $staff_id);
+                $this->db->where('week_start_date', $week_start);
+                $entries = $this->db->get(db_prefix() . 'timesheet_entries')->result();
+                
+                echo json_encode([
+                    'success' => true, 
+                    'entries' => $entries,
+                    'count' => count($entries),
+                    'staff_id' => $staff_id,
+                    'week_start' => $week_start
+                ]);
+                break;
+
             default:
-                echo json_encode(['error' => 'Ação não reconhecida. Use: list_timers, test_sync, hook_test']);
+                echo json_encode(['error' => 'Ação não reconhecida. Use: list_timers, test_sync, hook_test, fix_status, check_entries']);
         }
     }
 
