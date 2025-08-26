@@ -3,19 +3,6 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
- * Get week start date from any date
- */
-if (!function_exists('timesheet_get_week_start')) {
-    function timesheet_get_week_start($date = null) {
-        if (!$date) {
-            $date = date('Y-m-d');
-        }
-        $timestamp = is_numeric($date) ? $date : strtotime($date);
-        return date('Y-m-d', strtotime('monday this week', $timestamp));
-    }
-}
-
-/**
  * Get week start date (Monday) for a given date
  */
 if (!function_exists('timesheet_get_week_start')) {

@@ -49,8 +49,6 @@ class Timesheet_model extends App_Model
         $this->db->where('te.week_start_date', $week_start_date);
         $entries = $this->db->get()->result();
 
-        log_activity('[Timesheet Debug] Buscando entradas para staff ' . $staff_id . ' na semana ' . $week_start_date . ' - Encontradas: ' . count($entries));
-
         $grouped = [];
         foreach ($entries as $entry) {
             $key = $entry->project_id . '_' . ($entry->task_id ?: '0');
@@ -105,11 +103,6 @@ class Timesheet_model extends App_Model
      */
     public function save_entry($data)
     {
-        // Garantir que o status sempre seja definido
-        if (!isset($data['status']) || empty($data['status'])) {
-            $data['status'] = 'draft';
-        }
-
         $this->db->where('staff_id', $data['staff_id']);
         $this->db->where('project_id', $data['project_id']);
         $this->db->where('task_id', $data['task_id']);
@@ -119,23 +112,13 @@ class Timesheet_model extends App_Model
 
         if ($existing) {
             if (empty($data['hours']) || (float)$data['hours'] == 0) {
-                log_activity('[Timesheet] Removendo entrada ID: ' . $existing->id . ' (0 horas)');
                 return $this->db->delete(db_prefix() . 'timesheet_entries', ['id' => $existing->id]);
             } else {
-                $update_data = [
-                    'hours' => $data['hours'],
-                    'status' => $data['status']
-                ];
                 $this->db->where('id', $existing->id);
-                $result = $this->db->update(db_prefix() . 'timesheet_entries', $update_data);
-                log_activity('[Timesheet] Entrada atualizada ID: ' . $existing->id . ' com ' . $data['hours'] . 'h, status: ' . $data['status']);
-                return $result;
+                return $this->db->update(db_prefix() . 'timesheet_entries', ['hours' => $data['hours']]);
             }
         } elseif ((float)$data['hours'] > 0) {
-            $result = $this->db->insert(db_prefix() . 'timesheet_entries', $data);
-            $entry_id = $this->db->insert_id();
-            log_activity('[Timesheet] Nova entrada criada ID: ' . $entry_id . ' com ' . $data['hours'] . 'h, status: ' . $data['status']);
-            return $result;
+            return $this->db->insert(db_prefix() . 'timesheet_entries', $data);
         }
 
         return true;
@@ -546,108 +529,6 @@ class Timesheet_model extends App_Model
 
         } catch (Exception $e) {
             log_activity('[Perfex→Timesheet ERROR] Erro na sincronização: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Sincroniza um timer específico de forma incremental
-     * OTIMIZADA: Não deleta tudo, apenas ajusta o necessário
-     */
-    public function sync_single_timer($timer_id, $task_id, $staff_id)
-    {
-        try {
-            log_activity('[Timesheet Sync] Sincronização incremental - Timer: ' . $timer_id);
-
-            // Buscar dados do timer específico
-            $timer = $this->db->get_where(db_prefix() . 'taskstimers', ['id' => $timer_id])->row();
-            if (!$timer || !$timer->end_time) {
-                log_activity('[Timesheet Sync] Timer não encontrado ou não finalizado - ID: ' . $timer_id);
-                return false;
-            }
-
-            $start_time = is_numeric($timer->start_time) ? $timer->start_time : strtotime($timer->start_time);
-            $end_time = is_numeric($timer->end_time) ? $timer->end_time : strtotime($timer->end_time);
-            
-            if ($start_time <= 0 || $end_time <= 0 || $end_time <= $start_time) {
-                log_activity('[Timesheet Sync] Timer com timestamps inválidos - ID: ' . $timer_id);
-                return false;
-            }
-
-            // Data base é a data inicial
-            $date = date('Y-m-d', $start_time);
-            $week_start = timesheet_get_week_start($date);
-            $day_of_week = date('N', strtotime($date));
-            
-            // Calcular horas deste timer
-            $timer_hours = ($end_time - $start_time) / 3600;
-            
-            // Buscar entrada existente para este dia/tarefa/staff
-            $this->db->where('staff_id', $staff_id);
-            $this->db->where('task_id', $task_id);
-            $this->db->where('week_start_date', $week_start);
-            $this->db->where('day_of_week', $day_of_week);
-            $existing_entry = $this->db->get(db_prefix() . 'timesheet_entries')->row();
-
-            // Buscar TODOS os outros timers para este dia/tarefa/staff (exceto o atual)
-            $this->db->where('task_id', $task_id);
-            $this->db->where('staff_id', $staff_id);
-            $this->db->where('end_time IS NOT NULL');
-            $this->db->where('id !=', $timer_id);
-            $other_timers = $this->db->get(db_prefix() . 'taskstimers')->result();
-
-            $other_hours = 0;
-            foreach ($other_timers as $other_timer) {
-                $other_start = is_numeric($other_timer->start_time) ? $other_timer->start_time : strtotime($other_timer->start_time);
-                $other_end = is_numeric($other_timer->end_time) ? $other_timer->end_time : strtotime($other_timer->end_time);
-                
-                // Se for do mesmo dia
-                if (date('Y-m-d', $other_start) === $date) {
-                    $other_hours += ($other_end - $other_start) / 3600;
-                }
-            }
-
-            $total_hours = round($timer_hours + $other_hours, 2);
-            
-            // Buscar dados da tarefa
-            $task = $this->tasks_model->get($task_id);
-            if (!$task) {
-                log_activity('[Timesheet Sync] Tarefa não encontrada - ID: ' . $task_id);
-                return false;
-            }
-
-            if ($existing_entry) {
-                if ($total_hours > 0) {
-                    // Atualizar entrada existente
-                    $this->db->where('id', $existing_entry->id);
-                    $this->db->update(db_prefix() . 'timesheet_entries', ['hours' => $total_hours]);
-                    log_activity('[Timesheet Sync] Entrada atualizada para ' . $date . ' com ' . $total_hours . 'h');
-                } else {
-                    // Remover se não há mais horas
-                    $this->db->where('id', $existing_entry->id);
-                    $this->db->delete(db_prefix() . 'timesheet_entries');
-                    log_activity('[Timesheet Sync] Entrada removida para ' . $date . ' (0 horas)');
-                }
-            } else if ($total_hours > 0) {
-                // Criar nova entrada
-                $data = [
-                    'staff_id'        => $staff_id,
-                    'project_id'      => $task->rel_id,
-                    'task_id'         => $task_id,
-                    'week_start_date' => $week_start,
-                    'day_of_week'     => $day_of_week,
-                    'hours'           => $total_hours,
-                    'status'          => 'draft'
-                ];
-
-                $this->db->insert(db_prefix() . 'timesheet_entries', $data);
-                log_activity('[Timesheet Sync] Nova entrada criada para ' . $date . ' com ' . $total_hours . 'h');
-            }
-
-            return true;
-
-        } catch (Exception $e) {
-            log_activity('[Timesheet Sync ERROR] Erro na sincronização incremental: ' . $e->getMessage());
             return false;
         }
     }
