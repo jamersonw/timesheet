@@ -53,20 +53,20 @@
                                                 <?php echo _dt($approval->submitted_at); ?>
                                             </td>
                                             <td class="text-center">
-                                                <div class="btn-group">
+                                                <div class="btn-group" role="group">
                                                     <a href="<?php echo admin_url('timesheet/view_approval/' . $approval->id); ?>" 
-                                                       class="btn btn-info btn-sm">
+                                                       class="btn btn-sm btn-info" title="<?php echo _l('view'); ?>">
                                                         <i class="fa fa-eye"></i> <?php echo _l('view'); ?>
                                                     </a>
-                                                    <button type="button" 
-                                                            class="btn btn-success btn-sm approve-btn" 
-                                                            data-approval-id="<?php echo $approval->id; ?>">
-                                                        <i class="fa fa-check"></i> <?php echo _l('timesheet_approve'); ?>
+                                                    <button type="button" class="btn btn-sm btn-success approve-btn" 
+                                                            data-approval-id="<?php echo $approval->id; ?>" 
+                                                            title="<?php echo _l('timesheet_approve'); ?>">
+                                                        <i class="fa fa-check"></i> Aprovar
                                                     </button>
-                                                    <button type="button" 
-                                                            class="btn btn-danger btn-sm reject-btn" 
-                                                            data-approval-id="<?php echo $approval->id; ?>">
-                                                        <i class="fa fa-times"></i> <?php echo _l('timesheet_reject'); ?>
+                                                    <button type="button" class="btn btn-sm btn-danger reject-btn" 
+                                                            data-approval-id="<?php echo $approval->id; ?>" 
+                                                            title="<?php echo _l('timesheet_reject'); ?>">
+                                                        <i class="fa fa-times"></i> Rejeitar
                                                     </button>
                                                 </div>
                                             </td>

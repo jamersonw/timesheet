@@ -138,12 +138,16 @@
                                 <a href="<?php echo admin_url('timesheet/manage'); ?>" class="btn btn-default">
                                     <i class="fa fa-arrow-left"></i> <?php echo _l('back'); ?>
                                 </a>
-                                <button type="button" class="btn btn-success approve-btn" data-approval-id="<?php echo $approval->id; ?>">
-                                    <i class="fa fa-check"></i> <?php echo _l('timesheet_approve'); ?>
-                                </button>
-                                <button type="button" class="btn btn-danger reject-btn" data-approval-id="<?php echo $approval->id; ?>">
-                                    <i class="fa fa-times"></i> <?php echo _l('timesheet_reject'); ?>
-                                </button>
+                                <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-success approve-btn" 
+                                                    data-approval-id="<?php echo $approval->id; ?>">
+                                                <i class="fa fa-check"></i> Aprovar
+                                            </button>
+                                            <button type="button" class="btn btn-danger reject-btn" 
+                                                    data-approval-id="<?php echo $approval->id; ?>">
+                                                <i class="fa fa-times"></i> Rejeitar
+                                            </button>
+                                        </div>
                             </div>
                         </div>
                         <?php else: ?>

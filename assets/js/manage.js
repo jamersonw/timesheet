@@ -2,6 +2,10 @@ $(document).ready(function() {
     
     var currentApprovalId = null;
     
+    // Debug: verificar se os botões existem na página
+    console.log('Botões de aprovação encontrados:', $('.approve-btn').length);
+    console.log('Botões de rejeição encontrados:', $('.reject-btn').length);
+    
     // Load total hours for each approval
     if (typeof manage_data !== 'undefined' && manage_data.pending_approvals) {
         manage_data.pending_approvals.forEach(function(approval) {
@@ -9,8 +13,8 @@ $(document).ready(function() {
         });
     }
     
-    // Approve button click
-    $(document).on('click', '.approve-btn', function(e) {
+    // Approve button click - usar seletor mais específico
+    $(document).on('click', 'button.approve-btn, a.approve-btn', function(e) {
         e.preventDefault();
         e.stopPropagation();
         
@@ -32,8 +36,8 @@ $(document).ready(function() {
         });
     });
     
-    // Reject button click
-    $(document).on('click', '.reject-btn', function(e) {
+    // Reject button click - usar seletor mais específico
+    $(document).on('click', 'button.reject-btn, a.reject-btn', function(e) {
         e.preventDefault();
         e.stopPropagation();
         

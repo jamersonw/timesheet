@@ -123,6 +123,13 @@ $(document).ready(function() {
 
     $('#submit-timesheet').on('click', function() {
         var $btn = $(this);
+        
+        // Validar se existe pelo menos uma linha de projeto/tarefa
+        if ($('#timesheet-entries tr').length === 0) {
+            TimesheetModals.warning('Você deve adicionar pelo menos um projeto/tarefa antes de enviar o timesheet.', 'Nenhuma Atividade Selecionada');
+            return;
+        }
+        
         $btn.prop('disabled', true); 
 
         // Mostrar indicador de salvamento
@@ -133,10 +140,22 @@ $(document).ready(function() {
             setTimeout(function() {
                 $saveIndicator.html('<i class="fa fa-check text-success"></i> Todas as entradas salvas');
 
+                // Verificar se todas as horas são zeradas
+                var totalHours = 0;
+                $('.hours-input').each(function() {
+                    totalHours += parseHours($(this).val());
+                });
+                
+                var confirmMessage = timesheet_data.confirm_submit || 'Tem certeza que deseja enviar este timesheet para aprovação? Esta ação não pode ser desfeita.';
+                
+                if (totalHours === 0) {
+                    confirmMessage += '<br><br><strong class="text-warning"><i class="fa fa-exclamation-triangle"></i> Atenção:</strong> Você está enviando um timesheet sem nenhuma hora lançada (todos os dias estão zerados).';
+                }
+
                 // Usar modal elegante ao invés de confirm()
                 TimesheetModals.confirm({
                     title: 'Enviar para Aprovação',
-                    message: timesheet_data.confirm_submit || 'Tem certeza que deseja enviar este timesheet para aprovação? Esta ação não pode ser desfeita.',
+                    message: confirmMessage,
                     icon: 'fa-paper-plane',
                     confirmText: 'Enviar',
                     cancelText: 'Cancelar',
@@ -207,11 +226,12 @@ $(document).ready(function() {
                 $.post(timesheet_data.admin_url + 'timesheet/cancel_submission', data).done(function(response) {
                     response = JSON.parse(response);
                     if (response.success) {
-                        TimesheetModals.success(response.message, 'Submissão Cancelada').then(function() {
+                        TimesheetModals.notify('success', response.message);
+                        setTimeout(function() {
                             location.reload();
-                        });
+                        }, 1500);
                     } else {
-                        TimesheetModals.error(response.message, 'Erro ao Cancelar');
+                        TimesheetModals.notify('danger', response.message);
                     }
                 });
             }
