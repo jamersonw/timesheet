@@ -13,6 +13,13 @@
 
 
 
+
+## [1.3.15] - 2025-08-26
+
+### 🔧 ALTERAÇÕES
+- Correção de erro 500 na aprovação - melhor tratamento de exceções e validações
+
+
 ## [1.3.14] - 2025-08-26
 
 ### 🔧 ALTERAÇÕES
