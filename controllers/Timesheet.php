@@ -198,6 +198,13 @@ class Timesheet extends AdminController
 
         $result = $this->timesheet_model->approve_reject_timesheet($approval_id, $action, get_staff_user_id(), $reason);
 
+        if ($result) {
+            $message = $action == 'approved' ? _l('timesheet_approved_successfully') : _l('timesheet_rejected_successfully');
+            echo json_encode(['success' => true, 'message' => $message]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Error processing approval']);
+        }
+    }
 
     /**
      * Endpoint de debug para testar sincronização manualmente
@@ -236,15 +243,6 @@ class Timesheet extends AdminController
 
             default:
                 echo json_encode(['error' => 'Ação não reconhecida. Use: list_timers, test_sync, hook_test']);
-        }
-    }
-
-
-        if ($result) {
-            $message = $action == 'approved' ? _l('timesheet_approved_successfully') : _l('timesheet_rejected_successfully');
-            echo json_encode(['success' => true, 'message' => $message]);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Error processing approval']);
         }
     }
 
