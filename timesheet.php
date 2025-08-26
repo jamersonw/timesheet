@@ -128,13 +128,26 @@ function timesheet_sync_from_core_timer_deleted($data)
 {
     $CI = &get_instance();
     $timer_id = $data['id'] ?? null;
+    $task_id = $data['task_id'] ?? null;
 
-    if ($timer_id) {
+    if ($timer_id && $task_id) {
         $CI->load->model('timesheet/timesheet_model');
-        log_activity('[Timesheet Hook] Timer deletado - ID: ' . $timer_id);
+        log_activity('[Timesheet Hook] Timer deletado - ID: ' . $timer_id . ', Tarefa: ' . $task_id);
 
-        // Usar a nova função de sincronização
-        $CI->timesheet_model->sync_from_perfex_timer($timer_id, 'delete');
+        // Buscar staff_id do timer antes de deletar referência
+        $CI->db->where('perfex_timer_id', $timer_id);
+        $entries = $CI->db->get(db_prefix() . 'timesheet_entries')->result();
+        
+        if ($entries) {
+            foreach ($entries as $entry) {
+                // Limpar referência do timer deletado
+                $CI->db->where('id', $entry->id);
+                $CI->db->update(db_prefix() . 'timesheet_entries', ['perfex_timer_id' => null]);
+                
+                // Recalcular horas da tarefa
+                $CI->timesheet_model->recalculate_task_hours($task_id, $entry->staff_id);
+            }
+        }
     }
 }
 
@@ -146,13 +159,14 @@ function timesheet_sync_from_core_timer_stopped($data)
     $CI = &get_instance();
     $timer_id = $data['id'] ?? null;
     $task_id = $data['task_id'] ?? null;
+    $staff_id = $data['staff_id'] ?? null;
 
-    if ($timer_id && $task_id) {
+    if ($timer_id && $task_id && $staff_id) {
         $CI->load->model('timesheet/timesheet_model');
-        log_activity('[Timesheet Hook] Timer finalizado - ID: ' . $timer_id . ', Tarefa: ' . $task_id);
+        log_activity('[Timesheet Hook] Timer finalizado - ID: ' . $timer_id . ', Tarefa: ' . $task_id . ', Staff: ' . $staff_id);
 
-        // Usar a nova função de sincronização
-        $CI->timesheet_model->sync_from_perfex_timer($timer_id, 'update');
+        // Recalcular horas da tarefa após timer finalizado
+        $CI->timesheet_model->recalculate_task_hours($task_id, $staff_id);
     }
 }
 
@@ -163,13 +177,15 @@ function timesheet_sync_from_core_timer_updated($data)
 {
     $CI = &get_instance();
     $timer_id = $data['id'] ?? null;
+    $task_id = $data['task_id'] ?? null;
+    $staff_id = $data['staff_id'] ?? null;
 
-    if ($timer_id) {
+    if ($timer_id && $task_id && $staff_id) {
         $CI->load->model('timesheet/timesheet_model');
-        log_activity('[Timesheet Hook] Timer atualizado - ID: ' . $timer_id);
+        log_activity('[Timesheet Hook] Timer atualizado - ID: ' . $timer_id . ', Tarefa: ' . $task_id . ', Staff: ' . $staff_id);
 
-        // Usar a nova função de sincronização
-        $CI->timesheet_model->sync_from_perfex_timer($timer_id, 'update');
+        // Recalcular horas da tarefa após edição
+        $CI->timesheet_model->recalculate_task_hours($task_id, $staff_id);
     }
 }
 
