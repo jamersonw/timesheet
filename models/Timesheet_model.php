@@ -555,4 +555,16 @@ class Timesheet_model extends App_Model
         // Pode editar se não há aprovação ou se foi rejeitado
         return !$approval || $approval->status == 'rejected';
     }
+
+    /**
+     * Check if a staff member can submit a specific week
+     * Versão mais permissiva para submissão
+     */
+    public function can_submit_week($staff_id, $week_start_date)
+    {
+        $approval = $this->get_week_approval_status($staff_id, $week_start_date);
+
+        // Pode submeter se não há aprovação, se foi rejeitado, ou se está em draft
+        return !$approval || in_array($approval->status, ['rejected', 'draft']);
+    }
 }

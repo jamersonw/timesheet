@@ -125,27 +125,60 @@ $(document).ready(function() {
     $('#submit-timesheet').on('click', function() {
         var $btn = $(this);
         $btn.prop('disabled', true); 
+        
+        // Mostrar indicador de salvamento
+        $saveIndicator.html('<i class="fa fa-spinner fa-spin"></i> Salvando todas as entradas...');
+        
         saveAllEntries().then(function() {
-            if (confirm(timesheet_data.confirm_submit)) {
-                var data = {};
-                data.week_start = timesheet_data.week_start;
-                data[csrfData.token_name] = csrfData.hash;
-                $.post(timesheet_data.admin_url + 'timesheet/submit_week', data).done(function(response) {
-                    response = JSON.parse(response);
-                    if (response.success) {
-                        alert_float('success', response.message);
-                        setTimeout(function(){ location.reload(); }, 1500);
-                    } else {
-                        alert_float('danger', response.message);
+            // Aguardar um momento para garantir que o servidor processou todas as alterações
+            setTimeout(function() {
+                $saveIndicator.html('<i class="fa fa-check text-success"></i> Todas as entradas salvas');
+                
+                if (confirm(timesheet_data.confirm_submit)) {
+                    $saveIndicator.html('<i class="fa fa-spinner fa-spin"></i> Enviando para aprovação...');
+                    
+                    var data = {};
+                    data.week_start = timesheet_data.week_start;
+                    data[csrfData.token_name] = csrfData.hash;
+                    
+                    $.post(timesheet_data.admin_url + 'timesheet/submit_week', data).done(function(response) {
+                        try {
+                            response = typeof response === 'string' ? JSON.parse(response) : response;
+                        } catch (e) {
+                            console.error("Erro ao parsear resposta da submissão:", response);
+                            alert_float('danger', 'Erro de comunicação com o servidor');
+                            $btn.prop('disabled', false);
+                            $saveIndicator.html('');
+                            return;
+                        }
+                        
+                        if (response.success) {
+                            $saveIndicator.html('<i class="fa fa-check text-success"></i> Enviado com sucesso!');
+                            alert_float('success', response.message);
+                            setTimeout(function(){ location.reload(); }, 1500);
+                        } else {
+                            $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro na submissão');
+                            alert_float('danger', response.message);
+                            $btn.prop('disabled', false);
+                            setTimeout(function() { $saveIndicator.html(''); }, 3000);
+                        }
+                    }).fail(function(jqXHR) {
+                        console.error("Falha na requisição de submissão:", jqXHR.responseText);
+                        $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro de conexão');
+                        alert_float('danger', 'Erro de conexão ao enviar para aprovação');
                         $btn.prop('disabled', false);
-                    }
-                });
-            } else {
-                $btn.prop('disabled', false);
-            }
+                        setTimeout(function() { $saveIndicator.html(''); }, 3000);
+                    });
+                } else {
+                    $btn.prop('disabled', false);
+                    setTimeout(function() { $saveIndicator.html(''); }, 2000);
+                }
+            }, 500); // Aguardar 500ms para o servidor processar
         }).catch(function() {
+            $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro ao salvar');
             alert_float('danger', 'Falha ao salvar as horas antes do envio. Tente novamente.');
             $btn.prop('disabled', false);
+            setTimeout(function() { $saveIndicator.html(''); }, 3000);
         });
     });
 

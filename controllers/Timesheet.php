@@ -101,6 +101,12 @@ class Timesheet extends AdminController
         $staff_id = get_staff_user_id();
         $week_start = $this->input->post('week_start');
 
+        // Usar validação específica para submissão (mais permissiva)
+        if (!$this->timesheet_model->can_submit_week($staff_id, $week_start)) {
+            echo json_encode(['success' => false, 'message' => _l('timesheet_cannot_submit_approved')]);
+            return;
+        }
+
         if ($this->timesheet_model->submit_week($staff_id, $week_start)) {
             echo json_encode([
                 'success' => true,
