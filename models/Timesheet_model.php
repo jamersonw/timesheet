@@ -47,7 +47,26 @@ class Timesheet_model extends App_Model
         $this->db->join(db_prefix() . 'tasks t', 't.id = te.task_id', 'left');
         $this->db->where('te.staff_id', $staff_id);
         $this->db->where('te.week_start_date', $week_start_date);
+        $entries = $this->db->get()->result();
 
+        $grouped = [];
+        foreach ($entries as $entry) {
+            $key = $entry->project_id . '_' . ($entry->task_id ?: '0');
+            if (!isset($grouped[$key])) {
+                $grouped[$key] = [
+                    'project_id'   => $entry->project_id,
+                    'project_name' => $entry->project_name,
+                    'task_id'      => $entry->task_id,
+                    'task_name'    => $entry->task_name,
+                    'days'         => array_fill(1, 7, ['hours' => 0]),
+                    'total_hours'  => 0,
+                ];
+            }
+            $grouped[$key]['days'][$entry->day_of_week]['hours'] = $entry->hours;
+            $grouped[$key]['total_hours'] += $entry->hours;
+        }
+        return array_values($grouped);
+    }
 
     /**
      * Função de debug para listar todos os timers do Perfex
@@ -77,27 +96,6 @@ class Timesheet_model extends App_Model
             log_activity('[Timesheet Debug ERROR] Erro ao listar timers: ' . $e->getMessage());
             return false;
         }
-    }
-
-        $entries = $this->db->get()->result();
-
-        $grouped = [];
-        foreach ($entries as $entry) {
-            $key = $entry->project_id . '_' . ($entry->task_id ?: '0');
-            if (!isset($grouped[$key])) {
-                $grouped[$key] = [
-                    'project_id'   => $entry->project_id,
-                    'project_name' => $entry->project_name,
-                    'task_id'      => $entry->task_id,
-                    'task_name'    => $entry->task_name,
-                    'days'         => array_fill(1, 7, ['hours' => 0]),
-                    'total_hours'  => 0,
-                ];
-            }
-            $grouped[$key]['days'][$entry->day_of_week]['hours'] = $entry->hours;
-            $grouped[$key]['total_hours'] += $entry->hours;
-        }
-        return array_values($grouped);
     }
 
     /**
