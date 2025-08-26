@@ -43,7 +43,7 @@ class Timesheet extends AdminController
         $tasks = timesheet_get_staff_project_tasks(get_staff_user_id(), $project_id);
         echo json_encode($tasks);
     }
-    
+
     /**
      * Save timesheet entry via AJAX
      */
@@ -69,7 +69,7 @@ class Timesheet extends AdminController
             echo json_encode(['success' => false, 'message' => _l('timesheet_cannot_edit_approved')]);
             return;
         }
-        
+
         $data = [
             'staff_id'        => $staff_id,
             'project_id'      => $project_id,
@@ -116,7 +116,7 @@ class Timesheet extends AdminController
             echo json_encode(['success' => false, 'message' => 'Error submitting timesheet']);
         }
     }
-    
+
     /**
      * Cancel week submission
      */
@@ -137,7 +137,7 @@ class Timesheet extends AdminController
             ]);
         } else {
             echo json_encode([
-                'success' => false, 
+                'success' => false,
                 'message' => _l('timesheet_cannot_cancel_submission')
             ]);
         }
@@ -157,10 +157,10 @@ class Timesheet extends AdminController
 
         $data['pending_approvals'] = $this->timesheet_model->get_pending_approvals(get_staff_user_id());
         $data['title'] = _l('timesheet_manage');
-        
+
         $this->load->view('timesheet/manage', $data);
     }
-    
+
     /**
      * Get week total hours via AJAX for manager view
      */
@@ -207,19 +207,19 @@ class Timesheet extends AdminController
             echo json_encode(['error' => 'Apenas administradores podem usar esta função']);
             return;
         }
-        
+
         $action = $this->input->get('action');
-        
+
         switch ($action) {
             case 'list_timers':
                 $timers = $this->timesheet_model->debug_list_perfex_timers(20);
                 echo json_encode(['success' => true, 'timers' => $timers]);
                 break;
-                
+
             case 'test_sync':
                 $task_id = $this->input->get('task_id');
                 $staff_id = $this->input->get('staff_id');
-                
+
                 if ($task_id && $staff_id) {
                     log_activity('[Timesheet Debug] Teste manual de sincronização - Task: ' . $task_id . ', Staff: ' . $staff_id);
                     $result = $this->timesheet_model->recalculate_task_hours($task_id, $staff_id);
@@ -228,12 +228,12 @@ class Timesheet extends AdminController
                     echo json_encode(['error' => 'task_id e staff_id são obrigatórios']);
                 }
                 break;
-                
+
             case 'hook_test':
                 log_activity('[Timesheet Debug] Teste manual dos hooks executado pelo admin');
                 echo json_encode(['success' => true, 'message' => 'Verifique o log de atividades']);
                 break;
-                
+
             default:
                 echo json_encode(['error' => 'Ação não reconhecida. Use: list_timers, test_sync, hook_test']);
         }
@@ -265,9 +265,9 @@ class Timesheet extends AdminController
         $data['week_dates'] = timesheet_get_week_dates($approval->week_start_date);
         $data['daily_totals'] = $this->timesheet_model->get_week_daily_totals($approval->staff_id, $approval->week_start_date);
         $data['week_total'] = $this->timesheet_model->get_week_total_hours($approval->staff_id, $approval->week_start_date);
-        
+
         $data['title'] = _l('timesheet_approvals') . ' - ' . $approval->firstname . ' ' . $approval->lastname;
-        
+
         $this->load->view('timesheet/view_approval', $data);
     }
 }

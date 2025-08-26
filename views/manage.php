@@ -1,3 +1,4 @@
+
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
 <?php init_head(); ?>
 <link rel="stylesheet" href="<?php echo module_dir_url('timesheet', 'assets/css/timesheet_modals.css'); ?>">
@@ -19,7 +20,6 @@
                                 No pending timesheet approvals at this time.
                             </div>
                         <?php else: ?>
-
                             <div class="table-responsive">
                                 <table class="table table-striped table-bordered">
                                     <thead>
@@ -39,24 +39,23 @@
                                                 <br><small class="text-muted"><?php echo $approval->email; ?></small>
                                             </td>
                                             <td>
-                                                <?php 
-                                                $week_end = date('Y-m-d', strtotime('+6 days', strtotime($approval->week_start_date)));
-                                                echo _d($approval->week_start_date) . ' - ' . _d($week_end);
-                                                ?>
-                                            </td>
-                                            <td>
-                                                <span class="total-hours-display" data-approval-id="<?php echo $approval->id; ?>">
-                                                    <i class="fa fa-spinner fa-spin"></i> Loading...
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <?php echo _dt($approval->submitted_at); ?>
+                                                <?php echo _d($approval->week_start_date); ?>
+                                                <br><small class="text-muted">
+                                                    <?php echo _d($approval->week_start_date) . ' - ' . _d(timesheet_get_week_end($approval->week_start_date)); ?>
+                                                </small>
                                             </td>
                                             <td class="text-center">
-                                                <div class="btn-group" role="group">
+                                                <span class="total-hours-display" data-approval-id="<?php echo $approval->id; ?>">
+                                                    <i class="fa fa-spinner fa-spin"></i>
+                                                </span>
+                                            </td>
+                                            <td><?php echo _dt($approval->submitted_at); ?></td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm">
                                                     <a href="<?php echo admin_url('timesheet/view_approval/' . $approval->id); ?>" 
-                                                       class="btn btn-sm btn-info" title="<?php echo _l('view'); ?>">
-                                                        <i class="fa fa-eye"></i> <?php echo _l('view'); ?>
+                                                       class="btn btn-sm btn-info" 
+                                                       title="<?php echo _l('view'); ?>">
+                                                        <i class="fa fa-eye"></i> Ver
                                                     </a>
                                                     <button type="button" class="btn btn-sm btn-success approve-btn" 
                                                             data-approval-id="<?php echo $approval->id; ?>" 
@@ -75,7 +74,6 @@
                                     </tbody>
                                 </table>
                             </div>
-
                         <?php endif; ?>
 
                     </div>

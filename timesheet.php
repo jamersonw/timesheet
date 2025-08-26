@@ -62,7 +62,6 @@ register_language_files(TIMESHEET_MODULE_NAME, [TIMESHEET_MODULE_NAME]);
 
 /**
  * Hook para inicializar menus, permissões e os hooks de sincronização.
- * Usamos 'admin_init' para garantir que tudo seja carregado no ambiente administrativo.
  */
 hooks()->add_action('admin_init', 'timesheet_init_all');
 
@@ -99,16 +98,16 @@ function timesheet_init_all()
     ];
     register_staff_capabilities('timesheet', $capabilities, _l('timesheet'));
 
-    // Log inicial para confirmar que hooks estão sendo registrados
+    // 3. REGISTRO DOS HOOKS DE SINCRONIZAÇÃO
     log_activity('[Timesheet Init] Registrando hooks de sincronização...');
     
-    // Hooks de sincronização com o sistema de timers do Perfex
+    // Hooks principais
     hooks()->add_action('task_timer_started', 'timesheet_sync_from_core_timer_started');
     hooks()->add_action('task_timer_deleted', 'timesheet_sync_from_core_timer_deleted');
     hooks()->add_action('task_timer_stopped', 'timesheet_sync_from_core_timer_stopped');
     hooks()->add_action('task_timer_updated', 'timesheet_sync_from_core_timer_updated');
     
-    // Testar hooks alternativos que podem existir no Perfex
+    // Hooks de teste
     hooks()->add_action('after_task_timer_added', 'timesheet_test_hook_1');
     hooks()->add_action('after_task_timer_updated', 'timesheet_test_hook_2');
     hooks()->add_action('after_task_timer_deleted', 'timesheet_test_hook_3');
@@ -126,16 +125,12 @@ function timesheet_init_all()
 function timesheet_sync_from_core_timer_started($data)
 {
     $CI = &get_instance();
-    
-    // Log detalhado para debug
     log_activity('[Timesheet Hook DEBUG] task_timer_started CHAMADO! Dados recebidos: ' . json_encode($data));
     
     $task_id = $data['task_id'] ?? null;
-
     if ($task_id) {
         $CI->load->model('timesheet/timesheet_model');
         log_activity('[Timesheet Hook] Timer iniciado para tarefa: ' . $task_id);
-        // A sincronização é feita quando o timer é finalizado
     } else {
         log_activity('[Timesheet Hook ERROR] task_timer_started chamado mas task_id não encontrado');
     }
@@ -143,13 +138,10 @@ function timesheet_sync_from_core_timer_started($data)
 
 /**
  * Função de callback para o hook de EXCLUSÃO de timer.
- * É chamada pelo Perfex quando um timer é deletado.
  */
 function timesheet_sync_from_core_timer_deleted($data)
 {
     $CI = &get_instance();
-    
-    // Log detalhado para debug
     log_activity('[Timesheet Hook DEBUG] task_timer_deleted CHAMADO! Dados recebidos: ' . json_encode($data));
     
     $timer_id = $data['id'] ?? null;
@@ -159,26 +151,19 @@ function timesheet_sync_from_core_timer_deleted($data)
         $CI->load->model('timesheet/timesheet_model');
         log_activity('[Timesheet Hook] Timer deletado - ID: ' . $timer_id . ', Tarefa: ' . $task_id);
 
-        // Buscar staff_id do timer antes de deletar referência
         $CI->db->where('perfex_timer_id', $timer_id);
         $entries = $CI->db->get(db_prefix() . 'timesheet_entries')->result();
         
         if ($entries) {
             log_activity('[Timesheet Hook] Encontradas ' . count($entries) . ' entradas vinculadas ao timer deletado');
             foreach ($entries as $entry) {
-                // Limpar referência do timer deletado
                 $CI->db->where('id', $entry->id);
                 $CI->db->update(db_prefix() . 'timesheet_entries', ['perfex_timer_id' => null]);
                 
-                // Recalcular horas da tarefa
                 $result = $CI->timesheet_model->recalculate_task_hours($task_id, $entry->staff_id);
                 log_activity('[Timesheet Hook] Recálculo após exclusão: ' . ($result ? 'SUCESSO' : 'FALHA'));
             }
-        } else {
-            log_activity('[Timesheet Hook] Nenhuma entrada do timesheet encontrada para timer deletado ID: ' . $timer_id);
         }
-    } else {
-        log_activity('[Timesheet Hook ERROR] task_timer_deleted chamado mas dados insuficientes - Timer ID: ' . $timer_id . ', Task ID: ' . $task_id);
     }
 }
 
@@ -188,8 +173,6 @@ function timesheet_sync_from_core_timer_deleted($data)
 function timesheet_sync_from_core_timer_stopped($data)
 {
     $CI = &get_instance();
-    
-    // Log detalhado para debug
     log_activity('[Timesheet Hook DEBUG] task_timer_stopped CHAMADO! Dados recebidos: ' . json_encode($data));
     
     $timer_id = $data['id'] ?? null;
@@ -200,11 +183,8 @@ function timesheet_sync_from_core_timer_stopped($data)
         $CI->load->model('timesheet/timesheet_model');
         log_activity('[Timesheet Hook] Timer finalizado - ID: ' . $timer_id . ', Tarefa: ' . $task_id . ', Staff: ' . $staff_id);
 
-        // Recalcular horas da tarefa após timer finalizado
         $result = $CI->timesheet_model->recalculate_task_hours($task_id, $staff_id);
         log_activity('[Timesheet Hook] Resultado do recálculo: ' . ($result ? 'SUCESSO' : 'FALHA'));
-    } else {
-        log_activity('[Timesheet Hook ERROR] task_timer_stopped chamado mas dados insuficientes - Timer ID: ' . $timer_id . ', Task ID: ' . $task_id . ', Staff ID: ' . $staff_id);
     }
 }
 
@@ -214,8 +194,6 @@ function timesheet_sync_from_core_timer_stopped($data)
 function timesheet_sync_from_core_timer_updated($data)
 {
     $CI = &get_instance();
-    
-    // Log detalhado para debug
     log_activity('[Timesheet Hook DEBUG] task_timer_updated CHAMADO! Dados recebidos: ' . json_encode($data));
     
     $timer_id = $data['id'] ?? null;
@@ -226,11 +204,8 @@ function timesheet_sync_from_core_timer_updated($data)
         $CI->load->model('timesheet/timesheet_model');
         log_activity('[Timesheet Hook] Timer atualizado - ID: ' . $timer_id . ', Tarefa: ' . $task_id . ', Staff: ' . $staff_id);
 
-        // Recalcular horas da tarefa após edição
         $result = $CI->timesheet_model->recalculate_task_hours($task_id, $staff_id);
         log_activity('[Timesheet Hook] Resultado do recálculo após edição: ' . ($result ? 'SUCESSO' : 'FALHA'));
-    } else {
-        log_activity('[Timesheet Hook ERROR] task_timer_updated chamado mas dados insuficientes - Timer ID: ' . $timer_id . ', Task ID: ' . $task_id . ', Staff ID: ' . $staff_id);
     }
 }
 
@@ -279,7 +254,6 @@ function timesheet_process_timer_change($data, $hook_name) {
     $CI = &get_instance();
     $CI->load->model('timesheet/timesheet_model');
     
-    // Tentar extrair informações dos dados
     $timer_id = $data['id'] ?? $data['timer_id'] ?? null;
     $task_id = $data['task_id'] ?? null;
     $staff_id = $data['staff_id'] ?? null;
