@@ -1,3 +1,4 @@
+
 <?php
 /**
  * Ensures that the module init file can't be accessed directly, only within the application.
@@ -217,7 +218,21 @@ function timesheet_sync_from_core_timer_updated($data)
     // Log detalhado para debug
     log_activity('[Timesheet Hook DEBUG] task_timer_updated CHAMADO! Dados recebidos: ' . json_encode($data));
     
+    $timer_id = $data['id'] ?? null;
+    $task_id = $data['task_id'] ?? null;
+    $staff_id = $data['staff_id'] ?? null;
 
+    if ($timer_id && $task_id && $staff_id) {
+        $CI->load->model('timesheet/timesheet_model');
+        log_activity('[Timesheet Hook] Timer atualizado - ID: ' . $timer_id . ', Tarefa: ' . $task_id . ', Staff: ' . $staff_id);
+
+        // Recalcular horas da tarefa após edição
+        $result = $CI->timesheet_model->recalculate_task_hours($task_id, $staff_id);
+        log_activity('[Timesheet Hook] Resultado do recálculo após edição: ' . ($result ? 'SUCESSO' : 'FALHA'));
+    } else {
+        log_activity('[Timesheet Hook ERROR] task_timer_updated chamado mas dados insuficientes - Timer ID: ' . $timer_id . ', Task ID: ' . $task_id . ', Staff ID: ' . $staff_id);
+    }
+}
 
 /**
  * Funções de teste para identificar hooks que realmente funcionam
@@ -274,22 +289,6 @@ function timesheet_process_timer_change($data, $hook_name) {
     if ($task_id && $staff_id) {
         $result = $CI->timesheet_model->recalculate_task_hours($task_id, $staff_id);
         log_activity('[Timesheet Hook] Sincronização via ' . $hook_name . ': ' . ($result ? 'SUCESSO' : 'FALHA'));
-    }
-}
-
-    $timer_id = $data['id'] ?? null;
-    $task_id = $data['task_id'] ?? null;
-    $staff_id = $data['staff_id'] ?? null;
-
-    if ($timer_id && $task_id && $staff_id) {
-        $CI->load->model('timesheet/timesheet_model');
-        log_activity('[Timesheet Hook] Timer atualizado - ID: ' . $timer_id . ', Tarefa: ' . $task_id . ', Staff: ' . $staff_id);
-
-        // Recalcular horas da tarefa após edição
-        $result = $CI->timesheet_model->recalculate_task_hours($task_id, $staff_id);
-        log_activity('[Timesheet Hook] Resultado do recálculo após edição: ' . ($result ? 'SUCESSO' : 'FALHA'));
-    } else {
-        log_activity('[Timesheet Hook ERROR] task_timer_updated chamado mas dados insuficientes - Timer ID: ' . $timer_id . ', Task ID: ' . $task_id . ', Staff ID: ' . $staff_id);
     }
 }
 
