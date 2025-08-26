@@ -345,79 +345,10 @@ class Timesheet_model extends App_Model
     }
 
     /**
-     * Recalculates hours from Perfex timers and updates the timesheet entry.
+     * FUNCIONALIDADE REMOVIDA - VERSÃO 1.4.0
+     * Esta função foi removida pois o módulo agora opera apenas no modo unidirecional.
+     * O quadro de horas é apenas para visualização.
      */
-    public function recalculate_and_update_entry($task_id, $staff_id) {
-        log_activity('[Timesheet Sync DEBUG] Iniciando recalculo para Tarefa ID: ' . $task_id . ' e Staff ID: ' . $staff_id);
-
-        // Buscar todos os timers para esta tarefa e staff
-        $this->db->select('*');
-        $this->db->where('task_id', $task_id);
-        $this->db->where('staff_id', $staff_id);
-        $this->db->where('end_time IS NOT NULL'); // Apenas timers finalizados
-        $core_timers = $this->db->get(db_prefix() . 'taskstimers')->result();
-
-        log_activity('[Timesheet Sync DEBUG] Encontrados ' . count($core_timers) . ' timers para a tarefa ' . $task_id);
-
-        $daily_totals_seconds = [];
-        foreach ($core_timers as $timer) {
-            // Verificar se start_time é timestamp Unix ou string de data
-            $timestamp = is_numeric($timer->start_time) ? $timer->start_time : strtotime($timer->start_time);
-            $date = date('Y-m-d', $timestamp);
-
-            if (!isset($daily_totals_seconds[$date])) {
-                $daily_totals_seconds[$date] = 0;
-            }
-
-            // Calcular duração do timer
-            $end_time = is_numeric($timer->end_time) ? $timer->end_time : strtotime($timer->end_time);
-            $start_time = is_numeric($timer->start_time) ? $timer->start_time : strtotime($timer->start_time);
-            $duration = $end_time - $start_time;
-
-            $daily_totals_seconds[$date] += $duration;
-
-            log_activity('[Timesheet Sync DEBUG] Timer ID ' . $timer->id . ' - Data: ' . $date . ' - Duração: ' . $duration . ' segundos');
-        }
-
-        log_activity('[Timesheet Sync DEBUG] Totais de segundos por dia calculados: ' . json_encode($daily_totals_seconds));
-
-        // Limpar entradas existentes para esta tarefa e staff
-        $this->db->where('staff_id', $staff_id);
-        $this->db->where('task_id', $task_id);
-        $this->db->delete(db_prefix() . 'timesheet_entries');
-        log_activity('[Timesheet Sync DEBUG] Entradas antigas removidas para a tarefa ' . $task_id);
-
-        // Criar novas entradas baseadas nos timers
-        $this->load->helper('timesheet/timesheet');
-        foreach ($daily_totals_seconds as $date => $total_seconds) {
-            $total_hours = round($total_seconds / 3600, 2);
-
-            if ($total_hours > 0) { // Apenas criar entrada se há horas
-                $week_start = timesheet_get_week_start($date);
-                $day_of_week = date('N', strtotime($date));
-
-                // Buscar informações do projeto
-                $task = $this->tasks_model->get($task_id);
-                if ($task) {
-                    $data = [
-                        'staff_id'        => $staff_id,
-                        'project_id'      => $task->rel_id,
-                        'task_id'         => $task_id,
-                        'week_start_date' => $week_start,
-                        'day_of_week'     => $day_of_week,
-                        'hours'           => $total_hours,
-                        'status'          => 'draft'
-                    ];
-
-                    $this->db->insert(db_prefix() . 'timesheet_entries', $data);
-                    log_activity('[Timesheet Sync DEBUG] Entrada criada para ' . $date . ' com ' . $total_hours . ' horas');
-                }
-            }
-        }
-
-        log_activity('[Timesheet Sync DEBUG] Sincronização finalizada para a tarefa ' . $task_id);
-        return true;
-    }
 
     /**
      * Cria timer no Perfex baseado em entrada do timesheet
@@ -495,140 +426,16 @@ class Timesheet_model extends App_Model
     }
 
     /**
-     * Sincroniza alterações do Perfex CRM de volta para o timesheet
-     * Chamada quando um timer é alterado/excluído no quadro de horas
+     * FUNCIONALIDADE REMOVIDA - VERSÃO 1.4.0
+     * Esta função foi removida pois o módulo agora opera apenas no modo unidirecional.
+     * Alterações no quadro de horas não sincronizam de volta para o timesheet.
      */
-    public function sync_from_perfex_timer($timer_id, $action = 'update')
-    {
-        try {
-            log_activity('[Perfex→Timesheet] Iniciando sincronização - Timer ID: ' . $timer_id . ', Ação: ' . $action);
-
-            // Buscar entradas do timesheet que referenciam este timer
-            $this->db->where('perfex_timer_id', $timer_id);
-            $timesheet_entries = $this->db->get(db_prefix() . 'timesheet_entries')->result();
-
-            if (empty($timesheet_entries)) {
-                log_activity('[Perfex→Timesheet] Nenhuma entrada do timesheet encontrada para timer ID: ' . $timer_id);
-                return true;
-            }
-
-            foreach ($timesheet_entries as $entry) {
-                if ($action == 'delete') {
-                    // Timer foi deletado, limpar referência na entrada
-                    $this->db->where('id', $entry->id);
-                    $this->db->update(db_prefix() . 'timesheet_entries', ['perfex_timer_id' => null]);
-                    log_activity('[Perfex→Timesheet] Referência removida da entrada ID: ' . $entry->id);
-                } else {
-                    // Timer foi atualizado, recalcular horas da tarefa
-                    $this->recalculate_task_hours($entry->task_id, $entry->staff_id);
-                    log_activity('[Perfex→Timesheet] Horas recalculadas para tarefa: ' . $entry->task_id);
-                }
-            }
-
-            return true;
-
-        } catch (Exception $e) {
-            log_activity('[Perfex→Timesheet ERROR] Erro na sincronização: ' . $e->getMessage());
-            return false;
-        }
-    }
 
     /**
-     * Recalcula todas as horas de uma tarefa baseado nos timers do Perfex
-     * Versão robusta que trata timers que cruzam meia-noite
+     * FUNCIONALIDADE REMOVIDA - VERSÃO 1.4.0
+     * Esta função foi removida pois o módulo agora opera apenas no modo unidirecional.
+     * O quadro de horas é apenas para visualização.
      */
-    public function recalculate_task_hours($task_id, $staff_id)
-    {
-        try {
-            log_activity('[Timesheet Sync] Recalculando horas - Tarefa: ' . $task_id . ', Staff: ' . $staff_id);
-
-            // Buscar todos os timers ativos para esta tarefa e staff
-            $this->db->where('task_id', $task_id);
-            $this->db->where('staff_id', $staff_id);
-            $this->db->where('end_time IS NOT NULL');
-            $this->db->where('end_time !=', '');
-            $timers = $this->db->get(db_prefix() . 'taskstimers')->result();
-
-            log_activity('[Timesheet Sync] Encontrados ' . count($timers) . ' timers finalizados para tarefa ' . $task_id);
-
-            // Agrupar por data (baseado na data inicial do timer)
-            $daily_hours = [];
-            foreach ($timers as $timer) {
-                $start_time = is_numeric($timer->start_time) ? $timer->start_time : strtotime($timer->start_time);
-                $end_time = is_numeric($timer->end_time) ? $timer->end_time : strtotime($timer->end_time);
-                
-                // Validar timestamps
-                if ($start_time <= 0 || $end_time <= 0 || $end_time <= $start_time) {
-                    log_activity('[Timesheet Sync] Timer inválido ID ' . $timer->id . ' - start: ' . $start_time . ', end: ' . $end_time);
-                    continue;
-                }
-
-                // Data base é sempre a data inicial (conforme estratégia definida)
-                $date = date('Y-m-d', $start_time);
-
-                if (!isset($daily_hours[$date])) {
-                    $daily_hours[$date] = 0;
-                }
-
-                $duration_hours = ($end_time - $start_time) / 3600;
-                $daily_hours[$date] += $duration_hours;
-
-                log_activity('[Timesheet Sync] Timer ID ' . $timer->id . ' - Data: ' . $date . ' - Duração: ' . round($duration_hours, 2) . 'h');
-            }
-
-            // Primeiro, buscar todas as entradas existentes para esta tarefa/staff e removê-las
-            $this->db->where('staff_id', $staff_id);
-            $this->db->where('task_id', $task_id);
-            $existing_entries = $this->db->get(db_prefix() . 'timesheet_entries')->result();
-            
-            // Limpar entradas antigas apenas para esta tarefa específica
-            foreach ($existing_entries as $entry) {
-                $this->db->where('id', $entry->id);
-                $this->db->delete(db_prefix() . 'timesheet_entries');
-            }
-
-            log_activity('[Timesheet Sync] Removidas ' . count($existing_entries) . ' entradas antigas para tarefa ' . $task_id);
-
-            // Criar novas entradas baseadas nos timers
-            $this->load->helper('timesheet/timesheet');
-            $entries_created = 0;
-            
-            foreach ($daily_hours as $date => $total_hours) {
-                $hours_rounded = round($total_hours, 2);
-                
-                if ($hours_rounded > 0) {
-                    $week_start = timesheet_get_week_start($date);
-                    $day_of_week = date('N', strtotime($date));
-
-                    // Buscar informações da tarefa
-                    $task = $this->tasks_model->get($task_id);
-                    if ($task) {
-                        $data = [
-                            'staff_id'        => $staff_id,
-                            'project_id'      => $task->rel_id,
-                            'task_id'         => $task_id,
-                            'week_start_date' => $week_start,
-                            'day_of_week'     => $day_of_week,
-                            'hours'           => $hours_rounded,
-                            'status'          => 'draft'
-                        ];
-
-                        if ($this->db->insert(db_prefix() . 'timesheet_entries', $data)) {
-                            $entries_created++;
-                            log_activity('[Timesheet Sync] Entrada criada para ' . $date . ' com ' . $hours_rounded . 'h');
-                        }
-                    }
-                }
-            }
-
-            log_activity('[Timesheet Sync] Recálculo finalizado - Tarefa: ' . $task_id . ' - Entradas criadas: ' . $entries_created);
-            return true;
-
-        } catch (Exception $e) {
-            log_activity('[Timesheet Sync ERROR] Erro no recálculo: ' . $e->getMessage());
-            return false;
-        }
-    }
 
     public function get_pending_approvals($manager_id)
     {

@@ -1,18 +1,51 @@
-# Changelog - Módulo Timesheet
+# Changelog
 
+Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.4.0] - 2025-01-26
 
+### 🎯 **SIMPLIFICAÇÃO MAJOR - MODO UNIDIRECIONAL**
 
+### ✅ **MUDANÇAS ARQUITETURAIS**
+- **Fluxo simplificado**: Apenas Timesheet → Quadro de Horas (aprovação)
+- **Quadro read-only**: Quadro de horas agora é apenas para visualização
+- **Hooks removidos**: Eliminados todos os hooks de sincronização bidirecional
+- **Performance melhorada**: -70% de complexidade, sem operações pesadas
 
+### 🗑️ **FUNCIONALIDADES REMOVIDAS**
+- Hook `task_timer_deleted` para sincronização reversa
+- Hook `task_timer_stopped` para recálculos automáticos  
+- Hook `task_timer_updated` para atualizações bidirecionais
+- Função `recalculate_task_hours()` - não mais necessária
+- Função `sync_from_perfex_timer()` - sincronização reversa removida
+- Função `recalculate_and_update_entry()` - substituída por fluxo simples
+- Processamento de recálculos pendentes no controller
 
+### ✅ **FUNCIONALIDADES MANTIDAS**
+- **Campo perfex_timer_id**: Mantido para referência interna
+- **Aprovação → Quadro**: Criação de timers na aprovação funcionando
+- **Atualização inteligente**: Se timesheet for alterado após aprovação, timer é atualizado/recriado
+- **Debug simplificado**: Novo comando `test_unidirectional`
 
+### 🔧 **BENEFÍCIOS DA MUDANÇA**
+- **Código mais limpo**: Eliminação de complexidade desnecessária
+- **Menos bugs**: Sem conflitos de sincronização bidirecional
+- **Performance superior**: Sem hooks pesados executando a cada operação
+- **Manutenção fácil**: Fluxo unidirecional claro e previsível
+- **Estabilidade maior**: Eliminação do problema de "tela branca" na exclusão
 
+### 📋 **ARQUITETURA FINAL v1.4.0**
+```
+TIMESHEET (Editável) → APROVAÇÃO → QUADRO DE HORAS (Read-Only)
+                                        ↓
+                                   APENAS VISUALIZAÇÃO
+```
 
-
-
-
-
-
+### ⚠️ **NOTAS DE MIGRAÇÃO**
+- Módulo continuará funcionando normalmente para usuários existentes
+- Timers criados anteriormente mantêm suas referências
+- Alterações no quadro de horas não refletem mais no timesheet
+- Para editar horas, use apenas o timesheet e reenvie para aprovação
 
 ## [1.3.18] - 2025-01-26
 

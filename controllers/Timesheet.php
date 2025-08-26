@@ -17,11 +17,7 @@ class Timesheet extends AdminController
             access_denied('timesheet');
         }
 
-        // Processar recálculos pendentes de exclusões
-        $this->process_pending_recalculations();
-
-        // Disparar verificação automática de sincronização
-        hooks()->do_action('after_timesheet_viewed');
+        // Versão 1.4.0: Modo unidirecional - sem processamento de recálculos pendentes
 
         $week_start = $this->input->get('week') ?: timesheet_get_week_start();
         $data['week_start'] = $week_start;
@@ -214,11 +210,9 @@ class Timesheet extends AdminController
     }
 
     /**
-     * Endpoint AJAX para sincronização automática quando timer é alterado
+     * FUNCIONALIDADE REMOVIDA - VERSÃO 1.4.0
+     * Endpoint de sincronização AJAX não é mais necessário no modo unidirecional.
      */
-    public function ajax_sync() {
-        timesheet_ajax_sync_endpoint();
-    }
 
     /**
      * Função para corrigir registros sem status
@@ -265,22 +259,9 @@ class Timesheet extends AdminController
                 echo json_encode(['success' => true, 'timers' => $timers]);
                 break;
 
-            case 'test_sync':
-                $task_id = $this->input->get('task_id');
-                $staff_id = $this->input->get('staff_id');
-
-                if ($task_id && $staff_id) {
-                    log_activity('[Timesheet Debug] Teste manual de sincronização - Task: ' . $task_id . ', Staff: ' . $staff_id);
-                    $result = $this->timesheet_model->recalculate_task_hours($task_id, $staff_id);
-                    echo json_encode(['success' => $result, 'message' => $result ? 'Sincronização executada' : 'Falha na sincronização']);
-                } else {
-                    echo json_encode(['error' => 'task_id e staff_id são obrigatórios']);
-                }
-                break;
-
-            case 'hook_test':
-                log_activity('[Timesheet Debug] Teste manual dos hooks executado pelo admin');
-                echo json_encode(['success' => true, 'message' => 'Verifique o log de atividades']);
+            case 'test_unidirectional':
+                log_activity('[Timesheet Debug v1.4.0] Módulo operando em modo UNIDIRECIONAL - Timesheet → Quadro apenas');
+                echo json_encode(['success' => true, 'message' => 'Módulo v1.4.0 - Modo unidirecional ativo']);
                 break;
 
             case 'fix_status':
@@ -305,7 +286,7 @@ class Timesheet extends AdminController
                 break;
 
             default:
-                echo json_encode(['error' => 'Ação não reconhecida. Use: list_timers, test_sync, hook_test, fix_status, check_entries']);
+                echo json_encode(['error' => 'Ação não reconhecida. Use: list_timers, test_unidirectional, fix_status, check_entries']);
         }
     }
 
@@ -333,45 +314,7 @@ class Timesheet extends AdminController
     }
 
     /**
-     * Processa recálculos pendentes de forma não-bloqueante
-     * Chamado quando usuário visualiza o timesheet
+     * FUNCIONALIDADE REMOVIDA - VERSÃO 1.4.0
+     * Processamento de recálculos pendentes não é mais necessário no modo unidirecional.
      */
-    private function process_pending_recalculations()
-    {
-        try {
-            // Buscar tarefas marcadas para recálculo
-            $this->db->like('name', 'timesheet_recalc_needed_');
-            $pending_options = $this->db->get(db_prefix() . 'options')->result();
-            
-            if (empty($pending_options)) {
-                return; // Nenhum recálculo pendente
-            }
-
-            log_activity('[Timesheet] Processando ' . count($pending_options) . ' recálculos pendentes');
-            
-            foreach ($pending_options as $option) {
-                // Extrair task_id do nome da opção
-                $task_id = str_replace('timesheet_recalc_needed_', '', $option->name);
-                
-                if (is_numeric($task_id)) {
-                    // Executar recálculo para todos os staffs desta tarefa
-                    $this->db->select('DISTINCT staff_id');
-                    $this->db->where('task_id', $task_id);
-                    $staff_members = $this->db->get(db_prefix() . 'timesheet_entries')->result();
-                    
-                    foreach ($staff_members as $staff) {
-                        $result = $this->timesheet_model->recalculate_task_hours($task_id, $staff->staff_id);
-                        log_activity('[Timesheet] Recálculo pendente executado - Task: ' . $task_id . ', Staff: ' . $staff->staff_id . ' - ' . ($result ? 'SUCESSO' : 'FALHA'));
-                    }
-                    
-                    // Remover marcação de pendência
-                    delete_option($option->name);
-                    log_activity('[Timesheet] Recálculo pendente finalizado para tarefa ' . $task_id);
-                }
-            }
-            
-        } catch (Exception $e) {
-            log_activity('[Timesheet] Erro no processamento de recálculos pendentes: ' . $e->getMessage());
-        }
-    }
 }
