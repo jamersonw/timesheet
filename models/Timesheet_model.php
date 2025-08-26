@@ -131,36 +131,51 @@ class Timesheet_model extends App_Model
      */
     public function approve_reject_timesheet($approval_id, $action, $approver_id, $reason = null)
     {
-        $data = [
-            'status'      => $action,
-            'approved_by' => $approver_id,
-            'approved_at' => date('Y-m-d H:i:s'),
-        ];
-        if ($action === 'rejected') {
-            $data['rejection_reason'] = $reason;
-        }
+        try {
+            $data = [
+                'status'      => $action,
+                'approved_by' => $approver_id,
+                'approved_at' => date('Y-m-d H:i:s'),
+            ];
+            if ($action === 'rejected') {
+                $data['rejection_reason'] = $reason;
+            }
 
-        $this->db->where('id', $approval_id);
-        if ($this->db->update(db_prefix() . 'timesheet_approvals', $data)) {
-            $approval = $this->db->get_where(db_prefix() . 'timesheet_approvals', ['id' => $approval_id])->row();
-    
-            if (!$approval) {
+            $this->db->where('id', $approval_id);
+            if ($this->db->update(db_prefix() . 'timesheet_approvals', $data)) {
+                $approval = $this->db->get_where(db_prefix() . 'timesheet_approvals', ['id' => $approval_id])->row();
+        
+                if (!$approval) {
+                    log_activity('[Timesheet Approval] ERRO: Aprovação ID ' . $approval_id . ' não encontrada após atualização');
+                    return false;
+                }
+        
+                $new_entry_status = ($action === 'approved' ? 'approved' : 'draft');
+                $this->db->where('staff_id', $approval->staff_id);
+                $this->db->where('week_start_date', $approval->week_start_date);
+                if (!$this->db->update(db_prefix() . 'timesheet_entries', ['status' => $new_entry_status])) {
+                    log_activity('[Timesheet Approval] ERRO: Falha ao atualizar status das entradas para staff ' . $approval->staff_id);
+                    return false;
+                }
+
+                if ($action === 'approved') {
+                    log_activity('[Timesheet Approval] Iniciando sincronização com quadro de horas para approval ID ' . $approval_id);
+                    if (!$this->log_approved_hours_to_tasks($approval->staff_id, $approval->week_start_date, $approver_id)) {
+                        log_activity('[Timesheet Approval] AVISO: Falha na sincronização com quadro de horas, mas aprovação foi mantida');
+                        // Não retornamos false aqui pois a aprovação foi bem sucedida, apenas a sincronização falhou
+                    }
+                }
+        
+                log_activity('[Timesheet Approval] Aprovação processada com sucesso - ID: ' . $approval_id . ', Ação: ' . $action . ', Staff: ' . $approval->staff_id);
+                return true;
+            } else {
+                log_activity('[Timesheet Approval] ERRO: Falha ao atualizar approval ID ' . $approval_id);
                 return false;
             }
-    
-            $new_entry_status = ($action === 'approved' ? 'approved' : 'draft');
-            $this->db->where('staff_id', $approval->staff_id);
-            $this->db->where('week_start_date', $approval->week_start_date);
-            $this->db->update(db_prefix() . 'timesheet_entries', ['status' => $new_entry_status]);
-
-            if ($action === 'approved') {
-                $this->log_approved_hours_to_tasks($approval->staff_id, $approval->week_start_date, $approver_id);
-            }
-    
-            return true;
+        } catch (Exception $e) {
+            log_activity('[Timesheet Approval] ERRO FATAL: ' . $e->getMessage() . ' - Approval ID: ' . $approval_id);
+            return false;
         }
-        
-        return false;
     }
     
     /**
@@ -168,82 +183,109 @@ class Timesheet_model extends App_Model
      */
     public function log_approved_hours_to_tasks($staff_id, $week_start_date, $approver_id)
     {
-        $this->load->helper('staff');
+        try {
+            $this->load->helper('staff');
 
-        // Buscar todas as entradas da semana que tenham horas > 0 e task_id válido
-        $this->db->where('staff_id', $staff_id);
-        $this->db->where('week_start_date', $week_start_date);
-        $this->db->where('hours >', 0);
-        $this->db->where('task_id IS NOT NULL');
-        $this->db->where('task_id !=', '');
-        $entries = $this->db->get(db_prefix() . 'timesheet_entries')->result();
-
-        if (empty($entries)) {
-            log_activity('[Timesheet Sync] Nenhuma entrada válida encontrada para staff ' . $staff_id . ' na semana ' . $week_start_date);
-            return;
-        }
-        
-        log_activity('[Timesheet Sync] Processando ' . count($entries) . ' entradas para staff ' . $staff_id . ' na semana ' . $week_start_date);
-
-        $timers_created = 0;
-        $timers_skipped = 0;
-
-        foreach ($entries as $entry) {
-            // Calcular a data específica do dia da semana
-            $day_offset = $entry->day_of_week - 1; // day_of_week é 1-7, precisamos 0-6
-            $entry_date = date('Y-m-d', strtotime($week_start_date . ' +' . $day_offset . ' days'));
-            
-            // Definir horários de trabalho (9:00 às X horas baseado nas horas trabalhadas)
-            $start_time = $entry_date . ' 09:00:00';
-            $end_timestamp = strtotime($start_time) + ($entry->hours * 3600);
-            $end_time = date('Y-m-d H:i:s', $end_timestamp);
-
-            // Verificar se já existe um timer para esta tarefa, staff e data específica
-            $this->db->where('task_id', $entry->task_id);
+            // Buscar todas as entradas da semana que tenham horas > 0 e task_id válido
             $this->db->where('staff_id', $staff_id);
-            $this->db->where('DATE(FROM_UNIXTIME(start_time))', $entry_date);
-            $existing_timer = $this->db->get(db_prefix() . 'taskstimers')->row();
+            $this->db->where('week_start_date', $week_start_date);
+            $this->db->where('hours >', 0);
+            $this->db->where('task_id IS NOT NULL');
+            $this->db->where('task_id !=', '');
+            $entries = $this->db->get(db_prefix() . 'timesheet_entries')->result();
+
+            if (empty($entries)) {
+                log_activity('[Timesheet Sync] Nenhuma entrada válida encontrada para staff ' . $staff_id . ' na semana ' . $week_start_date);
+                return true;
+            }
             
-            if ($existing_timer) {
-                log_activity('[Timesheet Sync] Timer já existe para tarefa ' . $entry->task_id . ' em ' . $entry_date . ' - Timer ID: ' . $existing_timer->id);
-                
-                // Atualizar referência na entrada do timesheet se não existir
-                if (empty($entry->perfex_timer_id)) {
-                    $this->db->where('id', $entry->id);
-                    $this->db->update(db_prefix() . 'timesheet_entries', ['perfex_timer_id' => $existing_timer->id]);
+            log_activity('[Timesheet Sync] Processando ' . count($entries) . ' entradas para staff ' . $staff_id . ' na semana ' . $week_start_date);
+
+            $timers_created = 0;
+            $timers_skipped = 0;
+
+            foreach ($entries as $entry) {
+                try {
+                    // Validar se a tarefa existe
+                    $task = $this->db->get_where(db_prefix() . 'tasks', ['id' => $entry->task_id])->row();
+                    if (!$task) {
+                        log_activity('[Timesheet Sync] AVISO: Tarefa ID ' . $entry->task_id . ' não encontrada. Pulando entrada ' . $entry->id);
+                        continue;
+                    }
+
+                    // Calcular a data específica do dia da semana
+                    $day_offset = $entry->day_of_week - 1; // day_of_week é 1-7, precisamos 0-6
+                    $entry_date = date('Y-m-d', strtotime($week_start_date . ' +' . $day_offset . ' days'));
+                    
+                    // Verificar se a data é válida
+                    if (!$entry_date || $entry_date == '1970-01-01') {
+                        log_activity('[Timesheet Sync] ERRO: Data inválida calculada para entrada ' . $entry->id . '. Week start: ' . $week_start_date . ', Day offset: ' . $day_offset);
+                        continue;
+                    }
+                    
+                    // Definir horários de trabalho (9:00 às X horas baseado nas horas trabalhadas)
+                    $start_time = $entry_date . ' 09:00:00';
+                    $end_timestamp = strtotime($start_time) + ($entry->hours * 3600);
+                    $end_time = date('Y-m-d H:i:s', $end_timestamp);
+
+                    // Verificar se já existe um timer para esta tarefa, staff e data específica
+                    $this->db->where('task_id', $entry->task_id);
+                    $this->db->where('staff_id', $staff_id);
+                    $this->db->where('DATE(FROM_UNIXTIME(start_time))', $entry_date);
+                    $existing_timer = $this->db->get(db_prefix() . 'taskstimers')->row();
+                    
+                    if ($existing_timer) {
+                        log_activity('[Timesheet Sync] Timer já existe para tarefa ' . $entry->task_id . ' em ' . $entry_date . ' - Timer ID: ' . $existing_timer->id);
+                        
+                        // Atualizar referência na entrada do timesheet se não existir
+                        if (empty($entry->perfex_timer_id)) {
+                            $this->db->where('id', $entry->id);
+                            $this->db->update(db_prefix() . 'timesheet_entries', ['perfex_timer_id' => $existing_timer->id]);
+                        }
+                        
+                        $timers_skipped++;
+                        continue;
+                    }
+
+                    // Preparar dados do timer
+                    $timer_data = [
+                        'task_id'    => $entry->task_id,
+                        'staff_id'   => $staff_id,
+                        'start_time' => strtotime($start_time),
+                        'end_time'   => strtotime($end_time),
+                        'note'       => 'Horas aprovadas via módulo Timesheet (' . $entry->hours . 'h em ' . date('d/m/Y', strtotime($entry_date)) . ')',
+                    ];
+
+                    log_activity('[Timesheet Sync] Criando timer - Tarefa: ' . $entry->task_id . ', Data: ' . $entry_date . ', Horas: ' . $entry->hours . 'h, Período: ' . date('H:i', strtotime($start_time)) . '-' . date('H:i', strtotime($end_time)));
+
+                    // Criar timer no quadro de horas do Perfex
+                    if ($this->db->insert(db_prefix() . 'taskstimers', $timer_data)) {
+                        $timer_id = $this->db->insert_id();
+                        
+                        // Salvar referência do timer criado na entrada do timesheet
+                        $this->db->where('id', $entry->id);
+                        $this->db->update(db_prefix() . 'timesheet_entries', ['perfex_timer_id' => $timer_id]);
+                        
+                        log_activity('[Timesheet Sync SUCCESS] Timer ID ' . $timer_id . ' criado para entrada ' . $entry->id . ' - Tarefa ' . $entry->task_id . ' em ' . $entry_date . ' (' . $entry->hours . 'h)');
+                        $timers_created++;
+                    } else {
+                        $db_error = $this->db->error();
+                        log_activity('[Timesheet Sync ERROR] Falha ao criar timer para entrada ' . $entry->id . ' - Tarefa ' . $entry->task_id . ' em ' . $entry_date . '. Erro DB: ' . $db_error['message']);
+                    }
+                    
+                } catch (Exception $e) {
+                    log_activity('[Timesheet Sync ERROR] Erro ao processar entrada ' . $entry->id . ': ' . $e->getMessage());
+                    continue;
                 }
-                
-                $timers_skipped++;
-                continue;
             }
-
-            // Preparar dados do timer
-            $timer_data = [
-                'task_id'    => $entry->task_id,
-                'staff_id'   => $staff_id,
-                'start_time' => strtotime($start_time),
-                'end_time'   => strtotime($end_time),
-                'note'       => 'Horas aprovadas via módulo Timesheet. Aprovado por: ' . get_staff_full_name($approver_id) . ' (' . $entry->hours . 'h em ' . _d($entry_date) . ')',
-            ];
-
-            log_activity('[Timesheet Sync] Criando timer - Tarefa: ' . $entry->task_id . ', Data: ' . $entry_date . ', Horas: ' . $entry->hours . 'h, Período: ' . date('H:i', strtotime($start_time)) . '-' . date('H:i', strtotime($end_time)));
-
-            // Criar timer no quadro de horas do Perfex
-            if ($this->db->insert(db_prefix() . 'taskstimers', $timer_data)) {
-                $timer_id = $this->db->insert_id();
-                
-                // Salvar referência do timer criado na entrada do timesheet
-                $this->db->where('id', $entry->id);
-                $this->db->update(db_prefix() . 'timesheet_entries', ['perfex_timer_id' => $timer_id]);
-                
-                log_activity('[Timesheet Sync SUCCESS] Timer ID ' . $timer_id . ' criado para entrada ' . $entry->id . ' - Tarefa ' . $entry->task_id . ' em ' . $entry_date . ' (' . $entry->hours . 'h)');
-                $timers_created++;
-            } else {
-                log_activity('[Timesheet Sync ERROR] Falha ao criar timer para entrada ' . $entry->id . ' - Tarefa ' . $entry->task_id . ' em ' . $entry_date . '. Erro DB: ' . $this->db->error()['message']);
-            }
+            
+            log_activity('[Timesheet Sync] Sincronização finalizada para staff ' . $staff_id . ' na semana ' . $week_start_date . ' - Criados: ' . $timers_created . ', Ignorados: ' . $timers_skipped);
+            return true;
+            
+        } catch (Exception $e) {
+            log_activity('[Timesheet Sync FATAL ERROR] Erro fatal na sincronização: ' . $e->getMessage());
+            return false;
         }
-        
-        log_activity('[Timesheet Sync] Sincronização finalizada para staff ' . $staff_id . ' na semana ' . $week_start_date . ' - Criados: ' . $timers_created . ', Ignorados: ' . $timers_skipped);
     }
 
     /**
