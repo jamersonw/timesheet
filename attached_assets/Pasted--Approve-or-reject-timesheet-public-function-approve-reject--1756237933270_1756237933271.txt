@@ -1,0 +1,75 @@
+    /**
+     * Approve or reject timesheet
+     */
+    public function approve_reject()
+    {
+        if (!has_permission('timesheet', '', 'edit')) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+
+        $approval_id = $this->input->post('approval_id');
+        $action = $this->input->post('action');
+        $reason = $this->input->post('reason');
+
+        if (empty($approval_id) || empty($action) || !in_array($action, ['approved', 'rejected'])) {
+            echo json_encode(['success' => false, 'message' => 'Invalid parameters']);
+            return;
+        }
+
+        if ($action === 'rejected' && empty($reason)) {
+            echo json_encode(['success' => false, 'message' => 'Rejection reason is required']);
+            return;
+        }
+
+        $result = $this->timesheet_model->approve_reject_timesheet($approval_id, $action, get_staff_user_id(), $reason);
+
+
+    /**
+     * Endpoint de debug para testar sincronização manualmente
+     */
+    public function debug_sync() {
+        if (!is_admin()) {
+            echo json_encode(['error' => 'Apenas administradores podem usar esta função']);
+            return;
+        }
+
+        $action = $this->input->get('action');
+
+        switch ($action) {
+            case 'list_timers':
+                $timers = $this->timesheet_model->debug_list_perfex_timers(20);
+                echo json_encode(['success' => true, 'timers' => $timers]);
+                break;
+
+            case 'test_sync':
+                $task_id = $this->input->get('task_id');
+                $staff_id = $this->input->get('staff_id');
+
+                if ($task_id && $staff_id) {
+                    log_activity('[Timesheet Debug] Teste manual de sincronização - Task: ' . $task_id . ', Staff: ' . $staff_id);
+                    $result = $this->timesheet_model->recalculate_task_hours($task_id, $staff_id);
+                    echo json_encode(['success' => $result, 'message' => $result ? 'Sincronização executada' : 'Falha na sincronização']);
+                } else {
+                    echo json_encode(['error' => 'task_id e staff_id são obrigatórios']);
+                }
+                break;
+
+            case 'hook_test':
+                log_activity('[Timesheet Debug] Teste manual dos hooks executado pelo admin');
+                echo json_encode(['success' => true, 'message' => 'Verifique o log de atividades']);
+                break;
+
+            default:
+                echo json_encode(['error' => 'Ação não reconhecida. Use: list_timers, test_sync, hook_test']);
+        }
+    }
+
+
+        if ($result) {
+            $message = $action == 'approved' ? _l('timesheet_approved_successfully') : _l('timesheet_rejected_successfully');
+            echo json_encode(['success' => true, 'message' => $message]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Error processing approval']);
+        }
+    }
