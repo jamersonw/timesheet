@@ -140,74 +140,88 @@ function timesheet_sync_from_core_timer_started($data)
 
 /**
  * Função de callback para o hook de EXCLUSÃO de timer.
+ * OTIMIZADA: Apenas remove referência, não recalcula tudo
  */
 function timesheet_sync_from_core_timer_deleted($data)
 {
     $CI = &get_instance();
-    log_activity('[Timesheet Hook DEBUG] task_timer_deleted CHAMADO! Dados recebidos: ' . json_encode($data));
+    log_activity('[Timesheet Hook] Timer deletado - ID: ' . ($data['id'] ?? 'N/A'));
 
     $timer_id = $data['id'] ?? null;
-    $task_id = $data['task_id'] ?? null;
+    
+    if (!$timer_id) {
+        return;
+    }
 
-    if ($timer_id && $task_id) {
+    try {
         $CI->load->model('timesheet/timesheet_model');
-        log_activity('[Timesheet Hook] Timer deletado - ID: ' . $timer_id . ', Tarefa: ' . $task_id);
-
+        
+        // Apenas limpar referências - SEM recálculo completo
         $CI->db->where('perfex_timer_id', $timer_id);
-        $entries = $CI->db->get(db_prefix() . 'timesheet_entries')->result();
-
-        if ($entries) {
-            log_activity('[Timesheet Hook] Encontradas ' . count($entries) . ' entradas vinculadas ao timer deletado');
-            foreach ($entries as $entry) {
-                $CI->db->where('id', $entry->id);
-                $CI->db->update(db_prefix() . 'timesheet_entries', ['perfex_timer_id' => null]);
-
-                $result = $CI->timesheet_model->recalculate_task_hours($task_id, $entry->staff_id);
-                log_activity('[Timesheet Hook] Recálculo após exclusão: ' . ($result ? 'SUCESSO' : 'FALHA'));
-            }
-        }
+        $CI->db->update(db_prefix() . 'timesheet_entries', ['perfex_timer_id' => null]);
+        
+        log_activity('[Timesheet Hook] Referência do timer ' . $timer_id . ' removida das entradas');
+        
+    } catch (Exception $e) {
+        log_activity('[Timesheet Hook ERROR] Erro ao processar exclusão: ' . $e->getMessage());
     }
 }
 
 /**
  * Hook para quando timer é parado/finalizado
+ * OTIMIZADA: Sincronização incremental
  */
 function timesheet_sync_from_core_timer_stopped($data)
 {
     $CI = &get_instance();
-    log_activity('[Timesheet Hook DEBUG] task_timer_stopped CHAMADO! Dados recebidos: ' . json_encode($data));
+    log_activity('[Timesheet Hook] Timer finalizado - ID: ' . ($data['id'] ?? 'N/A'));
 
     $timer_id = $data['id'] ?? null;
     $task_id = $data['task_id'] ?? null;
     $staff_id = $data['staff_id'] ?? null;
 
-    if ($timer_id && $task_id && $staff_id) {
-        $CI->load->model('timesheet/timesheet_model');
-        log_activity('[Timesheet Hook] Timer finalizado - ID: ' . $timer_id . ', Tarefa: ' . $task_id . ', Staff: ' . $staff_id);
+    if (!$timer_id || !$task_id || !$staff_id) {
+        return;
+    }
 
-        $result = $CI->timesheet_model->recalculate_task_hours($task_id, $staff_id);
-        log_activity('[Timesheet Hook] Resultado do recálculo: ' . ($result ? 'SUCESSO' : 'FALHA'));
+    try {
+        $CI->load->model('timesheet/timesheet_model');
+        
+        // Sincronização incremental apenas para este timer
+        $result = $CI->timesheet_model->sync_single_timer($timer_id, $task_id, $staff_id);
+        log_activity('[Timesheet Hook] Sincronização incremental: ' . ($result ? 'SUCESSO' : 'FALHA'));
+        
+    } catch (Exception $e) {
+        log_activity('[Timesheet Hook ERROR] Erro na sincronização: ' . $e->getMessage());
     }
 }
 
 /**
  * Hook para quando timer é editado
+ * OTIMIZADA: Sincronização incremental
  */
 function timesheet_sync_from_core_timer_updated($data)
 {
     $CI = &get_instance();
-    log_activity('[Timesheet Hook DEBUG] task_timer_updated CHAMADO! Dados recebidos: ' . json_encode($data));
+    log_activity('[Timesheet Hook] Timer atualizado - ID: ' . ($data['id'] ?? 'N/A'));
 
     $timer_id = $data['id'] ?? null;
     $task_id = $data['task_id'] ?? null;
     $staff_id = $data['staff_id'] ?? null;
 
-    if ($timer_id && $task_id && $staff_id) {
-        $CI->load->model('timesheet/timesheet_model');
-        log_activity('[Timesheet Hook] Timer atualizado - ID: ' . $timer_id . ', Tarefa: ' . $task_id . ', Staff: ' . $staff_id);
+    if (!$timer_id || !$task_id || !$staff_id) {
+        return;
+    }
 
-        $result = $CI->timesheet_model->recalculate_task_hours($task_id, $staff_id);
-        log_activity('[Timesheet Hook] Resultado do recálculo após edição: ' . ($result ? 'SUCESSO' : 'FALHA'));
+    try {
+        $CI->load->model('timesheet/timesheet_model');
+        
+        // Sincronização incremental apenas para este timer
+        $result = $CI->timesheet_model->sync_single_timer($timer_id, $task_id, $staff_id);
+        log_activity('[Timesheet Hook] Sincronização incremental após edição: ' . ($result ? 'SUCESSO' : 'FALHA'));
+        
+    } catch (Exception $e) {
+        log_activity('[Timesheet Hook ERROR] Erro na sincronização: ' . $e->getMessage());
     }
 }
 
