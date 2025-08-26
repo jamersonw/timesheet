@@ -1,0 +1,60 @@
+    public function get_week_entries_grouped($staff_id, $week_start_date)
+    {
+        $this->db->select('te.*, p.name as project_name, t.name as task_name');
+        $this->db->from(db_prefix() . 'timesheet_entries te');
+        $this->db->join(db_prefix() . 'projects p', 'p.id = te.project_id', 'left');
+        $this->db->join(db_prefix() . 'tasks t', 't.id = te.task_id', 'left');
+        $this->db->where('te.staff_id', $staff_id);
+        $this->db->where('te.week_start_date', $week_start_date);
+
+
+    /**
+     * Função de debug para listar todos os timers do Perfex
+     */
+    public function debug_list_perfex_timers($limit = 10) {
+        try {
+            log_activity('[Timesheet Debug] Listando últimos ' . $limit . ' timers do Perfex...');
+            
+            $this->db->select('*');
+            $this->db->from(db_prefix() . 'taskstimers');
+            $this->db->order_by('id', 'DESC');
+            $this->db->limit($limit);
+            $timers = $this->db->get()->result();
+            
+            log_activity('[Timesheet Debug] Encontrados ' . count($timers) . ' timers');
+            
+            foreach ($timers as $timer) {
+                $start_time = is_numeric($timer->start_time) ? date('Y-m-d H:i:s', $timer->start_time) : $timer->start_time;
+                $end_time = $timer->end_time ? (is_numeric($timer->end_time) ? date('Y-m-d H:i:s', $timer->end_time) : $timer->end_time) : 'EM ANDAMENTO';
+                
+                log_activity('[Timesheet Debug] Timer ID: ' . $timer->id . ' | Task: ' . $timer->task_id . ' | Staff: ' . $timer->staff_id . ' | Início: ' . $start_time . ' | Fim: ' . $end_time);
+            }
+            
+            return $timers;
+            
+        } catch (Exception $e) {
+            log_activity('[Timesheet Debug ERROR] Erro ao listar timers: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+        $entries = $this->db->get()->result();
+
+        $grouped = [];
+        foreach ($entries as $entry) {
+            $key = $entry->project_id . '_' . ($entry->task_id ?: '0');
+            if (!isset($grouped[$key])) {
+                $grouped[$key] = [
+                    'project_id'   => $entry->project_id,
+                    'project_name' => $entry->project_name,
+                    'task_id'      => $entry->task_id,
+                    'task_name'    => $entry->task_name,
+                    'days'         => array_fill(1, 7, ['hours' => 0]),
+                    'total_hours'  => 0,
+                ];
+            }
+            $grouped[$key]['days'][$entry->day_of_week]['hours'] = $entry->hours;
+            $grouped[$key]['total_hours'] += $entry->hours;
+        }
+        return array_values($grouped);
+    }
