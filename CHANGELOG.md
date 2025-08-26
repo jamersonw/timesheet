@@ -10,6 +10,13 @@
 
 
 
+
+## [1.3.12] - 2025-08-25
+
+### 🔧 ALTERAÇÕES
+- Correção crítica: caminho do helper para ativação do módulo
+
+
 ## [1.3.11] - 2025-08-25
 
 ### 🔧 ALTERAÇÕES

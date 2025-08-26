@@ -14,3 +14,7 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "php -S 0.0.0.0:5000 download_server.php"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
