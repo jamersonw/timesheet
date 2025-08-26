@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class Migration_Version_1312 extends App_module_migration
+class Migration_Version_1312 extends App_Model_Migration
 {
     public function up()
     {
