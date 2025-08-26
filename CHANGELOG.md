@@ -11,6 +11,13 @@
 
 
 
+
+## [1.3.13] - 2025-08-26
+
+### 🔧 ALTERAÇÕES
+- Correção crítica: helper path e migration class
+
+
 ## [1.3.12] - 2025-08-25
 
 ### 🔧 ALTERAÇÕES
