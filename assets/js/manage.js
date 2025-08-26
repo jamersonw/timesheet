@@ -10,8 +10,12 @@ $(document).ready(function() {
     }
     
     // Approve button click
-    $(document).on('click', '.approve-btn', function() {
+    $(document).on('click', '.approve-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
         var approvalId = $(this).data('approval-id');
+        console.log('Clicou em aprovar, ID:', approvalId);
         
         TimesheetModals.confirm({
             title: 'Aprovar Timesheet',
@@ -21,6 +25,7 @@ $(document).ready(function() {
             cancelText: 'Cancelar',
             confirmClass: 'timesheet-modal-btn-success'
         }).then(function(confirmed) {
+            console.log('Resultado da confirmação:', confirmed);
             if (confirmed) {
                 approveRejectTimesheet(approvalId, 'approved');
             }
@@ -28,8 +33,12 @@ $(document).ready(function() {
     });
     
     // Reject button click
-    $(document).on('click', '.reject-btn', function() {
+    $(document).on('click', '.reject-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
         var approvalId = $(this).data('approval-id');
+        console.log('Clicou em rejeitar, ID:', approvalId);
         
         TimesheetModals.prompt({
             title: 'Rejeitar Timesheet',
@@ -41,6 +50,7 @@ $(document).ready(function() {
             confirmClass: 'timesheet-modal-btn-danger',
             required: true
         }).then(function(reason) {
+            console.log('Motivo da rejeição:', reason);
             if (reason) {
                 approveRejectTimesheet(approvalId, 'rejected', reason);
             }
@@ -109,7 +119,9 @@ $(document).ready(function() {
                 console.groupEnd();
                 
                 if (response.success) {
-                    showAlert('success', response.message);
+                    // Usar notificação automática em vez de modal adicional
+                    TimesheetModals.notify('success', response.message);
+                    
                     setTimeout(function() {
                         $row.fadeOut(function() {
                             $(this).remove();
@@ -118,16 +130,16 @@ $(document).ready(function() {
                     }, 1500);
                     
                 } else {
-                    showAlert('danger', response.message);
+                    TimesheetModals.notify('danger', response.message);
                     $buttons.prop('disabled', false);
-                    $row.find('.approve-btn').html('<i class="fa fa-check"></i> Approve');
-                    $row.find('.reject-btn').html('<i class="fa fa-times"></i> Reject');
+                    $row.find('.approve-btn').html('<i class="fa fa-check"></i> Aprovar');
+                    $row.find('.reject-btn').html('<i class="fa fa-times"></i> Rejeitar');
                 }
             },
             // ================== INÍCIO DA CORREÇÃO ==================
             // Corrigido a função de erro para receber os parâmetros corretos
             error: function(jqXHR, textStatus, errorThrown) {
-                showAlert('danger', 'Error processing request. Please try again.');
+                TimesheetModals.notify('danger', 'Erro ao processar solicitação. Tente novamente.');
                 
                 console.group('[APROVAÇÃO] ERRO DE AJAX');
                 console.error('Status Code:', jqXHR.status);
@@ -137,8 +149,8 @@ $(document).ready(function() {
                 console.groupEnd();
                 
                 $buttons.prop('disabled', false);
-                $row.find('.approve-btn').html('<i class="fa fa-check"></i> Approve');
-                $row.find('.reject-btn').html('<i class="fa fa-times"></i> Reject');
+                $row.find('.approve-btn').html('<i class="fa fa-check"></i> Aprovar');
+                $row.find('.reject-btn').html('<i class="fa fa-times"></i> Rejeitar');
             }
             // =================== FIM DA CORREÇÃO ====================
         });
@@ -160,24 +172,7 @@ $(document).ready(function() {
         return parseFloat(hours || 0).toFixed(2);
     }
     
-    function showAlert(type, message) {
-        var alertHtml = '<div class="alert alert-' + type + ' alert-dismissible">';
-        alertHtml += '<button type="button" class="close" data-dismiss="alert">&times;</button>';
-        alertHtml += message;
-        alertHtml += '</div>';
-        
-        $('.panel-body').prepend(alertHtml);
-        
-        if (type === 'success') {
-            setTimeout(function() {
-                $('.alert-success').fadeOut();
-            }, 3000);
-        }
-        
-        $('html, body').animate({
-            scrollTop: $('.panel-body').offset().top - 100
-        }, 500);
-    }
+    // Função showAlert removida - usando TimesheetModals.notify() agora
     
     $('#rejection-reason').on('input', function() {
         var reason = $(this).val().trim();

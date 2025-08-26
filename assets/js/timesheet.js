@@ -20,7 +20,7 @@ $(document).ready(function() {
     $(document).on('blur', '.hours-input', function() {
         var $input = $(this);
         var value = $input.val().trim();
-        
+
         // Sempre formatar o valor, incluindo 0
         var formattedValue = formatHours(value);
         $input.val(formattedValue);
@@ -30,7 +30,7 @@ $(document).ready(function() {
             saveEntry($input);
         }, 300);
     });
-    
+
     // Limpar indicador e reformatar para edição
     $(document).on('focus', '.hours-input', function() {
         var $input = $(this);
@@ -53,10 +53,10 @@ $(document).ready(function() {
             console.warn("⚠️ [SAVE-ENTRY] Salvamento abortado: task-id ou project-id não encontrado na linha da tabela (TR).", { 'task-id': taskId, 'project-id': projectId });
             return Promise.resolve({ success: true, message: 'Nenhuma tarefa selecionada para salvar' });
         }
-        
+
         return new Promise(function(resolve, reject) {
             $saveIndicator.html('<i class="fa fa-spinner fa-spin"></i> Salvando...');
-            
+
             var hours = parseHours($input.val());
             var data = {
                 project_id: projectId,
@@ -70,7 +70,7 @@ $(document).ready(function() {
             console.groupCollapsed("🔵 [SAVE-ENTRY] Tentando salvar para o dia: " + $input.data('day'));
             console.log("➡️ Dados enviados via POST:", data);
             console.log("➡️ URL:", timesheet_data.admin_url + 'timesheet/save_entry');
-    
+
             $.post(timesheet_data.admin_url + 'timesheet/save_entry', data)
             .done(function(response) {
                 try {
@@ -84,13 +84,13 @@ $(document).ready(function() {
                 }
 
                 console.log("⬅️ Resposta do servidor recebida:", response);
-    
+
                 if (response.success) {
                     $saveIndicator.html('<i class="fa fa-check text-success"></i> Salvo');
                     resolve(response);
                 } else {
                     $saveIndicator.html('<i class="fa fa-times text-danger"></i> Falha!');
-                    alert_float('danger', response.message || 'Ocorreu um erro desconhecido ao salvar.');
+                    TimesheetModals.notify('danger', response.message || 'Ocorreu um erro desconhecido ao salvar.');
                     reject(response);
                 }
                 setTimeout(function() { $saveIndicator.html(''); }, 2500);
@@ -102,18 +102,17 @@ $(document).ready(function() {
                 console.error("Status Text:", textStatus);
                 console.error("Error Thrown:", errorThrown);
                 console.error("Resposta Completa do Servidor:", jqXHR.responseText);
-    
+
                 $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro de conexão');
                 setTimeout(function() { $saveIndicator.html(''); }, 2500);
-                
-                alert_float('danger', 'Erro de conexão ou erro interno no servidor. Verifique o console.');
+
+                TimesheetModals.notify('danger', 'Erro de conexão ou erro interno no servidor. Verifique o console.');
                 reject(jqXHR);
                 console.groupEnd();
             });
         });
     }
-    
-    // ... (restante do arquivo permanece o mesmo) ...
+
     function saveAllEntries() {
         var promises = [];
         $('.hours-input').each(function() {
@@ -125,15 +124,15 @@ $(document).ready(function() {
     $('#submit-timesheet').on('click', function() {
         var $btn = $(this);
         $btn.prop('disabled', true); 
-        
+
         // Mostrar indicador de salvamento
         $saveIndicator.html('<i class="fa fa-spinner fa-spin"></i> Salvando todas as entradas...');
-        
+
         saveAllEntries().then(function() {
             // Aguardar um momento para garantir que o servidor processou todas as alterações
             setTimeout(function() {
                 $saveIndicator.html('<i class="fa fa-check text-success"></i> Todas as entradas salvas');
-                
+
                 // Usar modal elegante ao invés de confirm()
                 TimesheetModals.confirm({
                     title: 'Enviar para Aprovação',
@@ -145,11 +144,11 @@ $(document).ready(function() {
                 }).then(function(confirmed) {
                     if (confirmed) {
                         $saveIndicator.html('<i class="fa fa-spinner fa-spin"></i> Enviando para aprovação...');
-                        
+
                         var data = {};
                         data.week_start = timesheet_data.week_start;
                         data[csrfData.token_name] = csrfData.hash;
-                        
+
                         $.post(timesheet_data.admin_url + 'timesheet/submit_week', data).done(function(response) {
                             try {
                                 response = typeof response === 'string' ? JSON.parse(response) : response;
@@ -160,22 +159,21 @@ $(document).ready(function() {
                                 $saveIndicator.html('');
                                 return;
                             }
-                            
+
                             if (response.success) {
                                 $saveIndicator.html('<i class="fa fa-check text-success"></i> Enviado com sucesso!');
-                                TimesheetModals.success(response.message, 'Timesheet Enviado!').then(function() {
-                                    location.reload();
-                                });
+                                TimesheetModals.notify('success', response.message);
+                                setTimeout(function(){ location.reload(); }, 1500);
                             } else {
                                 $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro na submissão');
-                                TimesheetModals.error(response.message, 'Erro na Submissão');
+                                TimesheetModals.notify('danger', response.message);
                                 $btn.prop('disabled', false);
                                 setTimeout(function() { $saveIndicator.html(''); }, 3000);
                             }
                         }).fail(function(jqXHR) {
                             console.error("Falha na requisição de submissão:", jqXHR.responseText);
                             $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro de conexão');
-                            TimesheetModals.error('Erro de conexão ao enviar para aprovação', 'Erro de Conexão');
+                            TimesheetModals.notify('danger', 'Erro de conexão ao enviar para aprovação');
                             $btn.prop('disabled', false);
                             setTimeout(function() { $saveIndicator.html(''); }, 3000);
                         });
@@ -187,7 +185,7 @@ $(document).ready(function() {
             }, 500); // Aguardar 500ms para o servidor processar
         }).catch(function() {
             $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro ao salvar');
-            TimesheetModals.error('Falha ao salvar as horas antes do envio. Tente novamente.', 'Erro ao Salvar');
+            TimesheetModals.notify('danger', 'Falha ao salvar as horas antes do envio. Tente novamente.');
             $btn.prop('disabled', false);
             setTimeout(function() { $saveIndicator.html(''); }, 3000);
         });
@@ -219,7 +217,7 @@ $(document).ready(function() {
             }
         });
     });
-    
+
     $('#add-project-row').on('click', function() {
         $('#project-modal').modal('show');
     });
@@ -246,7 +244,7 @@ $(document).ready(function() {
         var taskId = $('#task-select').val();
         var projectName = $('#project-select').find('option:selected').text();
         var taskName = $('#task-select').find('option:selected').text();
-        
+
         if(!projectId || !taskId) {
             TimesheetModals.warning('Por favor, selecione um projeto E uma tarefa.', 'Seleção Obrigatória');
             return;
@@ -265,10 +263,10 @@ $(document).ready(function() {
         row_html += '<td class="text-center total-hours"><strong>0,00</strong></td>' + 
                     '<td class="text-center"><button type="button" class="btn btn-danger btn-xs remove-row"><i class="fa fa-trash"></i></button></td>' +
                     '</tr>';
-        
+
         $('#timesheet-entries').append(row_html);
         $('#project-modal').modal('hide');
-        
+
         $('#project-select').val('').trigger('change');
     });
 
@@ -310,6 +308,6 @@ $(document).ready(function() {
         }
         $('.week-total').text(formatHours(weekTotal));
     }
-    
+
     updateTotals();
 });

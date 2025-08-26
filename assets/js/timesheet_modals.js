@@ -304,6 +304,68 @@ var TimesheetModals = {
     },
     
     /**
+     * Mostrar notificação automática (estilo Perfex)
+     */
+    notify: function(type, message, duration) {
+        duration = duration || 4000;
+        
+        if (typeof alert_float === 'function') {
+            // Usar sistema de notificação nativo do Perfex
+            alert_float(type, message);
+        } else {
+            // Fallback para nosso sistema customizado
+            TimesheetModals.showFloatingAlert(type, message, duration);
+        }
+    },
+    
+    /**
+     * Sistema de notificação flutuante customizado
+     */
+    showFloatingAlert: function(type, message, duration) {
+        var alertId = 'timesheet-alert-' + Date.now();
+        var iconClass = {
+            'success': 'fa-check-circle',
+            'danger': 'fa-exclamation-triangle',
+            'warning': 'fa-exclamation-triangle',
+            'info': 'fa-info-circle'
+        }[type] || 'fa-info-circle';
+        
+        var alertHtml = `
+            <div class="timesheet-floating-alert timesheet-alert-${type}" id="${alertId}">
+                <div class="timesheet-alert-content">
+                    <i class="fa ${iconClass}"></i>
+                    <span>${message}</span>
+                    <button class="timesheet-alert-close">&times;</button>
+                </div>
+            </div>
+        `;
+        
+        $('body').append(alertHtml);
+        var $alert = $('#' + alertId);
+        
+        // Mostrar com animação
+        setTimeout(function() {
+            $alert.addClass('show');
+        }, 50);
+        
+        // Auto-remover
+        setTimeout(function() {
+            $alert.removeClass('show');
+            setTimeout(function() {
+                $alert.remove();
+            }, 300);
+        }, duration);
+        
+        // Remover ao clicar no X
+        $alert.find('.timesheet-alert-close').on('click', function() {
+            $alert.removeClass('show');
+            setTimeout(function() {
+                $alert.remove();
+            }, 300);
+        });
+    },
+    
+    /**
      * Fechar modal
      */
     close: function(modalId) {
