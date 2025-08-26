@@ -7,7 +7,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 /*
 Module Name: Timesheet
 Description: Sistema de apontamento de horas com aprovação para profissionais e gerentes de projeto
-Version: 1.3.15
+Version: 1.3.17
 Requires at least: 2.3.*
 Author: Perfex CRM Module Developer
 */

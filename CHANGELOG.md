@@ -14,6 +14,38 @@
 
 
 
+## [1.3.17] - 2025-01-26
+
+### 🔧 FIX
+- Correção na criação do campo `perfex_timer_id` na tabela `timesheet_entries`
+- Migration adicional para garantir que o campo seja criado corretamente
+
+## [1.3.16] - 2025-01-26
+
+### 🚀 SINCRONIZAÇÃO BIDIRECIONAL COMPLETA
+- **Vínculo estabelecido**: Campo `perfex_timer_id` adicionado para referenciar timers do Perfex
+- **Hooks completos**: Monitoramento de todos os eventos de timer (criar, editar, deletar, parar)
+- **Sincronização automática**: Alterações no quadro de horas refletem instantaneamente no timesheet
+- **Recálculo inteligente**: Horas são recalculadas baseadas nos timers reais do Perfex
+
+### 🔧 IMPLEMENTAÇÕES TÉCNICAS
+- **Migration 1316**: Adiciona campo `perfex_timer_id` com índice para performance
+- **Função sync_from_perfex_timer()**: Processa alterações vindas do Perfex CRM  
+- **Função recalculate_task_hours()**: Recalcula horas baseado em timers ativos
+- **Hooks múltiplos**: `task_timer_started`, `task_timer_stopped`, `task_timer_deleted`, `after_timer_update`
+
+### 📋 FUNCIONALIDADES
+- **Timesheet → Perfex**: Na aprovação, salva `timer_id` na entrada do timesheet
+- **Perfex → Timesheet**: Qualquer alteração no timer atualiza o timesheet automaticamente
+- **Logs detalhados**: Rastreamento completo de todas as sincronizações
+- **Prevenção de loops**: Evita sincronizações circulares
+
+### 🎯 CASOS DE USO RESOLVIDOS
+- ✅ Gestor altera horas no quadro de tempo → Timesheet atualiza automaticamente
+- ✅ Timer é deletado no Perfex → Referência é removida do timesheet
+- ✅ Timer é editado no Perfex → Horas são recalculadas no timesheet
+- ✅ Funcionário para timer → Timesheet reflete as horas trabalhadas
+
 ## [1.3.15] - 2025-08-26
 
 ### 🔧 ALTERAÇÕES
@@ -85,32 +117,6 @@
 ### 🔧 ALTERAÇÕES
 - Atualizações e melhorias gerais
 
-
-## [1.3.16] - 2025-01-17
-
-### 🚀 SINCRONIZAÇÃO BIDIRECIONAL COMPLETA
-- **Vínculo estabelecido**: Campo `perfex_timer_id` adicionado para referenciar timers do Perfex
-- **Hooks completos**: Monitoramento de todos os eventos de timer (criar, editar, deletar, parar)
-- **Sincronização automática**: Alterações no quadro de horas refletem instantaneamente no timesheet
-- **Recálculo inteligente**: Horas são recalculadas baseadas nos timers reais do Perfex
-
-### 🔧 IMPLEMENTAÇÕES TÉCNICAS
-- **Migration 1316**: Adiciona campo `perfex_timer_id` com índice para performance
-- **Função sync_from_perfex_timer()**: Processa alterações vindas do Perfex CRM  
-- **Função recalculate_task_hours()**: Recalcula horas baseado em timers ativos
-- **Hooks múltiplos**: `task_timer_started`, `task_timer_stopped`, `task_timer_deleted`, `after_timer_update`
-
-### 📋 FUNCIONALIDADES
-- **Timesheet → Perfex**: Na aprovação, salva `timer_id` na entrada do timesheet
-- **Perfex → Timesheet**: Qualquer alteração no timer atualiza o timesheet automaticamente
-- **Logs detalhados**: Rastreamento completo de todas as sincronizações
-- **Prevenção de loops**: Evita sincronizações circulares
-
-### 🎯 CASOS DE USO RESOLVIDOS
-- ✅ Gestor altera horas no quadro de tempo → Timesheet atualiza automaticamente
-- ✅ Timer é deletado no Perfex → Referência é removida do timesheet
-- ✅ Timer é editado no Perfex → Horas são recalculadas no timesheet
-- ✅ Funcionário para timer → Timesheet reflete as horas trabalhadas
 
 ## [1.3.3] - 2025-08-25
 
