@@ -1,0 +1,68 @@
+[APROVAÇÃO] Envio para o Servidor
+manage.js:88 Dados enviados via AJAX: {approval_id: 2, action: 'approved'}
+manage.js:89 URL: https://perfex.neurodeep.com.br/admin/timesheet/approve_reject
+vendor-admin.js?v=3.3.1:1   POST https://perfex.neurodeep.com.br/admin/timesheet/approve_reject 500 (Internal Server Error)
+send @ vendor-admin.js?v=3.3.1:1
+ajax @ vendor-admin.js?v=3.3.1:1
+a.ajax @ jquery-migrate.min.js?v=3.3.1:2
+approveRejectTimesheet @ manage.js:92
+(anônimo) @ manage.js:17
+dispatch @ vendor-admin.js?v=3.3.1:1
+m.handle @ vendor-admin.js?v=3.3.1:1
+manage.js:123 [APROVAÇÃO] ERRO DE AJAX
+manage.js:124  Status Code: 500
+error @ manage.js:124
+l @ vendor-admin.js?v=3.3.1:1
+fireWith @ vendor-admin.js?v=3.3.1:1
+D @ vendor-admin.js?v=3.3.1:1
+(anônimo) @ vendor-admin.js?v=3.3.1:1
+XMLHttpRequest.send
+send @ vendor-admin.js?v=3.3.1:1
+ajax @ vendor-admin.js?v=3.3.1:1
+a.ajax @ jquery-migrate.min.js?v=3.3.1:2
+approveRejectTimesheet @ manage.js:92
+(anônimo) @ manage.js:17
+dispatch @ vendor-admin.js?v=3.3.1:1
+m.handle @ vendor-admin.js?v=3.3.1:1
+manage.js:125  Status Text: error
+error @ manage.js:125
+l @ vendor-admin.js?v=3.3.1:1
+fireWith @ vendor-admin.js?v=3.3.1:1
+D @ vendor-admin.js?v=3.3.1:1
+(anônimo) @ vendor-admin.js?v=3.3.1:1
+XMLHttpRequest.send
+send @ vendor-admin.js?v=3.3.1:1
+ajax @ vendor-admin.js?v=3.3.1:1
+a.ajax @ jquery-migrate.min.js?v=3.3.1:2
+approveRejectTimesheet @ manage.js:92
+(anônimo) @ manage.js:17
+dispatch @ vendor-admin.js?v=3.3.1:1
+m.handle @ vendor-admin.js?v=3.3.1:1
+manage.js:126  Error Thrown: 
+error @ manage.js:126
+l @ vendor-admin.js?v=3.3.1:1
+fireWith @ vendor-admin.js?v=3.3.1:1
+D @ vendor-admin.js?v=3.3.1:1
+(anônimo) @ vendor-admin.js?v=3.3.1:1
+XMLHttpRequest.send
+send @ vendor-admin.js?v=3.3.1:1
+ajax @ vendor-admin.js?v=3.3.1:1
+a.ajax @ jquery-migrate.min.js?v=3.3.1:2
+approveRejectTimesheet @ manage.js:92
+(anônimo) @ manage.js:17
+dispatch @ vendor-admin.js?v=3.3.1:1
+m.handle @ vendor-admin.js?v=3.3.1:1
+manage.js:127  Resposta Completa do Servidor: 
+error @ manage.js:127
+l @ vendor-admin.js?v=3.3.1:1
+fireWith @ vendor-admin.js?v=3.3.1:1
+D @ vendor-admin.js?v=3.3.1:1
+(anônimo) @ vendor-admin.js?v=3.3.1:1
+XMLHttpRequest.send
+send @ vendor-admin.js?v=3.3.1:1
+ajax @ vendor-admin.js?v=3.3.1:1
+a.ajax @ jquery-migrate.min.js?v=3.3.1:2
+approveRejectTimesheet @ manage.js:92
+(anônimo) @ manage.js:17
+dispatch @ vendor-admin.js?v=3.3.1:1
+m.handle @ vendor-admin.js?v=3.3.1:1

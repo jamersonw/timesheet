@@ -12,6 +12,13 @@
 
 
 
+
+## [1.3.14] - 2025-08-26
+
+### 🔧 ALTERAÇÕES
+- Correção crítica: sincronização criar uma entrada por dia na tbltaskstimers
+
+
 ## [1.3.13] - 2025-08-26
 
 ### 🔧 ALTERAÇÕES
