@@ -15,8 +15,95 @@ $(document).ready(function() {
 
     var $saveIndicator = $('#save-indicator');
     var saveTimeout;
+    var saveQueue = [];
+    var isProcessingQueue = false;
+    var backupSaveInterval;
+    var pendingChanges = new Set();
 
-    // Auto-save ao sair do campo
+    // Inicializar backup automático a cada 30 segundos
+    function initBackupSave() {
+        backupSaveInterval = setInterval(function() {
+            if (pendingChanges.size > 0) {
+                console.log('🔄 [BACKUP-SAVE] Executando salvamento de backup para', pendingChanges.size, 'campos pendentes');
+                saveAllPendingChanges();
+            }
+        }, 30000); // 30 segundos
+    }
+
+    // Processar fila de salvamento sequencialmente
+    function processQueue() {
+        if (isProcessingQueue || saveQueue.length === 0) {
+            return;
+        }
+
+        isProcessingQueue = true;
+        var $input = saveQueue.shift();
+        var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
+
+        $saveIndicator.html('<i class="fa fa-spinner fa-spin text-primary"></i> Salvando...');
+
+        saveEntry($input).then(function(response) {
+            pendingChanges.delete(inputId);
+            
+            // Se há mais itens na fila, continuar processando
+            if (saveQueue.length > 0) {
+                setTimeout(function() {
+                    isProcessingQueue = false;
+                    processQueue();
+                }, 100); // Pequeno delay entre salvamentos
+            } else {
+                isProcessingQueue = false;
+                $saveIndicator.html('<i class="fa fa-check text-success"></i> Tudo salvo');
+                setTimeout(function() { 
+                    if (saveQueue.length === 0) $saveIndicator.html(''); 
+                }, 2500);
+            }
+        }).catch(function(error) {
+            console.error('❌ [QUEUE-SAVE] Erro ao salvar:', error);
+            isProcessingQueue = false;
+            $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro ao salvar');
+            setTimeout(function() { $saveIndicator.html(''); }, 3000);
+            
+            // Continuar com próximo item mesmo se este falhou
+            if (saveQueue.length > 0) {
+                setTimeout(function() {
+                    processQueue();
+                }, 1000);
+            }
+        });
+    }
+
+    // Adicionar à fila de salvamento
+    function addToSaveQueue($input) {
+        var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
+        
+        // Remover duplicatas da fila (manter apenas a última alteração)
+        saveQueue = saveQueue.filter(function(item) {
+            var itemId = item.data('input-id') || (item.data('day') + '_' + item.closest('tr').data('task-id'));
+            return itemId !== inputId;
+        });
+
+        // Adicionar à fila
+        saveQueue.push($input);
+        pendingChanges.add(inputId);
+        
+        // Iniciar processamento se não estiver em andamento
+        processQueue();
+    }
+
+    // Salvar todas as alterações pendentes
+    function saveAllPendingChanges() {
+        $('.hours-input').each(function() {
+            var $input = $(this);
+            var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
+            
+            if (pendingChanges.has(inputId)) {
+                addToSaveQueue($input.clone());
+            }
+        });
+    }
+
+    // Auto-save melhorado com debounce de 1.5 segundos
     $(document).on('blur', '.hours-input', function() {
         var $input = $(this);
         var value = $input.val().trim();
@@ -25,10 +112,15 @@ $(document).ready(function() {
         var formattedValue = formatHours(value);
         $input.val(formattedValue);
 
+        // Marcar como alteração pendente
+        var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
+        pendingChanges.add(inputId);
+
+        // Limpar timeout anterior e definir novo com 1.5 segundos
         clearTimeout(saveTimeout);
         saveTimeout = setTimeout(function() {
-            saveEntry($input);
-        }, 300);
+            addToSaveQueue($input);
+        }, 1500); // Aumentado de 300ms para 1.5 segundos
     });
 
     // Limpar indicador e reformatar para edição
@@ -113,12 +205,65 @@ $(document).ready(function() {
         });
     }
 
+    // Salvamento forçado de todas as entradas (usado antes de submissão)
     function saveAllEntries() {
-        var promises = [];
-        $('.hours-input').each(function() {
-            promises.push(saveEntry($(this)));
+        return new Promise(function(resolve, reject) {
+            $saveIndicator.html('<i class="fa fa-spinner fa-spin text-warning"></i> Salvamento forçado em andamento...');
+            
+            // Limpar fila atual e timeout
+            clearTimeout(saveTimeout);
+            saveQueue = [];
+            isProcessingQueue = false;
+
+            var promises = [];
+            var totalInputs = 0;
+            var processedInputs = 0;
+
+            $('.hours-input').each(function() {
+                var $input = $(this);
+                var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
+                totalInputs++;
+
+                var promise = saveEntry($input).then(function(response) {
+                    pendingChanges.delete(inputId);
+                    processedInputs++;
+                    
+                    // Atualizar progresso
+                    $saveIndicator.html('<i class="fa fa-spinner fa-spin text-warning"></i> Salvando ' + processedInputs + '/' + totalInputs + '...');
+                    
+                    return response;
+                }).catch(function(error) {
+                    processedInputs++;
+                    console.error('❌ [FORCE-SAVE] Erro ao salvar entrada:', error);
+                    return error;
+                });
+
+                promises.push(promise);
+            });
+
+            if (promises.length === 0) {
+                $saveIndicator.html('<i class="fa fa-check text-success"></i> Nada para salvar');
+                setTimeout(function() { $saveIndicator.html(''); }, 1500);
+                resolve();
+                return;
+            }
+
+            Promise.allSettled(promises).then(function(results) {
+                var successful = results.filter(r => r.status === 'fulfilled' && r.value.success !== false).length;
+                var failed = results.length - successful;
+
+                if (failed === 0) {
+                    $saveIndicator.html('<i class="fa fa-check text-success"></i> Todas as ' + successful + ' entradas salvas');
+                    pendingChanges.clear();
+                    resolve();
+                } else {
+                    $saveIndicator.html('<i class="fa fa-exclamation-triangle text-warning"></i> ' + successful + ' salvas, ' + failed + ' falharam');
+                    reject({ message: failed + ' entradas falharam ao salvar' });
+                }
+
+                setTimeout(function() { $saveIndicator.html(''); }, 3000);
+            });
         });
-        return Promise.all(promises);
     }
 
     $('#submit-timesheet').on('click', function() {
@@ -132,9 +277,8 @@ $(document).ready(function() {
         
         $btn.prop('disabled', true); 
 
-        // Mostrar indicador de salvamento
-        $saveIndicator.html('<i class="fa fa-spinner fa-spin"></i> Salvando todas as entradas...');
-
+        // Executar salvamento forçado antes da submissão
+        console.log('🚀 [SUBMIT] Iniciando salvamento forçado antes da submissão');
         saveAllEntries().then(function() {
             // Aguardar um momento para garantir que o servidor processou todas as alterações
             setTimeout(function() {
@@ -330,4 +474,47 @@ $(document).ready(function() {
     }
 
     updateTotals();
+    
+    // Inicializar sistema de backup automático
+    initBackupSave();
+    
+    // Limpeza quando a página for fechada
+    $(window).on('beforeunload', function() {
+        clearInterval(backupSaveInterval);
+        
+        // Se há alterações pendentes, avisar o usuário
+        if (pendingChanges.size > 0) {
+            return 'Você tem alterações não salvas. Tem certeza que deseja sair?';
+        }
+    });
+    
+    // Salvamento forçado ao navegar para outra página
+    $(document).on('click', 'a[href], button[type="submit"]', function(e) {
+        if (pendingChanges.size > 0 && !$(this).hasClass('hours-input') && !$(this).hasClass('remove-row')) {
+            e.preventDefault();
+            var originalTarget = this;
+            
+            $saveIndicator.html('<i class="fa fa-spinner fa-spin text-info"></i> Salvando antes de navegar...');
+            
+            saveAllEntries().then(function() {
+                // Continuar com a navegação
+                if (originalTarget.href) {
+                    window.location.href = originalTarget.href;
+                } else if (originalTarget.onclick) {
+                    originalTarget.onclick();
+                }
+            }).catch(function() {
+                TimesheetModals.warning('Algumas alterações podem não ter sido salvas. Deseja continuar mesmo assim?', 'Alterações Pendentes')
+                .then(function(confirmed) {
+                    if (confirmed) {
+                        if (originalTarget.href) {
+                            window.location.href = originalTarget.href;
+                        } else if (originalTarget.onclick) {
+                            originalTarget.onclick();
+                        }
+                    }
+                });
+            });
+        }
+    });
 });

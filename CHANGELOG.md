@@ -285,6 +285,38 @@ ALTER TABLE timesheet_entries ADD COLUMN perfex_timer_id INT(11) NULL;
 - Formatação de horas mantida (8 → 8,00)
 - Todas as funcionalidades anteriores preservadas
 
+## [1.3.16] - 2025-01-26
+
+### 🚀 SISTEMA DE SALVAMENTO HÍBRIDO IMPLEMENTADO
+
+**PROBLEMA RESOLVIDO**: Auto-save com timeout muito baixo (300ms) causava perda de dados quando usuário navegava rapidamente entre campos.
+
+### ✅ MELHORIAS CRÍTICAS
+- **Debounce aumentado**: Timeout aumentado de 300ms para 1.5 segundos
+- **Fila de salvamento**: Sistema sequencial previne race conditions
+- **Salvamento forçado**: Antes de submissão e navegação entre páginas
+- **Backup automático**: Salvamento de segurança a cada 30 segundos
+- **Indicadores visuais**: Status claro de "salvando", "salvo", "erro" com progresso
+
+### 🔧 FUNCIONALIDADES TÉCNICAS
+- **Queue System**: Processa alterações sequencialmente sem duplicatas
+- **Pending Changes Tracking**: Rastreia campos com alterações não salvas
+- **Before Unload Protection**: Avisa usuário sobre alterações pendentes
+- **Force Save**: Garantia de salvamento antes de ações críticas
+- **Error Recovery**: Continua processamento mesmo se um campo falhar
+
+### 🎯 IMPACTO NA UX
+- **Maior confiabilidade**: Dados nunca mais serão perdidos por navegação rápida
+- **Feedback visual**: Usuário sempre sabe o status de salvamento
+- **Proteção inteligente**: Sistema previne perda acidental de dados
+- **Performance otimizada**: Salvamentos agrupados reduzem carga no servidor
+
+### 🛡️ COMPATIBILIDADE
+- Mantém todas as funcionalidades existentes
+- Sincronização bidirecional continua funcionando
+- Sistema de aprovação inalterado
+- Interface sem mudanças visuais significativas
+
 ## [1.0.8] - 2025-08-24
 
 ### 🔧 CORREÇÕES CRÍTICAS
