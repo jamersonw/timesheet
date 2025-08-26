@@ -47,6 +47,38 @@ class Timesheet_model extends App_Model
         $this->db->join(db_prefix() . 'tasks t', 't.id = te.task_id', 'left');
         $this->db->where('te.staff_id', $staff_id);
         $this->db->where('te.week_start_date', $week_start_date);
+
+
+    /**
+     * Função de debug para listar todos os timers do Perfex
+     */
+    public function debug_list_perfex_timers($limit = 10) {
+        try {
+            log_activity('[Timesheet Debug] Listando últimos ' . $limit . ' timers do Perfex...');
+            
+            $this->db->select('*');
+            $this->db->from(db_prefix() . 'taskstimers');
+            $this->db->order_by('id', 'DESC');
+            $this->db->limit($limit);
+            $timers = $this->db->get()->result();
+            
+            log_activity('[Timesheet Debug] Encontrados ' . count($timers) . ' timers');
+            
+            foreach ($timers as $timer) {
+                $start_time = is_numeric($timer->start_time) ? date('Y-m-d H:i:s', $timer->start_time) : $timer->start_time;
+                $end_time = $timer->end_time ? (is_numeric($timer->end_time) ? date('Y-m-d H:i:s', $timer->end_time) : $timer->end_time) : 'EM ANDAMENTO';
+                
+                log_activity('[Timesheet Debug] Timer ID: ' . $timer->id . ' | Task: ' . $timer->task_id . ' | Staff: ' . $timer->staff_id . ' | Início: ' . $start_time . ' | Fim: ' . $end_time);
+            }
+            
+            return $timers;
+            
+        } catch (Exception $e) {
+            log_activity('[Timesheet Debug ERROR] Erro ao listar timers: ' . $e->getMessage());
+            return false;
+        }
+    }
+
         $entries = $this->db->get()->result();
 
         $grouped = [];
