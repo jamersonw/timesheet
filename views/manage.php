@@ -118,6 +118,7 @@ var manage_data = {
 </script>
 
 <?php init_tail(); ?>
+<script src="<?php echo module_dir_url('timesheet', 'assets/js/timesheet_modals.js'); ?>"></script>
 <script src="<?php echo module_dir_url('timesheet', 'assets/js/manage.js'); ?>"></script>
 </body>
 </html>
