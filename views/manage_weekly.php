@@ -1,7 +1,7 @@
 
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
 <?php init_head(); ?>
-<link rel="stylesheet" href="<?php echo module_dir_url('timesheet', 'assets/css/timesheet_modals.css'); ?>"><?php echo get_csrf_input(); ?>
+<link rel="stylesheet" href="<?php echo module_dir_url('timesheet', 'assets/css/timesheet_modals.css'); ?>">
 <div id="wrapper">
     <div class="content">
         <div class="row">

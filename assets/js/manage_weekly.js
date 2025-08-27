@@ -1,44 +1,28 @@
 
-// Aguardar o carregamento completo do jQuery e do DOM
-(function() {
-    function initializeWeeklyManage() {
-        // Verificar se o jQuery está carregado
-        if (typeof $ === 'undefined') {
-            console.error('jQuery não está carregado!');
-            setTimeout(initializeWeeklyManage, 100);
-            return;
-        }
-        
-        // Verificar se os dados estão disponíveis
-        if (typeof weekly_manage_data === 'undefined') {
-            console.error('weekly_manage_data não está definido!');
-            return;
-        }
-        
-        // Configurar CSRF para todas as requisições AJAX
-        if (typeof csrf_token_name !== 'undefined' && typeof csrf_hash_name !== 'undefined') {
-            $.ajaxSetup({
-                data: function() {
-                    var obj = {};
-                    obj[csrf_token_name] = $('input[name="' + csrf_token_name + '"]').val();
-                    return obj;
-                }
-            });
-        }
+$(document).ready(function() {
+    'use strict';
+    
+    // Verificar se os dados estão disponíveis
+    if (typeof weekly_manage_data === 'undefined') {
+        console.error('weekly_manage_data não está definido!');
+        return;
+    }
     
     var currentApprovalId = null;
     
-    // Load total hours for each approval
+    // Carregar total de horas para cada aprovação
     if (weekly_manage_data.weekly_approvals) {
         weekly_manage_data.weekly_approvals.forEach(function(approval) {
             loadTotalHours(approval.id, approval.staff_id, approval.week_start_date);
         });
     }
 
-    // Initialize tooltips
-    $('[data-toggle="tooltip"]').tooltip();
+    // Inicializar tooltips
+    if (typeof $().tooltip === 'function') {
+        $('[data-toggle="tooltip"]').tooltip();
+    }
     
-    // Approve button click
+    // Botão de aprovar
     $(document).on('click', 'button.approve-btn', function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -46,21 +30,28 @@
         var approvalId = $(this).data('approval-id');
         console.log('Clicou em aprovar, ID:', approvalId);
         
-        TimesheetModals.confirm({
-            title: 'Aprovar Timesheet',
-            message: 'Tem certeza que deseja aprovar este timesheet? As horas serão adicionadas ao quadro de horas do Perfex.',
-            icon: 'fa-check-circle',
-            confirmText: 'Aprovar',
-            cancelText: 'Cancelar',
-            confirmClass: 'timesheet-modal-btn-success'
-        }).then(function(confirmed) {
-            if (confirmed) {
+        if (typeof TimesheetModals !== 'undefined' && TimesheetModals.confirm) {
+            TimesheetModals.confirm({
+                title: 'Aprovar Timesheet',
+                message: 'Tem certeza que deseja aprovar este timesheet? As horas serão adicionadas ao quadro de horas do Perfex.',
+                icon: 'fa-check-circle',
+                confirmText: 'Aprovar',
+                cancelText: 'Cancelar',
+                confirmClass: 'timesheet-modal-btn-success'
+            }).then(function(confirmed) {
+                if (confirmed) {
+                    approveRejectTimesheet(approvalId, 'approved');
+                }
+            });
+        } else {
+            // Fallback para confirm nativo
+            if (confirm('Tem certeza que deseja aprovar este timesheet?')) {
                 approveRejectTimesheet(approvalId, 'approved');
             }
-        });
+        }
     });
     
-    // Reject button click
+    // Botão de rejeitar
     $(document).on('click', 'button.reject-btn', function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -68,23 +59,31 @@
         var approvalId = $(this).data('approval-id');
         console.log('Clicou em rejeitar, ID:', approvalId);
         
-        TimesheetModals.prompt({
-            title: 'Rejeitar Timesheet',
-            message: 'Por favor, informe o motivo da rejeição:',
-            placeholder: 'Digite o motivo da rejeição...',
-            icon: 'fa-times-circle',
-            confirmText: 'Rejeitar',
-            cancelText: 'Cancelar',
-            confirmClass: 'timesheet-modal-btn-danger',
-            required: true
-        }).then(function(reason) {
-            if (reason) {
-                approveRejectTimesheet(approvalId, 'rejected', reason);
+        if (typeof TimesheetModals !== 'undefined' && TimesheetModals.prompt) {
+            TimesheetModals.prompt({
+                title: 'Rejeitar Timesheet',
+                message: 'Por favor, informe o motivo da rejeição:',
+                placeholder: 'Digite o motivo da rejeição...',
+                icon: 'fa-times-circle',
+                confirmText: 'Rejeitar',
+                cancelText: 'Cancelar',
+                confirmClass: 'timesheet-modal-btn-danger',
+                required: true
+            }).then(function(reason) {
+                if (reason) {
+                    approveRejectTimesheet(approvalId, 'rejected', reason);
+                }
+            });
+        } else {
+            // Fallback para prompt nativo
+            var reason = prompt('Por favor, informe o motivo da rejeição:');
+            if (reason && reason.trim()) {
+                approveRejectTimesheet(approvalId, 'rejected', reason.trim());
             }
-        });
+        }
     });
 
-    // Cancel approval button click
+    // Botão de cancelar aprovação
     $(document).on('click', 'button.cancel-approval-btn', function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -92,18 +91,25 @@
         var approvalId = $(this).data('approval-id');
         console.log('Clicou em cancelar aprovação, ID:', approvalId);
         
-        TimesheetModals.confirm({
-            title: 'Cancelar Aprovação',
-            message: 'Tem certeza que deseja cancelar esta aprovação? As horas serão removidas do quadro de horas e o status voltará para rascunho. O funcionário será notificado.',
-            icon: 'fa-exclamation-triangle',
-            confirmText: 'Cancelar Aprovação',
-            cancelText: 'Manter Aprovação',
-            confirmClass: 'timesheet-modal-btn-warning'
-        }).then(function(confirmed) {
-            if (confirmed) {
+        if (typeof TimesheetModals !== 'undefined' && TimesheetModals.confirm) {
+            TimesheetModals.confirm({
+                title: 'Cancelar Aprovação',
+                message: 'Tem certeza que deseja cancelar esta aprovação? As horas serão removidas do quadro de horas e o status voltará para rascunho.',
+                icon: 'fa-exclamation-triangle',
+                confirmText: 'Cancelar Aprovação',
+                cancelText: 'Manter Aprovação',
+                confirmClass: 'timesheet-modal-btn-warning'
+            }).then(function(confirmed) {
+                if (confirmed) {
+                    cancelApproval(approvalId);
+                }
+            });
+        } else {
+            // Fallback para confirm nativo
+            if (confirm('Tem certeza que deseja cancelar esta aprovação?')) {
                 cancelApproval(approvalId);
             }
-        });
+        }
     });
     
     function loadTotalHours(approvalId, staffId, weekStartDate) {
@@ -161,21 +167,32 @@
             success: function(response) {
                 console.log('Resposta do servidor:', response);
                 if (response.success) {
-                    TimesheetModals.alert({
-                        title: 'Sucesso',
-                        message: response.message,
-                        icon: 'fa-check-circle',
-                        type: 'success'
-                    }).then(function() {
-                        location.reload();
-                    });
+                    if (typeof TimesheetModals !== 'undefined' && TimesheetModals.alert) {
+                        TimesheetModals.alert({
+                            title: 'Sucesso',
+                            message: response.message,
+                            icon: 'fa-check-circle',
+                            type: 'success'
+                        }).then(function() {
+                            location.reload();
+                        });
+                    } else {
+                        alert_float('success', response.message);
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1500);
+                    }
                 } else {
-                    TimesheetModals.alert({
-                        title: 'Erro',
-                        message: response.message || 'Erro desconhecido',
-                        icon: 'fa-exclamation-circle',
-                        type: 'error'
-                    });
+                    if (typeof TimesheetModals !== 'undefined' && TimesheetModals.alert) {
+                        TimesheetModals.alert({
+                            title: 'Erro',
+                            message: response.message || 'Erro desconhecido',
+                            icon: 'fa-exclamation-circle',
+                            type: 'error'
+                        });
+                    } else {
+                        alert_float('danger', response.message || 'Erro desconhecido');
+                    }
                     var row = $('tr[data-approval-id="' + approvalId + '"]');
                     row.find('.btn').prop('disabled', false);
                     restoreButtonIcons(row, action);
@@ -183,12 +200,16 @@
             },
             error: function(xhr, status, error) {
                 console.error('Erro AJAX:', error);
-                TimesheetModals.alert({
-                    title: 'Erro',
-                    message: 'Erro de comunicação com o servidor',
-                    icon: 'fa-exclamation-circle',
-                    type: 'error'
-                });
+                if (typeof TimesheetModals !== 'undefined' && TimesheetModals.alert) {
+                    TimesheetModals.alert({
+                        title: 'Erro',
+                        message: 'Erro de comunicação com o servidor',
+                        icon: 'fa-exclamation-circle',
+                        type: 'error'
+                    });
+                } else {
+                    alert_float('danger', 'Erro de comunicação com o servidor');
+                }
                 var row = $('tr[data-approval-id="' + approvalId + '"]');
                 row.find('.btn').prop('disabled', false);
                 restoreButtonIcons(row, action);
@@ -212,21 +233,32 @@
             success: function(response) {
                 console.log('Resposta do servidor:', response);
                 if (response.success) {
-                    TimesheetModals.alert({
-                        title: 'Sucesso',
-                        message: response.message,
-                        icon: 'fa-check-circle',
-                        type: 'success'
-                    }).then(function() {
-                        location.reload();
-                    });
+                    if (typeof TimesheetModals !== 'undefined' && TimesheetModals.alert) {
+                        TimesheetModals.alert({
+                            title: 'Sucesso',
+                            message: response.message,
+                            icon: 'fa-check-circle',
+                            type: 'success'
+                        }).then(function() {
+                            location.reload();
+                        });
+                    } else {
+                        alert_float('success', response.message);
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1500);
+                    }
                 } else {
-                    TimesheetModals.alert({
-                        title: 'Erro',
-                        message: response.message || 'Erro desconhecido',
-                        icon: 'fa-exclamation-circle',
-                        type: 'error'
-                    });
+                    if (typeof TimesheetModals !== 'undefined' && TimesheetModals.alert) {
+                        TimesheetModals.alert({
+                            title: 'Erro',
+                            message: response.message || 'Erro desconhecido',
+                            icon: 'fa-exclamation-circle',
+                            type: 'error'
+                        });
+                    } else {
+                        alert_float('danger', response.message || 'Erro desconhecido');
+                    }
                     var row = $('tr[data-approval-id="' + approvalId + '"]');
                     row.find('.btn').prop('disabled', false);
                     row.find('.cancel-approval-btn i').removeClass().addClass('fa fa-undo');
@@ -234,12 +266,16 @@
             },
             error: function(xhr, status, error) {
                 console.error('Erro AJAX:', error);
-                TimesheetModals.alert({
-                    title: 'Erro',
-                    message: 'Erro de comunicação com o servidor',
-                    icon: 'fa-exclamation-circle',
-                    type: 'error'
-                });
+                if (typeof TimesheetModals !== 'undefined' && TimesheetModals.alert) {
+                    TimesheetModals.alert({
+                        title: 'Erro',
+                        message: 'Erro de comunicação com o servidor',
+                        icon: 'fa-exclamation-circle',
+                        type: 'error'
+                    });
+                } else {
+                    alert_float('danger', 'Erro de comunicação com o servidor');
+                }
                 var row = $('tr[data-approval-id="' + approvalId + '"]');
                 row.find('.btn').prop('disabled', false);
                 row.find('.cancel-approval-btn i').removeClass().addClass('fa fa-undo');
@@ -252,13 +288,4 @@
         row.find('.reject-btn i').removeClass().addClass('fa fa-times');
         row.find('.cancel-approval-btn i').removeClass().addClass('fa fa-undo');
     }
-    
-    } // Fim da função initializeWeeklyManage
-    
-    // Inicializar quando o documento estiver pronto
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeWeeklyManage);
-    } else {
-        initializeWeeklyManage();
-    }
-})();
+});

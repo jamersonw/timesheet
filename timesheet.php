@@ -108,7 +108,7 @@ function timesheet_init_menu_and_permissions()
             'slug'     => 'timesheet_weekly_approvals', 
             'name'     => _l('timesheet_weekly_approvals'),
             'href'     => admin_url('timesheet/manage_weekly'),
-            'icon'     => 'fa fa-calendar',
+            'icon'     => 'fa fa-calendar-check-o',
         ]);
     }
 
@@ -153,6 +153,15 @@ function timesheet_load_admin_assets()
     $CI = &get_instance();
     if (strpos($CI->uri->uri_string(), 'timesheet') !== false) {
         echo '<link rel="stylesheet" href="' . module_dir_url('timesheet', 'assets/css/timesheet.css') . '">';
+        // Adicionar script para gerenciar CSRF token
+        echo '<script>
+                var csrfData = {
+                    "ci_csrf_token": "' . get_instance()->security->get_csrf_hash() . '"
+                };
+                $.ajaxSetup({
+                    data: csrfData
+                });
+            </script>';
     }
 }
 
