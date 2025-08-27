@@ -1,0 +1,37 @@
+Debug da Instalação do Módulo Timesheet
+Testando install.php...
+[2025-08-27 20:28:48] [Timesheet Install] Iniciando processo de instalação do módulo v1.4.4
+[2025-08-27 20:28:48] [Timesheet Install] CodeIgniter instance OK
+[2025-08-27 20:28:48] [Timesheet Install] Verificando tabela timesheet_entries...
+CHECK_TABLE: tbl_timesheet_entries
+[2025-08-27 20:28:48] [Timesheet Install] Criando tabela timesheet_entries...
+EXECUTE_SQL: CREATE TABLE `tbl_timesheet_entries` ( `id` int(11) NOT NULL AUTO_INCREMENT, `staff_...
+[2025-08-27 20:28:48] [Timesheet Install] Tabela timesheet_entries criada com sucesso
+[2025-08-27 20:28:48] [Timesheet Install] Verificando tabela timesheet_approvals...
+CHECK_TABLE: tbl_timesheet_approvals
+[2025-08-27 20:28:48] [Timesheet Install] Criando tabela timesheet_approvals...
+EXECUTE_SQL: CREATE TABLE `tbl_timesheet_approvals` ( `id` int(11) NOT NULL AUTO_INCREMENT, `staf...
+[2025-08-27 20:28:48] [Timesheet Install] Tabela timesheet_approvals criada com sucesso
+[2025-08-27 20:28:48] [Timesheet Install] Configurando opções padrão...
+ADD_OPTION: timesheet_default_hours_per_day = 8
+[2025-08-27 20:28:48] [Timesheet Install] Opção timesheet_default_hours_per_day criada
+ADD_OPTION: timesheet_allow_future_entries = 0
+[2025-08-27 20:28:48] [Timesheet Install] Opção timesheet_allow_future_entries criada
+ADD_OPTION: timesheet_require_task_selection = 1
+[2025-08-27 20:28:48] [Timesheet Install] Opção timesheet_require_task_selection criada
+ADD_OPTION: timesheet_auto_submit_weeks = 0
+[2025-08-27 20:28:48] [Timesheet Install] Opção timesheet_auto_submit_weeks criada
+[2025-08-27 20:28:48] [Timesheet Install] Configurando permissões do módulo...
+ADD_PERMISSIONS: timesheet - 5 permissões
+- Visualizar (view)
+- Criar (create)
+- Editar (edit)
+- Deletar (delete)
+- Aprovar Timesheet (approve)
+[2025-08-27 20:28:48] [Timesheet Install] Permissões do módulo adicionadas com sucesso
+[2025-08-27 20:28:48] [Timesheet Install] Configurando versão do módulo...
+ADD_OPTION: timesheet_module_version = 1.4.4
+[2025-08-27 20:28:48] [Timesheet Install] Versão 1.4.4 definida
+[2025-08-27 20:28:48] [Timesheet Install] Instalação concluída com sucesso!
+✅ Instalação testada com sucesso!
+Este é um teste simulado. Use este script para identificar problemas antes de ativar o módulo no Perfex.
