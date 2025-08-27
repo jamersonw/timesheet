@@ -1,4 +1,3 @@
-
 <?php
 /**
  * Ensures that the module init file can't be accessed directly, only within the application.
@@ -71,20 +70,24 @@ function timesheet_init_menu_and_permissions()
     $CI = &get_instance();
 
     // 1. REGISTRO DOS ITENS DE MENU
+    // Atualizado para refletir a Opção B - Menus Separados
+
+    // Menu para Aprovações Rápidas (tela atual melhorada)
     if (has_permission('timesheet', '', 'view')) {
-        $CI->app_menu->add_sidebar_menu_item('timesheet', [
-            'name'     => _l('timesheet_my_timesheet'),
-            'href'     => admin_url('timesheet'),
-            'icon'     => 'fa fa-clock-o',
+        $CI->app_menu->add_sidebar_menu_item('timesheet_quick_approvals', [
+            'name'     => _l('timesheet_quick_approvals'),
+            'href'     => admin_url('timesheet/manage'),
+            'icon'     => 'fa fa-flash',
             'position' => 30,
         ]);
     }
 
+    // Menu para Aprovações Semanais (nova tela com navegação semanal)
     if (is_admin() || timesheet_can_manage_any_project(get_staff_user_id())) {
-        $CI->app_menu->add_sidebar_menu_item('timesheet_manage', [
-            'name'     => _l('timesheet_approvals'),
-            'href'     => admin_url('timesheet/manage'),
-            'icon'     => 'fa fa-check-circle',
+        $CI->app_menu->add_sidebar_menu_item('timesheet_weekly_approvals', [
+            'name'     => _l('timesheet_weekly_approvals'),
+            'href'     => admin_url('timesheet/manage_weekly'),
+            'icon'     => 'fa fa-calendar',
             'position' => 31,
         ]);
     }

@@ -2,50 +2,46 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
-## [1.4.0] - 2025-01-26
+## [1.5.0] - 2025-01-25
+### Added
+- **NOVA INTERFACE**: Sistema de aprovações com menus separados
+- **Aprovações Rápidas**: Lista tradicional de pendências
+- **Aprovações Semanais**: Interface com navegação por semana
+- **Cancelar Aprovação**: Reverter aprovações já processadas
+- **Notificações**: Sistema integrado do Perfex para avisos
+- Visualização de todos os status: Pendente, Aprovado, Rejeitado
 
-### 🎯 **SIMPLIFICAÇÃO MAJOR - MODO UNIDIRECIONAL**
+### Enhanced
+- Interface mais intuitiva para gerentes
+- Navegação semanal com filtros visuais
+- Histórico completo das decisões tomadas
+- Remoção automática de timers ao cancelar aprovação
+- Sincronização automática entre as telas
 
-### ✅ **MUDANÇAS ARQUITETURAIS**
-- **Fluxo simplificado**: Apenas Timesheet → Quadro de Horas (aprovação)
-- **Quadro read-only**: Quadro de horas agora é apenas para visualização
-- **Hooks removidos**: Eliminados todos os hooks de sincronização bidirecional
-- **Performance melhorada**: -70% de complexidade, sem operações pesadas
+### Technical
+- Novos métodos: `manage_weekly()`, `cancel_approval()`
+- Model: `get_weekly_approvals()`, `cancel_approval()`, `remove_approved_timers()`
+- View: `manage_weekly.php` para interface semanal
+- JavaScript: `manage_weekly.js` com funcionalidades específicas
 
-### 🗑️ **FUNCIONALIDADES REMOVIDAS**
-- Hook `task_timer_deleted` para sincronização reversa
-- Hook `task_timer_stopped` para recálculos automáticos  
-- Hook `task_timer_updated` para atualizações bidirecionais
-- Função `recalculate_task_hours()` - não mais necessária
-- Função `sync_from_perfex_timer()` - sincronização reversa removida
-- Função `recalculate_and_update_entry()` - substituída por fluxo simples
-- Processamento de recálculos pendentes no controller
+## [1.4.0] - 2025-01-25
+### Changed
+- **ARQUITETURA**: Módulo agora opera em modo **UNIDIRECIONAL**
+- Timesheet → Quadro de horas (apenas nesta direção)
+- Quadro de horas é apenas para visualização
+- Removido processamento de recálculos pendentes
+- Removidas funções de sincronização bidirecional
 
-### ✅ **FUNCIONALIDADES MANTIDAS**
-- **Campo perfex_timer_id**: Mantido para referência interna
-- **Aprovação → Quadro**: Criação de timers na aprovação funcionando
-- **Atualização inteligente**: Se timesheet for alterado após aprovação, timer é atualizado/recriado
-- **Debug simplificado**: Novo comando `test_unidirectional`
+### Fixed
+- Campo `perfex_timer_id` criado automaticamente se não existir
+- Validação mais robusta para submissão de timesheets
+- Logs mais detalhados para debug e monitoramento
 
-### 🔧 **BENEFÍCIOS DA MUDANÇA**
-- **Código mais limpo**: Eliminação de complexidade desnecessária
-- **Menos bugs**: Sem conflitos de sincronização bidirecional
-- **Performance superior**: Sem hooks pesados executando a cada operação
-- **Manutenção fácil**: Fluxo unidirecional claro e previsível
-- **Estabilidade maior**: Eliminação do problema de "tela branca" na exclusão
-
-### 📋 **ARQUITETURA FINAL v1.4.0**
-```
-TIMESHEET (Editável) → APROVAÇÃO → QUADRO DE HORAS (Read-Only)
-                                        ↓
-                                   APENAS VISUALIZAÇÃO
-```
-
-### ⚠️ **NOTAS DE MIGRAÇÃO**
-- Módulo continuará funcionando normalmente para usuários existentes
-- Timers criados anteriormente mantêm suas referências
-- Alterações no quadro de horas não refletem mais no timesheet
-- Para editar horas, use apenas o timesheet e reenvie para aprovação
+### Removed
+- Sincronização Quadro → Timesheet (modo bidirecional)
+- Processamento automático de alterações no quadro
+- Endpoint de sincronização AJAX
+</original>
 
 ## [1.3.18] - 2025-01-26
 

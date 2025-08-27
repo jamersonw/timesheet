@@ -290,6 +290,54 @@ class Timesheet extends AdminController
         }
     }
 
+    /**
+     * Manage timesheets weekly (new interface)
+     */
+    public function manage_weekly()
+    {
+        if (!has_permission('timesheet', '', 'view')) {
+            access_denied('timesheet');
+        }
+        if (!is_admin() && !timesheet_can_manage_any_project(get_staff_user_id())) {
+            access_denied('timesheet');
+        }
+
+        $week_start = $this->input->get('week') ?: timesheet_get_week_start();
+        $data['week_start'] = $week_start;
+        $data['week_end'] = timesheet_get_week_end($week_start);
+        $data['week_dates'] = timesheet_get_week_dates($week_start);
+        $data['weekly_approvals'] = $this->timesheet_model->get_weekly_approvals($week_start);
+        $data['title'] = _l('timesheet_weekly_approvals');
+
+        $this->load->view('timesheet/manage_weekly', $data);
+    }
+
+    /**
+     * Cancel approval and revert to draft
+     */
+    public function cancel_approval()
+    {
+        if (!has_permission('timesheet', '', 'edit')) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+
+        $approval_id = $this->input->post('approval_id');
+        
+        if (empty($approval_id)) {
+            echo json_encode(['success' => false, 'message' => 'Invalid approval ID']);
+            return;
+        }
+
+        $result = $this->timesheet_model->cancel_approval($approval_id, get_staff_user_id());
+
+        if ($result) {
+            echo json_encode(['success' => true, 'message' => _l('timesheet_approval_cancelled_successfully')]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Error cancelling approval']);
+        }
+    }
+
     public function view_approval($approval_id)
     {
         if (!has_permission('timesheet', '', 'view')) {

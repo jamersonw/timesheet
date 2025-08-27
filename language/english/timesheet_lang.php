@@ -61,6 +61,13 @@ $lang['timesheet_permission_edit'] = 'Edit Timesheet';
 $lang['timesheet_permission_delete'] = 'Delete Timesheet';
 $lang['timesheet_permission_approve'] = 'Approve Timesheet';
 
+// Weekly approvals
+$lang['timesheet_weekly_approvals'] = 'Weekly Approvals';
+$lang['timesheet_quick_approvals'] = 'Quick Approvals';
+$lang['timesheet_no_approvals_this_week'] = 'No timesheets submitted for this week.';
+$lang['timesheet_cancel_approval'] = 'Cancel Approval';
+$lang['timesheet_approval_cancelled_successfully'] = 'Approval cancelled successfully. Staff member has been notified.';
+
 // User-friendly messages
 $lang['timesheet_pending_message'] = 'Your hours have been submitted and are awaiting manager approval.';
 $lang['timesheet_approved_message'] = 'Your hours have been approved by the manager.';
