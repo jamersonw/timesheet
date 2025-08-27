@@ -8,24 +8,17 @@ defined('BASEPATH') or exit('No direct script access allowed');
 if (!function_exists('timesheet_get_week_start')) {
     function timesheet_get_week_start($date = null)
     {
-        try {
-            if (!$date) {
-                $date = date('Y-m-d');
-            }
-
-            $timestamp = strtotime($date);
-            if ($timestamp === false) {
-                throw new Exception("Data inválida: " . $date);
-            }
-
-            $dayOfWeek = date('w', $timestamp);
-            $daysToSubtract = ($dayOfWeek == 0) ? 6 : $dayOfWeek - 1;
-
-            return date('Y-m-d', strtotime("-{$daysToSubtract} days", $timestamp));
-        } catch (Exception $e) {
-            log_message('error', 'Error in timesheet_get_week_start: ' . $e->getMessage());
-            return date('Y-m-d');
+        if ($date === null) {
+            $date = date('Y-m-d');
         }
+        
+        $timestamp = strtotime($date);
+        $dayOfWeek = date('N', $timestamp); // 1 = Monday, 7 = Sunday
+        
+        // Calculate days to subtract to get to Monday
+        $daysToSubtract = $dayOfWeek - 1;
+        
+        return date('Y-m-d', strtotime("-{$daysToSubtract} days", $timestamp));
     }
 }
 
@@ -74,14 +67,14 @@ if (!function_exists('timesheet_get_staff_projects')) {
     function timesheet_get_staff_projects($staff_id)
     {
         $CI = &get_instance();
-
+        
         $CI->db->select('p.id, p.name');
         $CI->db->from(db_prefix() . 'projects p');
         $CI->db->join(db_prefix() . 'project_members pm', 'pm.project_id = p.id');
         $CI->db->where('pm.staff_id', $staff_id);
         $CI->db->where('p.status', 2); // Active projects only
         $CI->db->order_by('p.name', 'ASC');
-
+        
         return $CI->db->get()->result();
     }
 }
@@ -93,7 +86,7 @@ if (!function_exists('timesheet_get_staff_project_tasks')) {
     function timesheet_get_staff_project_tasks($staff_id, $project_id)
     {
         $CI = &get_instance();
-
+        
         $CI->db->select('t.id, t.name');
         $CI->db->from(db_prefix() . 'tasks t');
         $CI->db->join(db_prefix() . 'task_assigned ta', 'ta.taskid = t.id');
@@ -102,7 +95,7 @@ if (!function_exists('timesheet_get_staff_project_tasks')) {
         $CI->db->where('t.rel_type', 'project');
         $CI->db->where('t.status !=', 5); // Exclude completed tasks (status = 5)
         $CI->db->order_by('t.name', 'ASC');
-
+        
         return $CI->db->get()->result();
     }
 }
@@ -114,18 +107,18 @@ if (!function_exists('timesheet_can_manage_project')) {
     function timesheet_can_manage_project($staff_id, $project_id)
     {
         $CI = &get_instance();
-
+        
         // Check if admin
         if (is_admin($staff_id)) {
             return true;
         }
-
+        
         // Check if project creator
         $CI->db->select('addedfrom');
         $CI->db->from(db_prefix() . 'projects');
         $CI->db->where('id', $project_id);
         $project = $CI->db->get()->row();
-
+        
         return $project && $project->addedfrom == $staff_id;
     }
 }
@@ -155,7 +148,7 @@ if (!function_exists('timesheet_status_badge')) {
             'approved' => '<span class="label label-success">Aprovado</span>',
             'rejected' => '<span class="label label-danger">Rejeitado</span>',
         ];
-
+        
         return isset($badges[$status]) ? $badges[$status] : '<span class="label label-default">' . $status . '</span>';
     }
 }
@@ -172,7 +165,8 @@ if (!function_exists('timesheet_status_badge')) {
             'approved' => '<span class="label label-success">' . _l('timesheet_status_approved') . '</span>',
             'rejected' => '<span class="label label-danger">' . _l('timesheet_status_rejected') . '</span>',
         ];
-
+        
         return isset($badges[$status]) ? $badges[$status] : $status;
     }
 }
+

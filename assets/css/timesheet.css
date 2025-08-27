@@ -111,17 +111,17 @@
     .timesheet-table {
         font-size: 12px;
     }
-
+    
     .hours-input {
         width: 60px;
         font-size: 11px;
     }
-
+    
     .timesheet-table th,
     .timesheet-table td {
         padding: 4px;
     }
-
+    
     .week-navigation .btn-group {
         margin-left: 0;
         margin-top: 10px;
@@ -136,7 +136,7 @@
     .week-navigation .btn-group {
         display: none !important;
     }
-
+    
     .hours-input {
         border: none;
         background: transparent;
@@ -224,33 +224,3 @@
     border-top: 2px solid #dee2e6;
 }
 
-/* Estilos gerais para o módulo Timesheet */
-.timesheet-container {
-    padding: 20px;
-}
-
-.hours-input {
-    width: 80px !important;
-    text-align: center;
-}
-
-.total-hours {
-    font-weight: bold;
-}
-
-/* Melhorar espaçamento do menu lateral */
-.sidebar-menu .menu-item-timesheet .menu-text {
-    margin-left: 8px;
-}
-
-.sidebar-menu .timesheet-submenu .menu-text {
-    margin-left: 6px;
-}
-
-/* Ícones do timesheet */
-.fa-user-clock,
-.fa-check-square, 
-.fa-calendar-check-o,
-.fa-clock-o {
-    margin-right: 8px;
-}

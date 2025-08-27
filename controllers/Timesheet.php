@@ -8,13 +8,7 @@ class Timesheet extends AdminController
     {
         parent::__construct();
         $this->load->model('timesheet/timesheet_model');
-        
-        // Verificar se o helper existe antes de carregar
-        if (file_exists(APPPATH . 'modules/timesheet/helpers/timesheet_helper.php')) {
-            $this->load->helper('timesheet/timesheet');
-        } else {
-            log_message('error', 'Timesheet helper file not found');
-        }
+        $this->load->helper('timesheet/timesheet');
     }
 
     public function index()
@@ -165,7 +159,6 @@ class Timesheet extends AdminController
         }
 
         $data['pending_approvals'] = $this->timesheet_model->get_pending_approvals(get_staff_user_id());
-        $data['all_approvals'] = $this->timesheet_model->get_all_approvals(get_staff_user_id());
         $data['title'] = _l('timesheet_manage');
 
         $this->load->view('timesheet/manage', $data);
@@ -294,82 +287,6 @@ class Timesheet extends AdminController
 
             default:
                 echo json_encode(['error' => 'Ação não reconhecida. Use: list_timers, test_unidirectional, fix_status, check_entries']);
-        }
-    }
-
-    /**
-     * Manage timesheets weekly (new interface)
-     */
-    public function manage_weekly()
-    {
-        log_activity('[Timesheet DEBUG] manage_weekly() iniciado - IP: ' . $this->input->ip_address());
-        
-        if (!has_permission('timesheet', '', 'view')) {
-            log_activity('[Timesheet DEBUG] Acesso negado - sem permissão timesheet view');
-            access_denied('timesheet');
-        }
-        if (!is_admin() && !timesheet_can_manage_any_project(get_staff_user_id())) {
-            log_activity('[Timesheet DEBUG] Acesso negado - não é admin e não pode gerenciar projetos');
-            access_denied('timesheet');
-        }
-
-        try {
-            log_activity('[Timesheet DEBUG] Carregando helper timesheet...');
-            // Carregar helper necessário
-            $this->load->helper('timesheet/timesheet');
-            log_activity('[Timesheet DEBUG] Helper carregado com sucesso');
-            
-            $week_start = $this->input->get('week') ?: timesheet_get_week_start();
-            log_activity('[Timesheet DEBUG] Week start definido: ' . $week_start);
-            
-            $data['week_start'] = $week_start;
-            $data['week_end'] = timesheet_get_week_end($week_start);
-            log_activity('[Timesheet DEBUG] Week end calculado: ' . $data['week_end']);
-            
-            $data['week_dates'] = timesheet_get_week_dates($week_start);
-            log_activity('[Timesheet DEBUG] Week dates calculadas: ' . count($data['week_dates']) . ' datas');
-            
-            log_activity('[Timesheet DEBUG] Iniciando busca de aprovações semanais...');
-            $data['weekly_approvals'] = $this->timesheet_model->get_weekly_approvals($week_start);
-            log_activity('[Timesheet DEBUG] Aprovações encontradas: ' . count($data['weekly_approvals']));
-            
-            $data['title'] = _l('timesheet_weekly_approvals');
-            log_activity('[Timesheet DEBUG] Dados preparados, carregando view...');
-
-            log_activity('[Timesheet] Aprovações semanais carregadas para semana: ' . $week_start . ' (Total: ' . count($data['weekly_approvals']) . ')');
-            $this->load->view('timesheet/manage_weekly', $data);
-            log_activity('[Timesheet DEBUG] View carregada com sucesso');
-        } catch (Exception $e) {
-            log_message('error', 'Timesheet manage_weekly error: ' . $e->getMessage());
-            log_activity('[Timesheet ERROR] Erro ao carregar aprovações semanais: ' . $e->getMessage());
-            log_activity('[Timesheet ERROR] Stack trace: ' . $e->getTraceAsString());
-            show_error('Erro ao carregar aprovações semanais. Verifique os logs para mais detalhes.', 500, 'Erro Interno');
-        }
-    }
-
-    /**
-     * Cancel approval and revert to draft
-     */
-    public function cancel_approval()
-    {
-        if (!has_permission('timesheet', '', 'edit')) {
-            echo json_encode(['success' => false, 'message' => 'Access denied']);
-            return;
-        }
-
-        $approval_id = $this->input->post('approval_id');
-        
-        if (empty($approval_id)) {
-            echo json_encode(['success' => false, 'message' => 'Invalid approval ID']);
-            return;
-        }
-
-        $result = $this->timesheet_model->cancel_approval($approval_id, get_staff_user_id());
-
-        if ($result) {
-            echo json_encode(['success' => true, 'message' => _l('timesheet_approval_cancelled_successfully')]);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Error cancelling approval']);
         }
     }
 

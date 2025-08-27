@@ -1,3 +1,4 @@
+
 <?php
 /**
  * Ensures that the module init file can't be accessed directly, only within the application.
@@ -7,13 +8,13 @@ defined('BASEPATH') or exit('No direct script access allowed');
 /*
 Module Name: Timesheet
 Description: Sistema de apontamento de horas com aprovação para profissionais e gerentes de projeto - Versão Simplificada
-Version: 1.5.1
+Version: 1.4.0
 Requires at least: 2.3.*
 Author: Perfex CRM Module Developer
 */
 
 define('TIMESHEET_MODULE_NAME', 'timesheet');
-define('TIMESHEET_MODULE_VERSION', '1.5.1');
+define('TIMESHEET_MODULE_VERSION', '1.4.0');
 
 /**
  * Register activation hook
@@ -70,42 +71,21 @@ function timesheet_init_menu_and_permissions()
     $CI = &get_instance();
 
     // 1. REGISTRO DOS ITENS DE MENU
-    // Atualizado para refletir a Opção B - Menus Separados
-
-    // Menu principal Timesheet
     if (has_permission('timesheet', '', 'view')) {
-        $CI->app_menu->add_sidebar_menu_item('timesheet_main', [
-            'name'     => _l('timesheet'),
+        $CI->app_menu->add_sidebar_menu_item('timesheet', [
+            'name'     => _l('timesheet_my_timesheet'),
             'href'     => admin_url('timesheet'),
             'icon'     => 'fa fa-clock-o',
             'position' => 30,
         ]);
     }
 
-    // Submenu para Meu Timesheet
-    if (has_permission('timesheet', '', 'view')) {
-        $CI->app_menu->add_sidebar_children_item('timesheet_main', [
-            'slug'     => 'timesheet_my_timesheet',
-            'name'     => _l('timesheet_my_timesheet'),
-            'href'     => admin_url('timesheet'),
-        ]);
-    }
-
-    // Submenu para Aprovações Rápidas
-    if (has_permission('timesheet', '', 'view')) {
-        $CI->app_menu->add_sidebar_children_item('timesheet_main', [
-            'slug'     => 'timesheet_quick_approvals',
-            'name'     => _l('timesheet_quick_approvals'),
-            'href'     => admin_url('timesheet/manage'),
-        ]);
-    }
-
-    // Submenu para Aprovações Semanais
     if (is_admin() || timesheet_can_manage_any_project(get_staff_user_id())) {
-        $CI->app_menu->add_sidebar_children_item('timesheet_main', [
-            'slug'     => 'timesheet_weekly_approvals', 
-            'name'     => _l('timesheet_weekly_approvals'),
-            'href'     => admin_url('timesheet/manage_weekly'),
+        $CI->app_menu->add_sidebar_menu_item('timesheet_manage', [
+            'name'     => _l('timesheet_approvals'),
+            'href'     => admin_url('timesheet/manage'),
+            'icon'     => 'fa fa-check-circle',
+            'position' => 31,
         ]);
     }
 
@@ -119,7 +99,7 @@ function timesheet_init_menu_and_permissions()
     ];
     register_staff_capabilities('timesheet', $capabilities, _l('timesheet'));
 
-    log_activity('[Timesheet v1.5.1] Módulo inicializado - MODO UNIDIRECIONAL (sem hooks bidirecionais)');
+    log_activity('[Timesheet v1.4.0] Módulo inicializado - MODO UNIDIRECIONAL (sem hooks bidirecionais)');
 }
 
 /**
@@ -150,15 +130,6 @@ function timesheet_load_admin_assets()
     $CI = &get_instance();
     if (strpos($CI->uri->uri_string(), 'timesheet') !== false) {
         echo '<link rel="stylesheet" href="' . module_dir_url('timesheet', 'assets/css/timesheet.css') . '">';
-        // Adicionar script para gerenciar CSRF token
-        echo '<script>
-                var csrfData = {
-                    "ci_csrf_token": "' . get_instance()->security->get_csrf_hash() . '"
-                };
-                $.ajaxSetup({
-                    data: csrfData
-                });
-            </script>';
     }
 }
 
