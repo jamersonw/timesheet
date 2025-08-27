@@ -22,8 +22,29 @@ register_activation_hook(TIMESHEET_MODULE_NAME, 'timesheet_activation_hook');
 
 function timesheet_activation_hook()
 {
-    $CI = &get_instance();
-    require_once(__DIR__ . '/install.php');
+    try {
+        log_activity('[Timesheet Activation] Iniciando hook de ativação do módulo');
+        
+        $CI = &get_instance();
+        if (!$CI) {
+            log_activity('[Timesheet Activation ERROR] Falha ao obter instância do CodeIgniter');
+            throw new Exception('CodeIgniter instance not available');
+        }
+        
+        log_activity('[Timesheet Activation] CodeIgniter instance obtida com sucesso');
+        log_activity('[Timesheet Activation] Executando install.php...');
+        
+        require_once(__DIR__ . '/install.php');
+        
+        log_activity('[Timesheet Activation] Hook de ativação concluído com sucesso');
+        
+    } catch (Exception $e) {
+        log_activity('[Timesheet Activation FATAL ERROR] ' . $e->getMessage());
+        log_activity('[Timesheet Activation FATAL ERROR] File: ' . $e->getFile() . ' Line: ' . $e->getLine());
+        
+        // Re-throw para que o Perfex possa exibir o erro
+        throw $e;
+    }
 }
 
 /**
