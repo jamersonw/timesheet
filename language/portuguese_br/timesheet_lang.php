@@ -59,4 +59,14 @@ $lang['timesheet_thursday'] = 'Quinta';
 $lang['timesheet_friday'] = 'Sexta';
 $lang['timesheet_saturday'] = 'Sábado';
 $lang['timesheet_sunday'] = 'Domingo';
+
+$lang['timesheet_weekly_total'] = 'Total da Semana';
+$lang['timesheet_week_total_hours'] = 'Total de Horas da Semana';
+$lang['timesheet_approval_request'] = 'Solicitação de Aprovação';
+$lang['timesheet_approval_pending'] = 'Aprovação Pendente';
+$lang['timesheet_submission_cancelled'] = 'Submissão cancelada com sucesso';
+$lang['timesheet_cannot_cancel_submission'] = 'Não é possível cancelar a submissão';
+$lang['timesheet_approved_successfully'] = 'Timesheet aprovado com sucesso';
+$lang['timesheet_rejected_successfully'] = 'Timesheet rejeitado com sucesso';
+$lang['timesheet_weekly_approvals'] = 'Aprovação Semanal';
 ?>

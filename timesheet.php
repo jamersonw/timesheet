@@ -81,18 +81,18 @@ function timesheet_init_menu_and_permissions()
 
     if (is_admin() || timesheet_can_manage_any_project(get_staff_user_id())) {
         $CI->app_menu->add_sidebar_menu_item('timesheet_manage', [
-            'name'       => _l('timesheet_manage'),
-            'href'       => admin_url('timesheet/manage'),
-            'icon'       => 'fa fa-tasks',
-            'position'   => 2,
-        ],
-            [
-                'name'       => _l('timesheet_weekly_approvals'),
-                'href'       => admin_url('timesheet/manage_weekly'),
-                'icon'       => 'fa fa-calendar-check-o',
-                'position'   => 3,
-            ],
-        );
+            'name'     => _l('timesheet_manage'),
+            'href'     => admin_url('timesheet/manage'),
+            'icon'     => 'fa fa-tasks',
+            'position' => 31,
+        ]);
+        
+        $CI->app_menu->add_sidebar_menu_item('timesheet_weekly_manage', [
+            'name'     => _l('timesheet_weekly_approvals'),
+            'href'     => admin_url('timesheet/manage_weekly'),
+            'icon'     => 'fa fa-calendar-check-o',
+            'position' => 32,
+        ]);
     }
 
     // 2. REGISTRO DAS PERMISSÕES

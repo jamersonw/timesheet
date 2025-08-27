@@ -66,3 +66,13 @@ $lang['timesheet_pending_message'] = 'Your hours have been submitted and are awa
 $lang['timesheet_approved_message'] = 'Your hours have been approved by the manager.';
 $lang['timesheet_rejected_message'] = 'Your hours have been rejected. Please contact your manager for more details.';
 
+// Weekly Timesheet Specific Translations
+$lang['timesheet_weekly_total'] = 'Weekly Total';
+$lang['timesheet_week_total_hours'] = 'Week Total Hours';
+$lang['timesheet_approval_request'] = 'Approval Request';
+$lang['timesheet_approval_pending'] = 'Approval Pending';
+$lang['timesheet_submission_cancelled'] = 'Submission cancelled successfully';
+$lang['timesheet_cannot_cancel_submission'] = 'Cannot cancel submission';
+$lang['timesheet_approved_successfully'] = 'Timesheet approved successfully';
+$lang['timesheet_rejected_successfully'] = 'Timesheet rejected successfully';
+$lang['timesheet_weekly_approvals'] = 'Weekly Approvals';

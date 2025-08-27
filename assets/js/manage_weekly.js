@@ -64,26 +64,39 @@ $(document).ready(function() {
     });
     
     // Cancel approval button click
-    $(document).on('click', 'button.cancel-approval-btn, a.cancel-approval-btn', function(e) {
+    $(document).on('click', '.cancel-approval-btn', function(e) {
         e.preventDefault();
         e.stopPropagation();
         
         var approvalId = $(this).data('approval-id');
         console.log('Clicou em cancelar aprovação, ID:', approvalId);
         
-        TimesheetModals.confirm({
-            title: 'Cancelar Aprovação',
-            message: 'Tem certeza que deseja cancelar esta aprovação? O timesheet voltará ao status de rascunho e os timers do quadro de horas serão removidos.',
-            icon: 'fa-exclamation-triangle',
-            confirmText: 'Sim, Cancelar',
-            cancelText: 'Não',
-            confirmClass: 'timesheet-modal-btn-warning'
-        }).then(function(confirmed) {
-            console.log('Resultado da confirmação de cancelamento:', confirmed);
-            if (confirmed) {
+        if (!approvalId) {
+            console.error('Approval ID não encontrado no botão');
+            return;
+        }
+        
+        // Usar confirm simples se TimesheetModals não estiver disponível
+        if (typeof TimesheetModals !== 'undefined') {
+            TimesheetModals.confirm({
+                title: 'Cancelar Aprovação',
+                message: 'Tem certeza que deseja cancelar esta aprovação? O timesheet voltará ao status de rascunho e os timers do quadro de horas serão removidos.',
+                icon: 'fa-exclamation-triangle',
+                confirmText: 'Sim, Cancelar',
+                cancelText: 'Não',
+                confirmClass: 'timesheet-modal-btn-warning'
+            }).then(function(confirmed) {
+                console.log('Resultado da confirmação de cancelamento:', confirmed);
+                if (confirmed) {
+                    cancelApproval(approvalId);
+                }
+            });
+        } else {
+            // Fallback para confirm nativo
+            if (confirm('Tem certeza que deseja cancelar esta aprovação? O timesheet voltará ao status de rascunho e os timers do quadro de horas serão removidos.')) {
                 cancelApproval(approvalId);
             }
-        });
+        }
     });
     
     function loadTotalHours(approvalId, staffId, weekStartDate) {
