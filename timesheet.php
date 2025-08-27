@@ -82,6 +82,16 @@ function timesheet_init_menu_and_permissions()
         ]);
     }
 
+    // Submenu para Meu Timesheet
+    if (has_permission('timesheet', '', 'view')) {
+        $CI->app_menu->add_sidebar_children_item('timesheet_main', [
+            'slug'     => 'timesheet_my_timesheet',
+            'name'     => _l('timesheet_my_timesheet'),
+            'href'     => admin_url('timesheet'),
+            'icon'     => 'fa fa-user-clock',
+        ]);
+    }
+
     // Submenu para Aprovações Rápidas
     if (has_permission('timesheet', '', 'view')) {
         $CI->app_menu->add_sidebar_children_item('timesheet_main', [

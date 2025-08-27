@@ -43,11 +43,11 @@
                                             <table class="table table-striped table-bordered">
                                                 <thead>
                                                     <tr>
-                                                        <th><?php echo _l('staff'); ?></th>
-                                                        <th><?php echo _l('timesheet_week_of'); ?></th>
-                                                        <th><?php echo _l('timesheet_total'); ?> <?php echo _l('timesheet_hours'); ?></th>
-                                                        <th><?php echo _l('submitted_at'); ?></th>
-                                                        <th class="text-center"><?php echo _l('options'); ?></th>
+                                                        <th>Funcionário</th>
+                                                        <th>Semana</th>
+                                                        <th>Total de Horas</th>
+                                                        <th>Enviado em</th>
+                                                        <th class="text-center">Ações</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -104,11 +104,11 @@
                                         <table class="table table-striped table-bordered">
                                             <thead>
                                                 <tr>
-                                                    <th><?php echo _l('staff'); ?></th>
-                                                    <th><?php echo _l('timesheet_week_of'); ?></th>
-                                                    <th><?php echo _l('timesheet_total'); ?> <?php echo _l('timesheet_hours'); ?></th>
-                                                    <th><?php echo _l('submitted_at'); ?></th>
-                                                    <th class="text-center"><?php echo _l('options'); ?></th>
+                                                    <th>Funcionário</th>
+                                                    <th>Semana</th>
+                                                    <th>Total de Horas</th>
+                                                    <th>Enviado em</th>
+                                                    <th class="text-center">Ações</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
