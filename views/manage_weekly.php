@@ -1,6 +1,9 @@
 
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
-<?php init_head(); ?>
+<?php 
+log_activity('[Timesheet DEBUG] manage_weekly.php view iniciada - Total de aprovações: ' . count($weekly_approvals));
+init_head(); 
+?>
 <link rel="stylesheet" href="<?php echo module_dir_url('timesheet', 'assets/css/timesheet_modals.css'); ?>">
 <div id="wrapper">
     <div class="content">
