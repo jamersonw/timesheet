@@ -2,6 +2,43 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.4.1] - 2025-01-27
+
+### 🚀 **NOVA FUNCIONALIDADE - APROVAÇÃO SEMANAL**
+
+### ✅ **FUNCIONALIDADES ADICIONADAS**
+- **Tela de Aprovação Semanal**: Nova interface `manage_weekly.php` para aprovações por semana
+- **Navegação semanal**: Seletor de semana com navegação anterior/próxima
+- **Visualização agrupada**: Todas as aprovações pendentes da semana selecionada
+- **Menu duplo**: Mantidas as duas telas de aprovação (Quick Approvals + Weekly Approvals)
+- **Controller expandido**: Métodos `manage_weekly()` e `get_week_entries_grouped()`
+
+### 🔧 **IMPLEMENTAÇÕES TÉCNICAS**
+- **Método get_week_entries_grouped()**: Agrupa entradas por funcionário da semana selecionada
+- **View manage_weekly.php**: Interface completa com tabelas e controles de aprovação
+- **JavaScript manage_weekly.js**: Interatividade para navegação e aprovações
+- **Roteamento**: Nova rota `/timesheet/manage_weekly` configurada
+
+### 📋 **FUNCIONALIDADES MANTIDAS**
+- **Aprovação individual**: Tela original `manage.php` funcionando normalmente
+- **Mesmo sistema**: Ambas as telas usam a mesma lógica de aprovação/rejeição
+- **Compatibilidade total**: Sem alterações nas tabelas ou estrutura existente
+- **Fluxo unidirecional**: Mantido o modo unidirecional (Timesheet → Quadro de Horas)
+
+### 🎯 **BENEFÍCIOS DA NOVA TELA**
+- **Visão semanal**: Gerentes podem ver todas as aprovações de uma semana específica
+- **Eficiência melhorada**: Aprovação em lote por período
+- **Flexibilidade**: Duas opções de aprovação conforme necessidade do gestor
+- **Interface consistente**: Segue o mesmo padrão da tela existente
+
+### 📋 **ARQUITETURA v1.4.1**
+```
+TIMESHEET → APROVAÇÃO (Quick/Weekly) → QUADRO DE HORAS
+                ↓
+    - Quick Approvals: Individual por entrada
+    - Weekly Approvals: Agrupado por semana
+```
+
 ## [1.4.0] - 2025-01-26
 
 ### 🎯 **SIMPLIFICAÇÃO MAJOR - MODO UNIDIRECIONAL**
