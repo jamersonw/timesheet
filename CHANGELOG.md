@@ -2,6 +2,34 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.4.3] - 2025-01-27
+
+### 🐛 **CORREÇÃO CRÍTICA - CAMPOS DESABILITADOS APÓS CANCELAMENTO**
+
+### ✅ **PROBLEMA RESOLVIDO**
+- **Campos editáveis após cancelamento**: Corrigida lógica `can_edit` para incluir status `'draft'`
+- **Cancelamento aprimorado**: Registro removido completamente da tabela `timesheet_approvals`
+- **Status limpo**: Semana volta ao estado original (como se nunca tivesse sido enviada)
+
+### 🔧 **CORREÇÕES TÉCNICAS**
+- **Lógica can_edit**: Agora permite edição para status `['rejected', 'draft']`
+- **Método cancel_approval**: Remove registro ao invés de alterar status
+- **Validação correta**: Sistema não encontra approval_status após cancelamento
+- **Submissão liberada**: Botão "Enviar para Aprovação" funciona normalmente
+
+### 🎯 **CENÁRIO CORRIGIDO**
+1. ✅ **Timesheet aprovado** → Cancelamento da aprovação
+2. ✅ **Registro removido** da tabela `timesheet_approvals`
+3. ✅ **Campos habilitados** para edição
+4. ✅ **Botão submissão** disponível
+5. ✅ **Comportamento esperado** restaurado
+
+### 📋 **IMPACTO FUNCIONAL**
+- **UX melhorada**: Fluxo de cancelamento funcionando perfeitamente
+- **Edição liberada**: Campos ficam editáveis após cancelamento
+- **Estado consistente**: Sistema trata como timesheet novo
+- **Submissão normal**: Processo de aprovação funciona corretamente
+
 ## [1.4.2] - 2025-01-27
 
 ### 🐛 **CORREÇÕES CRÍTICAS**
