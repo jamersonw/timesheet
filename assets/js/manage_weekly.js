@@ -2,6 +2,12 @@
 $(document).ready(function() {
     'use strict';
     
+    // Verificar se jQuery está disponível
+    if (typeof $ === 'undefined') {
+        console.error('jQuery não está carregado!');
+        return;
+    }
+    
     // Verificar se os dados estão disponíveis
     if (typeof weekly_manage_data === 'undefined') {
         console.error('weekly_manage_data não está definido!');

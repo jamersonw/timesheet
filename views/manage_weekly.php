@@ -204,6 +204,29 @@ var weekly_manage_data = {
 };
 </script>
 
+<script>
+var weekly_manage_data = {
+    admin_url: '<?php echo admin_url(); ?>',
+    weekly_approvals: <?php echo json_encode(isset($weekly_approvals) ? $weekly_approvals : []); ?>
+};
+
+// Função CSRF setup para compatibilidade
+function csrf_jquery_ajax_setup() {
+    if (typeof $ !== 'undefined' && $.ajaxSetup) {
+        $.ajaxSetup({
+            data: {
+                '<?php echo $this->security->get_csrf_token_name(); ?>': '<?php echo $this->security->get_csrf_hash(); ?>'
+            }
+        });
+    }
+}
+
+// Executar setup quando jQuery estiver disponível
+$(document).ready(function() {
+    csrf_jquery_ajax_setup();
+});
+</script>
+
 <?php init_tail(); ?>
 <script src="<?php echo module_dir_url('timesheet', 'assets/js/timesheet_modals.js'); ?>"></script>
 <script src="<?php echo module_dir_url('timesheet', 'assets/js/manage_weekly.js'); ?>"></script>

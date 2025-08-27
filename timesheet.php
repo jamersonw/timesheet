@@ -98,7 +98,7 @@ function timesheet_init_menu_and_permissions()
             'slug'     => 'timesheet_quick_approvals',
             'name'     => _l('timesheet_quick_approvals'),
             'href'     => admin_url('timesheet/manage'),
-            'icon'     => 'fa fa-flash',
+            'icon'     => 'fa fa-check-square',
         ]);
     }
 
