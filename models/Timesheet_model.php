@@ -521,49 +521,23 @@ class Timesheet_model extends App_Model
         try {
             log_activity('[Timesheet DEBUG] get_weekly_approvals() iniciado para semana: ' . $week_start_date);
             
-            $this->db->select('ta.*, s.firstname, s.lastname, s.email');
-            log_activity('[Timesheet DEBUG] SELECT definido');
-            
-            $this->db->from(db_prefix() . 'timesheet_approvals ta');
-            log_activity('[Timesheet DEBUG] FROM definido: ' . db_prefix() . 'timesheet_approvals');
-            
-            $this->db->join(db_prefix() . 'staff s', 's.staffid = ta.staff_id');
-            log_activity('[Timesheet DEBUG] JOIN definido com staff');
-            
-            $this->db->where('ta.week_start_date', $week_start_date);
-            log_activity('[Timesheet DEBUG] WHERE definido: week_start_date = ' . $week_start_date);
-            
-            $this->db->order_by('ta.status', 'ASC'); // pending first
-            $this->db->order_by('s.firstname', 'ASC');
-            log_activity('[Timesheet DEBUG] ORDER BY definido');
-            
-            // Log da query antes de executar
-            $query_string = $this->db->get_compiled_select();
-            log_activity('[Timesheet DEBUG] Query compilada: ' . $query_string);
-            
-            // Reset query builder e executar novamente
-            $this->db->select('ta.*, s.firstname, s.lastname, s.email');
-            $this->db->from(db_prefix() . 'timesheet_approvals ta');
-            $this->db->join(db_prefix() . 'staff s', 's.staffid = ta.staff_id');
-            $this->db->where('ta.week_start_date', $week_start_date);
-            $this->db->order_by('ta.status', 'ASC');
-            $this->db->order_by('s.firstname', 'ASC');
+            // Usar método mais simples sem alias problemático
+            $this->db->select(db_prefix() . 'timesheet_approvals.*, ' . db_prefix() . 'staff.firstname, ' . db_prefix() . 'staff.lastname, ' . db_prefix() . 'staff.email');
+            $this->db->from(db_prefix() . 'timesheet_approvals');
+            $this->db->join(db_prefix() . 'staff', db_prefix() . 'staff.staffid = ' . db_prefix() . 'timesheet_approvals.staff_id', 'left');
+            $this->db->where(db_prefix() . 'timesheet_approvals.week_start_date', $week_start_date);
+            $this->db->order_by(db_prefix() . 'timesheet_approvals.status', 'ASC'); // pending first
+            $this->db->order_by(db_prefix() . 'staff.firstname', 'ASC');
             
             log_activity('[Timesheet DEBUG] Executando query...');
             $result = $this->db->get()->result();
             log_activity('[Timesheet DEBUG] Query executada com sucesso. Registros encontrados: ' . count($result));
             
-            if (!$result) {
-                log_activity('[Timesheet DEBUG] Nenhum resultado encontrado, retornando array vazio');
-                return [];
-            }
+            return $result ?: [];
             
-            log_activity('[Timesheet DEBUG] Retornando ' . count($result) . ' aprovações');
-            return $result;
         } catch (Exception $e) {
             log_message('error', 'Error in get_weekly_approvals: ' . $e->getMessage());
             log_activity('[Timesheet ERROR] Erro em get_weekly_approvals: ' . $e->getMessage());
-            log_activity('[Timesheet ERROR] Stack trace: ' . $e->getTraceAsString());
             return [];
         }
     }
