@@ -88,7 +88,6 @@ function timesheet_init_menu_and_permissions()
             'slug'     => 'timesheet_my_timesheet',
             'name'     => _l('timesheet_my_timesheet'),
             'href'     => admin_url('timesheet'),
-            'icon'     => 'fa fa-user-clock',
         ]);
     }
 
@@ -98,7 +97,6 @@ function timesheet_init_menu_and_permissions()
             'slug'     => 'timesheet_quick_approvals',
             'name'     => _l('timesheet_quick_approvals'),
             'href'     => admin_url('timesheet/manage'),
-            'icon'     => 'fa fa-check-square',
         ]);
     }
 
@@ -108,7 +106,6 @@ function timesheet_init_menu_and_permissions()
             'slug'     => 'timesheet_weekly_approvals', 
             'name'     => _l('timesheet_weekly_approvals'),
             'href'     => admin_url('timesheet/manage_weekly'),
-            'icon'     => 'fa fa-calendar-check-o',
         ]);
     }
 
