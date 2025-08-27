@@ -17,6 +17,17 @@ class Timesheet extends AdminController
             access_denied('timesheet');
         }
 
+        // Debug: Log das permissões do usuário atual
+        $staff_id = get_staff_user_id();
+        log_activity('[Timesheet Debug] Usuário ' . $staff_id . ' acessando index');
+        log_activity('[Timesheet Debug] Permissão view: ' . (has_permission('timesheet', '', 'view') ? 'SIM' : 'NÃO'));
+        log_activity('[Timesheet Debug] Permissão create: ' . (has_permission('timesheet', '', 'create') ? 'SIM' : 'NÃO'));
+        log_activity('[Timesheet Debug] Permissão edit: ' . (has_permission('timesheet', '', 'edit') ? 'SIM' : 'NÃO'));
+        log_activity('[Timesheet Debug] Permissão delete: ' . (has_permission('timesheet', '', 'delete') ? 'SIM' : 'NÃO'));
+        log_activity('[Timesheet Debug] Permissão approve: ' . (has_permission('timesheet', '', 'approve') ? 'SIM' : 'NÃO'));
+        log_activity('[Timesheet Debug] É admin: ' . (is_admin() ? 'SIM' : 'NÃO'));
+        log_activity('[Timesheet Debug] Pode gerenciar projetos: ' . (timesheet_can_manage_any_project($staff_id) ? 'SIM' : 'NÃO'));
+
         // Versão 1.4.0: Modo unidirecional - sem processamento de recálculos pendentes
 
         $week_start = $this->input->get('week') ?: timesheet_get_week_start();

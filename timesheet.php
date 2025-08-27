@@ -139,8 +139,8 @@ function timesheet_init_menu_and_permissions()
 
     // 2) FILHOS DO MENU (cada um com sua regra de visibilidade)
 
-    // Meu Timesheet – para quem pode "view" ou qualquer outra permissão básica
-    if (has_permission('timesheet', '', 'view') || has_permission('timesheet', '', 'create') || has_permission('timesheet', '', 'edit')) {
+    // Meu Timesheet – sempre aparece se tiver QUALQUER permissão de timesheet
+    if ($has_any_timesheet_permission) {
         $CI->app_menu->add_sidebar_children_item('timesheet_group', [
             'slug'     => 'timesheet_my_timesheet',
             'name'     => _l('timesheet_my_timesheet'),
