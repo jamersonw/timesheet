@@ -23,27 +23,54 @@ register_activation_hook(TIMESHEET_MODULE_NAME, 'timesheet_activation_hook');
 function timesheet_activation_hook()
 {
     try {
-        log_activity('[Timesheet Activation] Iniciando hook de ativação do módulo');
+        if (function_exists('log_activity')) {
+            log_activity('[Timesheet Activation] Iniciando hook de ativação do módulo v1.4.4');
+        }
         
         $CI = &get_instance();
         if (!$CI) {
-            log_activity('[Timesheet Activation ERROR] Falha ao obter instância do CodeIgniter');
+            if (function_exists('log_activity')) {
+                log_activity('[Timesheet Activation ERROR] Falha ao obter instância do CodeIgniter');
+            }
             throw new Exception('CodeIgniter instance not available');
         }
         
-        log_activity('[Timesheet Activation] CodeIgniter instance obtida com sucesso');
-        log_activity('[Timesheet Activation] Executando install.php...');
+        if (function_exists('log_activity')) {
+            log_activity('[Timesheet Activation] CodeIgniter instance obtida com sucesso');
+            log_activity('[Timesheet Activation] Executando install.php...');
+        }
         
-        require_once(__DIR__ . '/install.php');
+        // Verificar se o arquivo existe antes de incluir
+        $install_file = __DIR__ . '/install.php';
+        if (!file_exists($install_file)) {
+            throw new Exception('Install file not found: ' . $install_file);
+        }
         
-        log_activity('[Timesheet Activation] Hook de ativação concluído com sucesso');
+        // Include com verificação de retorno
+        $result = include_once($install_file);
+        
+        if (function_exists('log_activity')) {
+            if ($result === false) {
+                log_activity('[Timesheet Activation WARNING] Install.php retornou false');
+            } else {
+                log_activity('[Timesheet Activation] Hook de ativação concluído com sucesso');
+            }
+        }
+        
+        // Sempre retornar true para não quebrar a ativação
+        return true;
         
     } catch (Exception $e) {
-        log_activity('[Timesheet Activation FATAL ERROR] ' . $e->getMessage());
-        log_activity('[Timesheet Activation FATAL ERROR] File: ' . $e->getFile() . ' Line: ' . $e->getLine());
+        if (function_exists('log_activity')) {
+            log_activity('[Timesheet Activation ERROR] ' . $e->getMessage());
+            log_activity('[Timesheet Activation ERROR] File: ' . $e->getFile() . ' Line: ' . $e->getLine());
+        }
         
-        // Re-throw para que o Perfex possa exibir o erro
-        throw $e;
+        // Log no error_log do PHP como backup
+        error_log('[Timesheet Activation] ERROR: ' . $e->getMessage());
+        
+        // Não re-throw para evitar quebrar completamente a ativação
+        return false;
     }
 }
 
