@@ -1,0 +1,93 @@
+Corrigindo Permissões do Módulo Timesheet
+Debug - Conteúdo do database.php (primeiras 500 chars):
+<?php
+
+defined('BASEPATH') or exit('No direct script access allowed');
+include_once(APPPATH . 'config/app-config.php');
+
+/*
+| -------------------------------------------------------------------
+| DATABASE CONNECTIVITY SETTINGS
+| -------------------------------------------------------------------
+| This file will contain the settings needed to access your database.
+|
+| For complete instructions please consult the 'Database Connection'
+| page of the User Guide.
+|
+| ------------------...
+ℹ️ Detectado uso do app-config.php. Tentando extrair configurações...
+
+✅ Arquivo app-config.php encontrado
+
+Debug - Conteúdo do app-config.php (primeiras 800 chars):
+<?php
+
+defined('BASEPATH') or exit('No direct script access allowed');
+/*
+* --------------------------------------------------------------------------
+* Base Site URL
+* --------------------------------------------------------------------------
+*
+* URL to your CodeIgniter root. Typically this will be your base URL,
+* WITH a trailing slash:
+*
+*   http://example.com/
+*
+* If this is not set then CodeIgniter will try guess the protocol, domain
+* and path to your installation. However, you should always configure this
+* explicitly and never rely on auto-guessing, especially in production
+* environments.
+*
+*/
+define('APP_BASE_URL', 'https://perfex.neurodeep.com.br/');
+
+/*
+* --------------------------------------------------------------------------
+* Encryption Key
+* IMPORT...
+Tentando extrair configurações...
+Buscando hostname:
+✅ Encontrado: localhost
+
+Buscando username:
+✅ Encontrado: u755875096_jamersonw
+
+Buscando password:
+✅ Encontrado: 59886320#Jw
+
+Buscando database:
+✅ Encontrado: u755875096_perfex
+
+Buscando dbprefix:
+
+Warning: preg_match(): Unknown modifier '�' in /home/u755875096/domains/neurodeep.com.br/public_html/perfex/modules/timesheet/fix_permissions.php on line 105
+⚠️ Não encontrado
+
+Configurações detectadas:
+
+Host: localhost
+Database: u755875096_perfex
+Prefix: tbl_
+✅ Conectado ao banco de dados
+
+🔍 Investigando estrutura do banco de dados...
+Tabelas encontradas com prefixo 'tbl_':
+
+🔍 Procurando tabela de permissões...
+⚠️ tbl_staff_permissions não existe
+
+⚠️ tbl_permissions não existe
+
+⚠️ tbl_module_permissions não existe
+
+⚠️ tbl_staff_permissions_modules não existe
+
+⚠️ tbl_roles_permissions não existe
+
+⚠️ tbl_staff_role_permissions não existe
+
+⚠️ Nenhuma tabela de permissões padrão encontrada. Vamos usar método de configuração direta...
+
+❌ Tabela de cargos ('tbl_roles') não encontrada. Não é possível aplicar permissões via método alternativo.
+
+❌ Falha ao encontrar ou aplicar permissões. Verifique manualmente as tabelas do seu Perfex CRM.
