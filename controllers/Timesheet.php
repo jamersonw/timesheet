@@ -180,7 +180,7 @@ class Timesheet extends AdminController
         $data['week_start'] = $week_start;
         $data['week_end'] = timesheet_get_week_end($week_start);
         $data['week_dates'] = timesheet_get_week_dates($week_start);
-        $data['weekly_approvals'] = $this->timesheet_model->get_weekly_pending_approvals(get_staff_user_id(), $week_start);
+        $data['weekly_approvals'] = $this->timesheet_model->get_weekly_all_approvals(get_staff_user_id(), $week_start);
         $data['title'] = _l('timesheet_weekly_approvals');
 
         $this->load->view('timesheet/manage_weekly', $data);
@@ -286,6 +286,32 @@ class Timesheet extends AdminController
             echo json_encode(['success' => true, 'message' => $message]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Error processing approval']);
+        }
+    }
+
+    /**
+     * Cancel an approved timesheet
+     */
+    public function cancel_approval()
+    {
+        if (!has_permission('timesheet', '', 'edit')) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+
+        $approval_id = $this->input->post('approval_id');
+
+        if (empty($approval_id)) {
+            echo json_encode(['success' => false, 'message' => 'Invalid parameters']);
+            return;
+        }
+
+        $result = $this->timesheet_model->cancel_approval($approval_id, get_staff_user_id());
+
+        if ($result) {
+            echo json_encode(['success' => true, 'message' => 'Aprovação cancelada com sucesso. Timesheet voltou para rascunho.']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Erro ao cancelar aprovação']);
         }
     }
 

@@ -63,6 +63,29 @@ $(document).ready(function() {
         });
     });
     
+    // Cancel approval button click
+    $(document).on('click', 'button.cancel-approval-btn, a.cancel-approval-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var approvalId = $(this).data('approval-id');
+        console.log('Clicou em cancelar aprovação, ID:', approvalId);
+        
+        TimesheetModals.confirm({
+            title: 'Cancelar Aprovação',
+            message: 'Tem certeza que deseja cancelar esta aprovação? O timesheet voltará ao status de rascunho e os timers do quadro de horas serão removidos.',
+            icon: 'fa-exclamation-triangle',
+            confirmText: 'Sim, Cancelar',
+            cancelText: 'Não',
+            confirmClass: 'timesheet-modal-btn-warning'
+        }).then(function(confirmed) {
+            console.log('Resultado da confirmação de cancelamento:', confirmed);
+            if (confirmed) {
+                cancelApproval(approvalId);
+            }
+        });
+    });
+    
     function loadTotalHours(approvalId, staffId, weekStartDate) {
         $.ajax({
             url: manage_weekly_data.admin_url + 'timesheet/get_week_total',
@@ -166,6 +189,65 @@ $(document).ready(function() {
             },
             error: function(xhr, status, error) {
                 console.error('Erro AJAX (semanal):', xhr.responseText);
+                
+                TimesheetModals.alert({
+                    title: 'Erro de Comunicação',
+                    message: 'Erro ao comunicar com o servidor. Tente novamente.',
+                    icon: 'fa-exclamation-triangle',
+                    type: 'error'
+                });
+                
+                // Restaurar botão
+                $button.html(originalText).prop('disabled', false);
+            }
+        });
+    }
+    
+    function cancelApproval(approvalId) {
+        var $button = $('button[data-approval-id="' + approvalId + '"]');
+        var originalText = $button.html();
+        
+        // Mostrar loading
+        $button.html('<i class="fa fa-spinner fa-spin"></i> Cancelando...').prop('disabled', true);
+        
+        var postData = {
+            approval_id: approvalId
+        };
+        
+        console.log('Cancelando aprovação via AJAX:', postData);
+        
+        $.ajax({
+            url: manage_weekly_data.admin_url + 'timesheet/cancel_approval',
+            type: 'POST',
+            data: postData,
+            dataType: 'json',
+            success: function(response) {
+                console.log('Resposta do cancelamento:', response);
+                
+                if (response.success) {
+                    TimesheetModals.alert({
+                        title: 'Sucesso',
+                        message: response.message,
+                        icon: 'fa-check-circle',
+                        type: 'success'
+                    }).then(function() {
+                        // Recarregar a página para atualizar o status
+                        location.reload();
+                    });
+                } else {
+                    TimesheetModals.alert({
+                        title: 'Erro',
+                        message: response.message || 'Erro ao cancelar aprovação',
+                        icon: 'fa-exclamation-triangle',
+                        type: 'error'
+                    });
+                    
+                    // Restaurar botão
+                    $button.html(originalText).prop('disabled', false);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Erro AJAX no cancelamento:', xhr.responseText);
                 
                 TimesheetModals.alert({
                     title: 'Erro de Comunicação',

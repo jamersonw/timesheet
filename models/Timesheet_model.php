@@ -447,15 +447,16 @@ class Timesheet_model extends App_Model
     }
 
     /**
-     * Get pending approvals for a specific week
+     * Get ALL approvals for a specific week (pending + approved, rejected hidden)
      */
-    public function get_weekly_pending_approvals($manager_id, $week_start_date)
+    public function get_weekly_all_approvals($manager_id, $week_start_date)
     {
         $this->db->select('ta.*, s.firstname, s.lastname, s.email');
         $this->db->from(db_prefix() . 'timesheet_approvals ta');
         $this->db->join(db_prefix() . 'staff s', 's.staffid = ta.staff_id');
-        $this->db->where('ta.status', 'pending');
         $this->db->where('ta.week_start_date', $week_start_date);
+        $this->db->where_in('ta.status', ['pending', 'approved']); // Excluir rejected
+        $this->db->order_by('ta.status', 'ASC'); // pending primeiro
         $this->db->order_by('s.firstname', 'ASC');
         return $this->db->get()->result();
     }
@@ -514,5 +515,88 @@ class Timesheet_model extends App_Model
 
         // Pode submeter se não há aprovação, se foi rejeitado, ou se está em draft
         return !$approval || in_array($approval->status, ['rejected', 'draft']);
+    }
+
+    /**
+     * Cancel an approved timesheet, returning it to draft status
+     */
+    public function cancel_approval($approval_id, $approver_id)
+    {
+        try {
+            // Buscar aprovação
+            $approval = $this->db->get_where(db_prefix() . 'timesheet_approvals', ['id' => $approval_id])->row();
+            if (!$approval || $approval->status !== 'approved') {
+                log_activity('[Timesheet Cancel] Aprovação ID ' . $approval_id . ' não encontrada ou não está aprovada');
+                return false;
+            }
+
+            // Remover timers criados no Perfex
+            $this->remove_perfex_timers_for_week($approval->staff_id, $approval->week_start_date);
+
+            // Atualizar status da aprovação para draft (permitir nova submissão)
+            $data = [
+                'status' => 'draft',
+                'approved_by' => null,
+                'approved_at' => null,
+                'rejection_reason' => null
+            ];
+
+            $this->db->where('id', $approval_id);
+            if (!$this->db->update(db_prefix() . 'timesheet_approvals', $data)) {
+                log_activity('[Timesheet Cancel] ERRO: Falha ao atualizar aprovação ID ' . $approval_id);
+                return false;
+            }
+
+            // Atualizar status das entradas para draft
+            $this->db->where('staff_id', $approval->staff_id);
+            $this->db->where('week_start_date', $approval->week_start_date);
+            if (!$this->db->update(db_prefix() . 'timesheet_entries', ['status' => 'draft'])) {
+                log_activity('[Timesheet Cancel] ERRO: Falha ao atualizar entradas para staff ' . $approval->staff_id);
+                return false;
+            }
+
+            log_activity('[Timesheet Cancel] Aprovação cancelada com sucesso - ID: ' . $approval_id . ' por usuário: ' . $approver_id);
+            return true;
+
+        } catch (Exception $e) {
+            log_activity('[Timesheet Cancel] ERRO FATAL: ' . $e->getMessage() . ' - Approval ID: ' . $approval_id);
+            return false;
+        }
+    }
+
+    /**
+     * Remove all Perfex timers created for a specific week
+     */
+    private function remove_perfex_timers_for_week($staff_id, $week_start_date)
+    {
+        try {
+            // Buscar todas as entradas da semana que possuem timer_id
+            $this->db->select('id, perfex_timer_id');
+            $this->db->where('staff_id', $staff_id);
+            $this->db->where('week_start_date', $week_start_date);
+            $this->db->where('perfex_timer_id IS NOT NULL');
+            $entries = $this->db->get(db_prefix() . 'timesheet_entries')->result();
+
+            $timers_removed = 0;
+            foreach ($entries as $entry) {
+                // Remover timer do Perfex
+                $this->db->where('id', $entry->perfex_timer_id);
+                if ($this->db->delete(db_prefix() . 'taskstimers')) {
+                    $timers_removed++;
+                    log_activity('[Timesheet Cancel] Timer removido: ' . $entry->perfex_timer_id);
+                }
+
+                // Limpar referência na entrada
+                $this->db->where('id', $entry->id);
+                $this->db->update(db_prefix() . 'timesheet_entries', ['perfex_timer_id' => null]);
+            }
+
+            log_activity('[Timesheet Cancel] Removidos ' . $timers_removed . ' timers do Perfex para semana ' . $week_start_date);
+            return true;
+
+        } catch (Exception $e) {
+            log_activity('[Timesheet Cancel] ERRO ao remover timers: ' . $e->getMessage());
+            return false;
+        }
     }
 }

@@ -56,32 +56,49 @@
                             </div>
 
                             <?php foreach ($weekly_approvals as $approval): ?>
-                            <div class="panel panel-default approval-panel" data-approval-id="<?php echo $approval->id; ?>">
+                            <div class="panel panel-default approval-panel approval-<?php echo $approval->status; ?>" data-approval-id="<?php echo $approval->id; ?>">
                                 <div class="panel-heading">
                                     <div class="row">
                                         <div class="col-md-8">
                                             <h4 class="panel-title" style="margin: 0;">
                                                 <i class="fa fa-user"></i> 
                                                 <strong><?php echo $approval->firstname . ' ' . $approval->lastname; ?></strong>
+                                                <?php if ($approval->status == 'approved'): ?>
+                                                    <span class="label label-success"><i class="fa fa-check"></i> Aprovado</span>
+                                                <?php elseif ($approval->status == 'pending'): ?>
+                                                    <span class="label label-warning"><i class="fa fa-clock-o"></i> Pendente</span>
+                                                <?php endif; ?>
                                                 <br><small class="text-muted"><?php echo $approval->email; ?></small>
                                             </h4>
                                         </div>
                                         <div class="col-md-4 text-right">
                                             <div class="approval-actions">
+                                                <!-- Botão Ver sempre visível -->
                                                 <a href="<?php echo admin_url('timesheet/view_approval/' . $approval->id); ?>" 
                                                    class="btn btn-sm btn-info" title="Ver Detalhes">
                                                     <i class="fa fa-eye"></i> Ver
                                                 </a>
-                                                <button type="button" class="btn btn-sm btn-success approve-btn" 
-                                                        data-approval-id="<?php echo $approval->id; ?>" 
-                                                        title="Aprovar Timesheet">
-                                                    <i class="fa fa-check"></i> Aprovar
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-danger reject-btn" 
-                                                        data-approval-id="<?php echo $approval->id; ?>" 
-                                                        title="Rejeitar Timesheet">
-                                                    <i class="fa fa-times"></i> Rejeitar
-                                                </button>
+                                                
+                                                <?php if ($approval->status == 'pending'): ?>
+                                                    <!-- Status Pendente - Botões Aprovar e Rejeitar -->
+                                                    <button type="button" class="btn btn-sm btn-success approve-btn" 
+                                                            data-approval-id="<?php echo $approval->id; ?>" 
+                                                            title="Aprovar Timesheet">
+                                                        <i class="fa fa-check"></i> Aprovar
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-danger reject-btn" 
+                                                            data-approval-id="<?php echo $approval->id; ?>" 
+                                                            title="Rejeitar Timesheet">
+                                                        <i class="fa fa-times"></i> Rejeitar
+                                                    </button>
+                                                <?php elseif ($approval->status == 'approved'): ?>
+                                                    <!-- Status Aprovado - Botão Cancelar Aprovação -->
+                                                    <button type="button" class="btn btn-sm btn-warning cancel-approval-btn" 
+                                                            data-approval-id="<?php echo $approval->id; ?>" 
+                                                            title="Cancelar Aprovação">
+                                                        <i class="fa fa-undo"></i> Cancelar Aprovação
+                                                    </button>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </div>
@@ -167,11 +184,22 @@ var manage_weekly_data = {
 <style>
 .approval-panel {
     margin-bottom: 20px;
+}
+
+.approval-panel.approval-pending {
     border-left: 4px solid #f39c12;
 }
 
-.approval-panel .panel-heading {
+.approval-panel.approval-pending .panel-heading {
     background-color: #fdf2e9;
+}
+
+.approval-panel.approval-approved {
+    border-left: 4px solid #5cb85c;
+}
+
+.approval-panel.approval-approved .panel-heading {
+    background-color: #d4edda;
 }
 
 .approval-actions .btn {
