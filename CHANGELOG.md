@@ -334,7 +334,33 @@ TIMESHEET (Editável) → APROVAÇÃO → QUADRO DE HORAS (Read-Only)
 - **README.md**: Documentação completa com instruções de instalação e uso
 - **Versionamento semântico**: Seguindo padrão MAJOR.MINOR.PATCH
 
-### 📋 FUNCIONALIDADES DO BUILD SYSTEM
+### 📋 FUNCIONALIDADES D## [1.4.4] - 2025-01-16
+
+### 🎯 NOVA FUNCIONALIDADE: PERMISSÃO ESPECÍFICA PARA APROVAÇÃO
+- **Nova permissão "Aprovar Timesheet"**: Agora é possível conceder acesso às telas de aprovação sem ser administrador
+- **Flexibilidade de acesso**: Usuários com a permissão específica podem acessar `manage()` e `manage_weekly()`
+- **Segurança mantida**: Administradores e gerentes de projetos continuam com acesso total
+- **Compatibilidade total**: Funcionalidade anterior mantida, apenas expandida
+
+### 🔧 IMPLEMENTAÇÕES TÉCNICAS
+- **Permissão `timesheet_approve`**: Nova permissão específica para aprovações
+- **Validações atualizadas**: Métodos `manage()`, `manage_weekly()`, `approve_reject()` e `cancel_approval()` agora verificam a nova permissão
+- **Migração automática**: Script de migração para atualizar permissões existentes
+- **Retrocompatibilidade**: Instalações existentes continuam funcionando normalmente
+
+### 📋 COMO CONFIGURAR
+1. Acesse **Admin → Roles**
+2. Edite a função desejada
+3. Na seção **Timesheet**, marque **"Aprovar Timesheet"**
+4. Salve as alterações
+
+### ✅ NÍVEIS DE ACESSO APÓS ATUALIZAÇÃO
+- **✅ Administradores**: Acesso total (como antes)
+- **✅ Usuários com "Aprovar Timesheet"**: Acesso às telas de aprovação
+- **✅ Gerentes de projetos**: Acesso via `timesheet_can_manage_any_project()` (como antes)
+- **❌ Outros usuários**: Sem acesso às aprovações (como antes)
+
+O BUILD SYSTEM
 - Atualização automática de versão em todos os arquivos
 - Geração automática de changelog com timestamp
 - Criação de ZIP com estrutura `/timesheet/` correta

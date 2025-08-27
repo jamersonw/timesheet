@@ -154,7 +154,7 @@ class Timesheet extends AdminController
         if (!has_permission('timesheet', '', 'view')) {
             access_denied('timesheet');
         }
-        if (!is_admin() && !timesheet_can_manage_any_project(get_staff_user_id())) {
+        if (!has_permission('timesheet', '', 'approve') && !is_admin() && !timesheet_can_manage_any_project(get_staff_user_id())) {
             access_denied('timesheet');
         }
 
@@ -172,7 +172,7 @@ class Timesheet extends AdminController
         if (!has_permission('timesheet', '', 'view')) {
             access_denied('timesheet');
         }
-        if (!is_admin() && !timesheet_can_manage_any_project(get_staff_user_id())) {
+        if (!has_permission('timesheet', '', 'approve') && !is_admin() && !timesheet_can_manage_any_project(get_staff_user_id())) {
             access_denied('timesheet');
         }
 
@@ -260,7 +260,7 @@ class Timesheet extends AdminController
      */
     public function approve_reject()
     {
-        if (!has_permission('timesheet', '', 'edit')) {
+        if (!has_permission('timesheet', '', 'approve') && !has_permission('timesheet', '', 'edit')) {
             echo json_encode(['success' => false, 'message' => 'Access denied']);
             return;
         }
@@ -294,7 +294,7 @@ class Timesheet extends AdminController
      */
     public function cancel_approval()
     {
-        if (!has_permission('timesheet', '', 'edit')) {
+        if (!has_permission('timesheet', '', 'approve') && !has_permission('timesheet', '', 'edit')) {
             echo json_encode(['success' => false, 'message' => 'Access denied']);
             return;
         }
