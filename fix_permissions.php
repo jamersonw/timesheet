@@ -16,17 +16,81 @@ if (!file_exists($config_file)) {
 echo "<h2>Corrigindo Permissões do Módulo Timesheet</h2>";
 
 // Carregar configuração do banco MANUALMENTE (sem incluir o arquivo database.php)
-$db_config_content = file_get_contents($perfex_root . '/application/config/database.php');
+$db_config_file = $perfex_root . '/application/config/database.php';
 
-// Extrair configurações usando regex
-preg_match("/\['hostname'\]\s*=\s*['\"]([^'\"]+)['\"]/", $db_config_content, $hostname_match);
-preg_match("/\['username'\]\s*=\s*['\"]([^'\"]+)['\"]/", $db_config_content, $username_match);
-preg_match("/\['password'\]\s*=\s*['\"]([^'\"]*)['\"]/", $db_config_content, $password_match);
-preg_match("/\['database'\]\s*=\s*['\"]([^'\"]+)['\"]/", $db_config_content, $database_match);
-preg_match("/\['dbprefix'\]\s*=\s*['\"]([^'\"]*)['\"]/", $db_config_content, $prefix_match);
+if (!file_exists($db_config_file)) {
+    die('Arquivo database.php não encontrado em: ' . $db_config_file);
+}
 
-if (!$hostname_match || !$username_match || !$database_match) {
-    die('Não foi possível extrair configurações do banco de dados');
+$db_config_content = file_get_contents($db_config_file);
+
+if (empty($db_config_content)) {
+    die('Não foi possível ler o conteúdo do arquivo database.php');
+}
+
+echo "<h3>Debug - Conteúdo do database.php (primeiras 500 chars):</h3>";
+echo "<pre>" . htmlspecialchars(substr($db_config_content, 0, 500)) . "...</pre>";
+
+// Múltiplos padrões de regex para diferentes formatos
+$patterns = [
+    'hostname' => [
+        "/\['hostname'\]\s*=\s*['\"]([^'\"]+)['\"]/",
+        "/\[\"hostname\"\]\s*=\s*['\"]([^'\"]+)['\"]/",
+        "/hostname['\"]?\s*=>\s*['\"]([^'\"]+)['\"]/",
+    ],
+    'username' => [
+        "/\['username'\]\s*=\s*['\"]([^'\"]+)['\"]/",
+        "/\[\"username\"\]\s*=\s*['\"]([^'\"]+)['\"]/",
+        "/username['\"]?\s*=>\s*['\"]([^'\"]+)['\"]/",
+    ],
+    'password' => [
+        "/\['password'\]\s*=\s*['\"]([^'\"]*)['\"]/",
+        "/\[\"password\"\]\s*=\s*['\"]([^'\"]*)['\"]/",
+        "/password['\"]?\s*=>\s*['\"]([^'\"]*)['\"]/",
+    ],
+    'database' => [
+        "/\['database'\]\s*=\s*['\"]([^'\"]+)['\"]/",
+        "/\[\"database\"\]\s*=\s*['\"]([^'\"]+)['\"]/",
+        "/database['\"]?\s*=>\s*['\"]([^'\"]+)['\"]/",
+    ],
+    'dbprefix' => [
+        "/\['dbprefix'\]\s*=\s*['\"]([^'\"]*)['\"]/",
+        "/\[\"dbprefix\"\]\s*=\s*['\"]([^'\"]*)['\"]/",
+        "/dbprefix['\"]?\s*=>\s*['\"]([^'\"]*)['\"]/",
+    ]
+];
+
+$config = [];
+
+foreach ($patterns as $key => $pattern_list) {
+    $found = false;
+    foreach ($pattern_list as $pattern) {
+        if (preg_match($pattern, $db_config_content, $matches)) {
+            $config[$key] = $matches[1];
+            $found = true;
+            break;
+        }
+    }
+    if (!$found && $key !== 'dbprefix' && $key !== 'password') {
+        echo "<p style='color: red;'>❌ Não foi possível extrair: <strong>$key</strong></p>";
+        echo "<p>Padrões testados:</p><ul>";
+        foreach ($pattern_list as $pattern) {
+            echo "<li><code>" . htmlspecialchars($pattern) . "</code></li>";
+        }
+        echo "</ul>";
+        die('Erro na extração de configurações');
+    }
+}
+
+// Valores padrão
+$hostname = $config['hostname'] ?? '';
+$username = $config['username'] ?? '';
+$password = $config['password'] ?? '';
+$database = $config['database'] ?? '';
+$dbprefix = $config['dbprefix'] ?? 'tbl_';
+
+if (empty($hostname) || empty($username) || empty($database)) {
+    die('Configurações essenciais não encontradas. Hostname: ' . $hostname . ', Username: ' . $username . ', Database: ' . $database);
 }
 
 $hostname = $hostname_match[1];
