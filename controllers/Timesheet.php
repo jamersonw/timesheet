@@ -165,6 +165,28 @@ class Timesheet extends AdminController
     }
 
     /**
+     * Manage weekly timesheets (for managers/admins) - Weekly View
+     */
+    public function manage_weekly()
+    {
+        if (!has_permission('timesheet', '', 'view')) {
+            access_denied('timesheet');
+        }
+        if (!is_admin() && !timesheet_can_manage_any_project(get_staff_user_id())) {
+            access_denied('timesheet');
+        }
+
+        $week_start = $this->input->get('week') ?: timesheet_get_week_start();
+        $data['week_start'] = $week_start;
+        $data['week_end'] = timesheet_get_week_end($week_start);
+        $data['week_dates'] = timesheet_get_week_dates($week_start);
+        $data['weekly_approvals'] = $this->timesheet_model->get_weekly_pending_approvals(get_staff_user_id(), $week_start);
+        $data['title'] = _l('timesheet_weekly_approvals');
+
+        $this->load->view('timesheet/manage_weekly', $data);
+    }
+
+    /**
      * Get week total hours via AJAX for manager view
      */
     public function get_week_total()
@@ -173,6 +195,64 @@ class Timesheet extends AdminController
         $week_start_date = $this->input->get('week_start_date');
         $total_hours = $this->timesheet_model->get_week_total_hours($staff_id, $week_start_date);
         echo json_encode(['success' => true, 'total_hours' => $total_hours]);
+    }
+
+    /**
+     * Get timesheet preview for weekly approval view
+     */
+    public function get_timesheet_preview()
+    {
+        $staff_id = $this->input->get('staff_id');
+        $week_start_date = $this->input->get('week_start_date');
+        
+        $entries = $this->timesheet_model->get_week_entries_grouped($staff_id, $week_start_date);
+        $week_dates = timesheet_get_week_dates($week_start_date);
+        $daily_totals = $this->timesheet_model->get_week_daily_totals($staff_id, $week_start_date);
+        $week_total = $this->timesheet_model->get_week_total_hours($staff_id, $week_start_date);
+        
+        if (empty($entries)) {
+            echo json_encode(['success' => true, 'html' => '<div class="text-center text-muted">Nenhuma entrada encontrada</div>']);
+            return;
+        }
+        
+        // Generate HTML preview
+        $html = '<div class="table-responsive"><table class="table table-bordered table-condensed">';
+        $html .= '<thead><tr>';
+        $html .= '<th width="200">Projeto/Tarefa</th>';
+        
+        $day_names = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+        for ($i = 0; $i < 7; $i++) {
+            $html .= '<th class="text-center" width="60">' . $day_names[$i] . '<br><small>' . date('d/m', strtotime($week_dates[$i])) . '</small></th>';
+        }
+        $html .= '<th class="text-center" width="60">Total</th>';
+        $html .= '</tr></thead><tbody>';
+        
+        foreach ($entries as $entry) {
+            $html .= '<tr>';
+            $html .= '<td><strong>' . $entry['project_name'] . '</strong>';
+            if ($entry['task_name']) {
+                $html .= '<br><small class="text-muted">' . $entry['task_name'] . '</small>';
+            }
+            $html .= '</td>';
+            
+            for ($day = 1; $day <= 7; $day++) {
+                $hours = $entry['days'][$day]['hours'];
+                $html .= '<td class="text-center">' . ($hours > 0 ? number_format($hours, 1) . 'h' : '-') . '</td>';
+            }
+            $html .= '<td class="text-center"><strong>' . number_format($entry['total_hours'], 1) . 'h</strong></td>';
+            $html .= '</tr>';
+        }
+        
+        // Total row
+        $html .= '<tr class="info"><td><strong>Total:</strong></td>';
+        for ($day = 1; $day <= 7; $day++) {
+            $html .= '<td class="text-center"><strong>' . ($daily_totals[$day] > 0 ? number_format($daily_totals[$day], 1) . 'h' : '-') . '</strong></td>';
+        }
+        $html .= '<td class="text-center"><strong>' . number_format($week_total, 1) . 'h</strong></td>';
+        $html .= '</tr>';
+        $html .= '</tbody></table></div>';
+        
+        echo json_encode(['success' => true, 'html' => $html]);
     }
 
     /**

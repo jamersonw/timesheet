@@ -446,6 +446,20 @@ class Timesheet_model extends App_Model
         return $this->db->get()->result();
     }
 
+    /**
+     * Get pending approvals for a specific week
+     */
+    public function get_weekly_pending_approvals($manager_id, $week_start_date)
+    {
+        $this->db->select('ta.*, s.firstname, s.lastname, s.email');
+        $this->db->from(db_prefix() . 'timesheet_approvals ta');
+        $this->db->join(db_prefix() . 'staff s', 's.staffid = ta.staff_id');
+        $this->db->where('ta.status', 'pending');
+        $this->db->where('ta.week_start_date', $week_start_date);
+        $this->db->order_by('s.firstname', 'ASC');
+        return $this->db->get()->result();
+    }
+
     public function get_week_total_hours($staff_id, $week_start_date)
     {
         $this->db->select_sum('hours');
