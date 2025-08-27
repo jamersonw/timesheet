@@ -88,7 +88,7 @@ $patterns = [
         "/\$database\['dbprefix'\]\s*=\s*['\"]([^'\"]*)['\"]/",
         "/define\(['\"]APP_DB_PREFIX['\"],\s*['\"]([^'\"]*)['\"]\)/",
         "/\$dbprefix\s*=\s*['\"]([^'\"]*)['\"]/",
-        " பகிregistry['dbprefix']\s*=\s*['\"]([^'\"]*)['\"]/",
+        "/registry\['dbprefix'\]\s*=\s*['\"]([^'\"]*)['\"]/",
         "/['\"]dbprefix['\"]?\s*=>\s*['\"]([^'\"]*)['\"]/",
     ]
 ];
@@ -128,7 +128,12 @@ $hostname = $config['hostname'] ?? '';
 $username = $config['username'] ?? '';
 $password = $config['password'] ?? '';
 $database = $config['database'] ?? '';
-$dbprefix = $config['dbprefix'] ?? 'tbl_';
+$dbprefix = $config['dbprefix'] ?? 'tbl';
+
+// Normalizar o prefixo - garantir que termine com underscore
+if (!empty($dbprefix) && substr($dbprefix, -1) !== '_') {
+    $dbprefix .= '_';
+}
 
 if (empty($hostname) || empty($username) || empty($database)) {
     echo "<h3>❌ Configurações Críticas Faltando</h3>";
@@ -188,6 +193,46 @@ try {
     $perfex_tables = array_filter($all_tables, function($table) use ($dbprefix) {
         return strpos($table, $dbprefix) === 0;
     });
+
+    if (empty($perfex_tables)) {
+        echo "<li style='color: red;'>❌ Nenhuma tabela encontrada com prefixo '$dbprefix'</li>";
+        echo "</ul>";
+        
+        // Tentar detectar o prefixo correto automaticamente
+        echo "<p><strong>🔍 Tentando detectar prefixo correto...</strong></p>";
+        $common_perfex_tables = ['staff', 'clients', 'projects', 'tasks', 'options'];
+        $detected_prefix = '';
+        
+        foreach ($common_perfex_tables as $table_name) {
+            foreach ($all_tables as $existing_table) {
+                if (strpos($existing_table, $table_name) !== false) {
+                    $prefix_end = strpos($existing_table, $table_name);
+                    $detected_prefix = substr($existing_table, 0, $prefix_end);
+                    echo "<p style='color: green;'>✅ Prefixo detectado: '<strong>$detected_prefix</strong>' (baseado na tabela '$existing_table')</p>";
+                    $dbprefix = $detected_prefix;
+                    break 2;
+                }
+            }
+        }
+        
+        if (empty($detected_prefix)) {
+            echo "<p style='color: red;'>❌ Não foi possível detectar o prefixo automaticamente.</p>";
+            echo "<p><strong>Todas as tabelas encontradas:</strong></p><ul>";
+            foreach ($all_tables as $table) {
+                echo "<li>$table</li>";
+            }
+            echo "</ul>";
+            $mysqli->close();
+            exit;
+        }
+        
+        // Buscar novamente com o prefixo correto
+        $perfex_tables = array_filter($all_tables, function($table) use ($dbprefix) {
+            return strpos($table, $dbprefix) === 0;
+        });
+        
+        echo "<p><strong>Tabelas encontradas com prefixo correto '$dbprefix':</strong></p><ul>";
+    }
 
     foreach ($perfex_tables as $table) {
         echo "<li>$table</li>";
