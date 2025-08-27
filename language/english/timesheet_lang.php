@@ -55,11 +55,8 @@ $lang['timesheet_already_submitted'] = 'This week has already been submitted';
 $lang['timesheet_cannot_edit_approved'] = 'Cannot edit approved timesheet';
 
 // Permissions
-$lang['timesheet_permission_view'] = 'View Timesheet';
-$lang['timesheet_permission_create'] = 'Create Timesheet';
-$lang['timesheet_permission_edit'] = 'Edit Timesheet';
-$lang['timesheet_permission_delete'] = 'Delete Timesheet';
-$lang['timesheet_permission_approve'] = 'Approve Timesheet';
+$lang['timesheet_permission_view'] = 'View Timesheet (create own entries)';
+$lang['timesheet_permission_approve'] = 'Approve Timesheet (access approval screens)';
 
 // User-friendly messages
 $lang['timesheet_pending_message'] = 'Your hours have been submitted and are awaiting manager approval.';

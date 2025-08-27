@@ -72,5 +72,6 @@ $lang['timesheet_weekly_approvals'] = 'Aprovação Semanal';
 $lang['timesheet_quick_approvals'] = 'Aprovações Rápidas';
 
 // Permissions
-$lang['timesheet_permission_approve'] = 'Aprovar Timesheet';
+$lang['timesheet_permission_view'] = 'Visualizar Timesheet (criar próprios lançamentos)';
+$lang['timesheet_permission_approve'] = 'Aprovar Timesheet (acessar telas de aprovação)';
 ?>
