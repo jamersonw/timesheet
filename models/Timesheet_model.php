@@ -533,17 +533,10 @@ class Timesheet_model extends App_Model
             // Remover timers criados no Perfex
             $this->remove_perfex_timers_for_week($approval->staff_id, $approval->week_start_date);
 
-            // Atualizar status da aprovação para draft (permitir nova submissão)
-            $data = [
-                'status' => 'draft',
-                'approved_by' => null,
-                'approved_at' => null,
-                'rejection_reason' => null
-            ];
-
+            // Remover completamente o registro da tabela de aprovações (como se nunca tivesse sido enviado)
             $this->db->where('id', $approval_id);
-            if (!$this->db->update(db_prefix() . 'timesheet_approvals', $data)) {
-                log_activity('[Timesheet Cancel] ERRO: Falha ao atualizar aprovação ID ' . $approval_id);
+            if (!$this->db->delete(db_prefix() . 'timesheet_approvals')) {
+                log_activity('[Timesheet Cancel] ERRO: Falha ao remover aprovação ID ' . $approval_id);
                 return false;
             }
 
