@@ -201,38 +201,41 @@ try {
     safe_log_activity('[Timesheet Install] Configurando permissões do módulo...');
     
     $permissions = [
-        [
-            'id' => 1,
-            'name' => 'Visualizar',
-            'short_name' => 'view',
-        ],
-        [
-            'id' => 2,
-            'name' => 'Criar',
-            'short_name' => 'create',
-        ],
-        [
-            'id' => 3,
-            'name' => 'Editar',
-            'short_name' => 'edit',
-        ],
-        [
-            'id' => 4,
-            'name' => 'Deletar',
-            'short_name' => 'delete',
-        ],
-        [
-            'id' => 5,
-            'name' => 'Aprovar Timesheet',
-            'short_name' => 'approve',
-        ]
+        'view' => 'Visualizar',
+        'create' => 'Criar', 
+        'edit' => 'Editar',
+        'delete' => 'Deletar',
+        'approve' => 'Aprovar Timesheet'
     ];
 
     try {
-        if (safe_add_module_permissions('timesheet', $permissions)) {
-            safe_log_activity('[Timesheet Install] Permissões do módulo adicionadas com sucesso');
+        // Verificar se CI está disponível para usar o método correto
+        if (isset($CI) && method_exists($CI, 'app_modules')) {
+            // Usar método nativo do Perfex para registrar permissões
+            $capabilities = [];
+            $capabilities['capabilities'] = $permissions;
+            
+            // Inserir permissões diretamente na tabela se necessário
+            foreach ($permissions as $permission => $name) {
+                $check = $CI->db->get_where(db_prefix() . 'staff_permissions', [
+                    'feature' => 'timesheet',
+                    'capability' => $permission
+                ]);
+                
+                if ($check->num_rows() == 0) {
+                    $insert_data = [
+                        'feature' => 'timesheet',
+                        'capability' => $permission,
+                        'created' => date('Y-m-d H:i:s')
+                    ];
+                    $CI->db->insert(db_prefix() . 'staff_permissions', $insert_data);
+                    safe_log_activity('[Timesheet Install] Permissão ' . $permission . ' (' . $name . ') adicionada');
+                }
+            }
+            
+            safe_log_activity('[Timesheet Install] Permissões do módulo configuradas com sucesso');
         } else {
-            safe_log_activity('[Timesheet Install WARNING] Função add_module_permissions não disponível ou falhou');
+            safe_log_activity('[Timesheet Install WARNING] CI não disponível para configurar permissões');
         }
     } catch (Exception $e) {
         safe_log_activity('[Timesheet Install WARNING] Falha ao adicionar permissões: ' . $e->getMessage());
