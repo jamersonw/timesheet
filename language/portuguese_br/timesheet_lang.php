@@ -70,4 +70,7 @@ $lang['timesheet_approved_successfully'] = 'Timesheet aprovado com sucesso';
 $lang['timesheet_rejected_successfully'] = 'Timesheet rejeitado com sucesso';
 $lang['timesheet_weekly_approvals'] = 'Aprovação Semanal';
 $lang['timesheet_quick_approvals'] = 'Aprovações Rápidas';
+
+// Permissions
+$lang['timesheet_permission_approve'] = 'Aprovar Timesheet';
 ?>

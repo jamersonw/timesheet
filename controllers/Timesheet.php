@@ -151,9 +151,6 @@ class Timesheet extends AdminController
      */
     public function manage()
     {
-        if (!has_permission('timesheet', '', 'view')) {
-            access_denied('timesheet');
-        }
         if (!has_permission('timesheet', '', 'approve') && !is_admin() && !timesheet_can_manage_any_project(get_staff_user_id())) {
             access_denied('timesheet');
         }
@@ -169,9 +166,6 @@ class Timesheet extends AdminController
      */
     public function manage_weekly()
     {
-        if (!has_permission('timesheet', '', 'view')) {
-            access_denied('timesheet');
-        }
         if (!has_permission('timesheet', '', 'approve') && !is_admin() && !timesheet_can_manage_any_project(get_staff_user_id())) {
             access_denied('timesheet');
         }
