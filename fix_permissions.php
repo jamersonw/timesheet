@@ -15,42 +15,36 @@ if (!file_exists($config_file)) {
 
 echo "<h2>Corrigindo Permissões do Módulo Timesheet</h2>";
 
-// Carregar configuração do banco manualmente
-$db_config_file = $perfex_root . '/application/config/database.php';
+// Carregar configuração do banco MANUALMENTE (sem incluir o arquivo database.php)
+$db_config_content = file_get_contents($perfex_root . '/application/config/database.php');
 
-if (!file_exists($db_config_file)) {
-    die('Arquivo de configuração do banco não encontrado');
+// Extrair configurações usando regex
+preg_match("/\['hostname'\]\s*=\s*['\"]([^'\"]+)['\"]/", $db_config_content, $hostname_match);
+preg_match("/\['username'\]\s*=\s*['\"]([^'\"]+)['\"]/", $db_config_content, $username_match);
+preg_match("/\['password'\]\s*=\s*['\"]([^'\"]*)['\"]/", $db_config_content, $password_match);
+preg_match("/\['database'\]\s*=\s*['\"]([^'\"]+)['\"]/", $db_config_content, $database_match);
+preg_match("/\['dbprefix'\]\s*=\s*['\"]([^'\"]*)['\"]/", $db_config_content, $prefix_match);
+
+if (!$hostname_match || !$username_match || !$database_match) {
+    die('Não foi possível extrair configurações do banco de dados');
 }
 
-// Definir constantes necessárias antes de carregar o config
-if (!defined('BASEPATH')) {
-    define('BASEPATH', true);
-}
-if (!defined('APPPATH')) {
-    define('APPPATH', $perfex_root . '/application/');
-}
-if (!defined('ENVIRONMENT')) {
-    define('ENVIRONMENT', 'production');
-}
+$hostname = $hostname_match[1];
+$username = $username_match[1];
+$password = isset($password_match[1]) ? $password_match[1] : '';
+$database = $database_match[1];
+$dbprefix = isset($prefix_match[1]) ? $prefix_match[1] : 'tbl_';
 
-// Carregar configuração do banco
-$db = array();
-include $db_config_file;
-
-if (empty($db['default'])) {
-    die('Configuração do banco de dados não encontrada');
-}
-
-$db_config = $db['default'];
+echo "<p><strong>Configurações detectadas:</strong></p>";
+echo "<ul>";
+echo "<li>Host: " . $hostname . "</li>";
+echo "<li>Database: " . $database . "</li>";
+echo "<li>Prefix: " . $dbprefix . "</li>";
+echo "</ul>";
 
 try {
     // Conectar ao banco
-    $mysqli = new mysqli(
-        $db_config['hostname'], 
-        $db_config['username'], 
-        $db_config['password'], 
-        $db_config['database']
-    );
+    $mysqli = new mysqli($hostname, $username, $password, $database);
 
     if ($mysqli->connect_error) {
         die('Erro de conexão: ' . $mysqli->connect_error);
@@ -67,7 +61,7 @@ try {
         'approve' => 'Aprovar Timesheet'
     ];
 
-    $table_name = $db_config['dbprefix'] . 'staff_permissions';
+    $table_name = $dbprefix . 'staff_permissions';
     
     echo "<p>Tabela de permissões: <strong>$table_name</strong></p>";
 
@@ -110,6 +104,8 @@ try {
 
     echo "<p style='color: green; font-weight: bold;'>✅ Correção concluída! Vá para Configurações > Equipe > Cargos e verifique as permissões do módulo Timesheet.</p>";
     echo "<p><em>Nota: Pode ser necessário fazer logout e login novamente para as permissões fazerem efeito.</em></p>";
+    echo "<hr>";
+    echo "<p><strong>Importante:</strong> Este script é apenas para correção emergencial. Na instalação normal do módulo através do painel administrativo, essas permissões são criadas automaticamente.</p>";
 
     $mysqli->close();
 
