@@ -1,17 +1,30 @@
 
-$(document).ready(function() {
-    
-    // Verificar se o jQuery está carregado
-    if (typeof $ === 'undefined') {
-        console.error('jQuery não está carregado!');
-        return;
-    }
-    
-    // Verificar se os dados estão disponíveis
-    if (typeof weekly_manage_data === 'undefined') {
-        console.error('weekly_manage_data não está definido!');
-        return;
-    }
+// Aguardar o carregamento completo do jQuery e do DOM
+(function() {
+    function initializeWeeklyManage() {
+        // Verificar se o jQuery está carregado
+        if (typeof $ === 'undefined') {
+            console.error('jQuery não está carregado!');
+            setTimeout(initializeWeeklyManage, 100);
+            return;
+        }
+        
+        // Verificar se os dados estão disponíveis
+        if (typeof weekly_manage_data === 'undefined') {
+            console.error('weekly_manage_data não está definido!');
+            return;
+        }
+        
+        // Configurar CSRF para todas as requisições AJAX
+        if (typeof csrf_token_name !== 'undefined' && typeof csrf_hash_name !== 'undefined') {
+            $.ajaxSetup({
+                data: function() {
+                    var obj = {};
+                    obj[csrf_token_name] = $('input[name="' + csrf_token_name + '"]').val();
+                    return obj;
+                }
+            });
+        }
     
     var currentApprovalId = null;
     
@@ -239,4 +252,13 @@ $(document).ready(function() {
         row.find('.reject-btn i').removeClass().addClass('fa fa-times');
         row.find('.cancel-approval-btn i').removeClass().addClass('fa fa-undo');
     }
-});
+    
+    } // Fim da função initializeWeeklyManage
+    
+    // Inicializar quando o documento estiver pronto
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeWeeklyManage);
+    } else {
+        initializeWeeklyManage();
+    }
+})();
