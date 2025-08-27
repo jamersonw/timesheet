@@ -143,11 +143,8 @@ if (empty($hostname) || empty($username) || empty($database)) {
     die('Não foi possível conectar ao banco de dados com as configurações encontradas.');
 }
 
-$hostname = $hostname;
-$username = $username_match[1];
-$password = isset($password_match[1]) ? $password_match[1] : '';
-$database = $database_match[1];
-$dbprefix = isset($prefix_match[1]) ? $prefix_match[1] : 'tbl_';
+// Usar as configurações extraídas
+// (as variáveis já foram definidas no processo de extração acima)
 
 echo "<p><strong>Configurações detectadas:</strong></p>";
 echo "<ul>";
