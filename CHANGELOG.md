@@ -2,6 +2,46 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.4.2] - 2025-01-27
+
+### 🐛 **CORREÇÕES CRÍTICAS**
+
+### ✅ **BOTÃO CANCELAR APROVAÇÃO CORRIGIDO**
+- **Handler JavaScript**: Corrigido seletor CSS para `.cancel-approval-btn`
+- **Validação melhorada**: Verificação robusta de `approval-id` antes de processar
+- **Fallback inteligente**: Sistema de confirmação com fallback para `confirm()` nativo
+- **Debug aprimorado**: Logs detalhados para identificar problemas de execução
+
+### 🎯 **MENU APROVAÇÃO SEMANAL ADICIONADO**
+- **Item de menu separado**: "Aprovação Semanal" como item independente no sidebar
+- **Rota dedicada**: Acesso direto via `/timesheet/manage_weekly`
+- **Posicionamento correto**: Menu posicionado adequadamente na hierarquia
+- **Ícone específico**: `fa-calendar-check-o` para diferenciação visual
+
+### 🌐 **TRADUÇÕES EXPANDIDAS**
+- **Português BR**: Traduções completas para aprovações semanais
+- **Inglês**: Traduções correspondentes para compatibilidade
+- **Mensagens consistentes**: Feedback uniforme em ambos os idiomas
+- **Terminologia padronizada**: Uso consistente de termos técnicos
+
+### 🔧 **MELHORIAS TÉCNICAS**
+- **JavaScript robusto**: Tratamento de erros melhorado no `manage_weekly.js`
+- **Estrutura de menu**: Reorganização para melhor usabilidade
+- **Arquivo de idioma**: Expansão das traduções disponíveis
+- **Validação de dados**: Verificações adicionais antes de executar ações
+
+### 📋 **CORREÇÕES IMPLEMENTADAS**
+1. **Botão Cancelar Aprovação**: Agora funciona corretamente com feedback visual
+2. **Menu Semanal**: Item específico "Aprovação Semanal" disponível no sidebar
+3. **Traduções**: Textos completos em português e inglês
+4. **Estabilidade**: Handler de eventos mais robusto e confiável
+
+### 🎯 **IMPACTO FUNCIONAL**
+- **UX Melhorada**: Navegação mais intuitiva com menu dedicado
+- **Funcionalidade Completa**: Botão cancelar aprovação totalmente operacional
+- **Interface Consistente**: Traduções padronizadas em toda aplicação
+- **Confiabilidade**: Menos falhas de JavaScript e melhor tratamento de erros
+
 ## [1.4.1] - 2025-01-27
 
 ### 🚀 **NOVA FUNCIONALIDADE - APROVAÇÃO SEMANAL**
