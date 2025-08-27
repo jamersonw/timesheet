@@ -1,10 +1,22 @@
 
 $(document).ready(function() {
     
+    // Verificar se o jQuery está carregado
+    if (typeof $ === 'undefined') {
+        console.error('jQuery não está carregado!');
+        return;
+    }
+    
+    // Verificar se os dados estão disponíveis
+    if (typeof weekly_manage_data === 'undefined') {
+        console.error('weekly_manage_data não está definido!');
+        return;
+    }
+    
     var currentApprovalId = null;
     
     // Load total hours for each approval
-    if (typeof weekly_manage_data !== 'undefined' && weekly_manage_data.weekly_approvals) {
+    if (weekly_manage_data.weekly_approvals) {
         weekly_manage_data.weekly_approvals.forEach(function(approval) {
             loadTotalHours(approval.id, approval.staff_id, approval.week_start_date);
         });

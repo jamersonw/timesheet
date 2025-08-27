@@ -303,14 +303,19 @@ class Timesheet extends AdminController
             access_denied('timesheet');
         }
 
-        $week_start = $this->input->get('week') ?: timesheet_get_week_start();
-        $data['week_start'] = $week_start;
-        $data['week_end'] = timesheet_get_week_end($week_start);
-        $data['week_dates'] = timesheet_get_week_dates($week_start);
-        $data['weekly_approvals'] = $this->timesheet_model->get_weekly_approvals($week_start);
-        $data['title'] = _l('timesheet_weekly_approvals');
+        try {
+            $week_start = $this->input->get('week') ?: timesheet_get_week_start();
+            $data['week_start'] = $week_start;
+            $data['week_end'] = timesheet_get_week_end($week_start);
+            $data['week_dates'] = timesheet_get_week_dates($week_start);
+            $data['weekly_approvals'] = $this->timesheet_model->get_weekly_approvals($week_start);
+            $data['title'] = _l('timesheet_weekly_approvals');
 
-        $this->load->view('timesheet/manage_weekly', $data);
+            $this->load->view('timesheet/manage_weekly', $data);
+        } catch (Exception $e) {
+            log_message('error', 'Timesheet manage_weekly error: ' . $e->getMessage());
+            show_error('Erro ao carregar aprovações semanais: ' . $e->getMessage(), 500, 'Erro Interno');
+        }
     }
 
     /**

@@ -2,6 +2,27 @@
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
 <?php init_head(); ?>
 <link rel="stylesheet" href="<?php echo module_dir_url('timesheet', 'assets/css/timesheet_modals.css'); ?>">
+<script>
+// Garantir que as funções CSRF estejam disponíveis
+function csrf_jquery_ajax_setup() {
+    if (typeof $ !== 'undefined' && $.ajaxSetup) {
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (settings.type == 'POST' || settings.type == 'PUT' || settings.type == 'DELETE') {
+                    if (typeof csrf_token_name !== 'undefined' && typeof csrf_hash_name !== 'undefined') {
+                        xhr.setRequestHeader(csrf_token_name, $('input[name="' + csrf_token_name + '"]').val());
+                    }
+                }
+            }
+        });
+    }
+}
+
+// Executar quando o documento estiver pronto
+$(document).ready(function() {
+    csrf_jquery_ajax_setup();
+});
+</script>
 <div id="wrapper">
     <div class="content">
         <div class="row">

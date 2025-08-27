@@ -518,11 +518,26 @@ class Timesheet_model extends App_Model
      */
     public function get_weekly_approvals($week_start_date)
     {
-        $this->db->select('ta.*, s.firstname, s.lastname, s.email');
-        $this->db->from(db_prefix() . 'timesheet_approvals ta');
-        $this->db->join(db_prefix() . 'staff s', 's.staffid = ta.staff_id');
-        $this->db->where('ta.week_start_date', $week_start_date);
-        $this->db->order_by('ta.status', 'ASC'); // pending first
+        try {
+            $this->db->select('ta.*, s.firstname, s.lastname, s.email');
+            $this->db->from(db_prefix() . 'timesheet_approvals ta');
+            $this->db->join(db_prefix() . 'staff s', 's.staffid = ta.staff_id');
+            $this->db->where('ta.week_start_date', $week_start_date);
+            $this->db->order_by('ta.status', 'ASC'); // pending first
+            $this->db->order_by('s.firstname', 'ASC');
+            
+            $result = $this->db->get()->result();
+            
+            if (!$result) {
+                return [];
+            }
+            
+            return $result;
+        } catch (Exception $e) {
+            log_message('error', 'Error in get_weekly_approvals: ' . $e->getMessage());
+            return [];
+        }
+    }
         $this->db->order_by('s.firstname', 'ASC');
         return $this->db->get()->result();
     }

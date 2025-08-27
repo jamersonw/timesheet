@@ -1,4 +1,3 @@
-
 <?php
 
 # Version 1.4.0
@@ -65,9 +64,9 @@ $lang['timesheet_permission_approve'] = 'Aprovar Timesheet';
 // Weekly approvals
 $lang['timesheet_weekly_approvals'] = 'Aprovações Semanais';
 $lang['timesheet_quick_approvals'] = 'Aprovações Rápidas';
-$lang['timesheet_no_approvals_this_week'] = 'Nenhum timesheet enviado para esta semana.';
+$lang['timesheet_no_approvals_this_week'] = 'Nenhuma aprovação encontrada para esta semana';
 $lang['timesheet_cancel_approval'] = 'Cancelar Aprovação';
-$lang['timesheet_approval_cancelled_successfully'] = 'Aprovação cancelada com sucesso. O funcionário foi notificado.';
+$lang['timesheet_approval_cancelled_successfully'] = 'Aprovação cancelada com sucesso! Funcionário foi notificado.';
 
 // User-friendly messages
 $lang['timesheet_pending_message'] = 'Suas horas foram enviadas e estão aguardando aprovação do gerente.';
@@ -99,4 +98,12 @@ $lang['options'] = 'Opções';
 $lang['view'] = 'Ver';
 $lang['close'] = 'Fechar';
 $lang['cancel'] = 'Cancelar';
+
+// Traduções adicionais para debug
+$lang['staff'] = 'Funcionário';
+$lang['status'] = 'Status';
+$lang['timesheet_total'] = 'Total';
+$lang['timesheet_hours'] = 'Horas';
+$lang['submitted_at'] = 'Enviado em';
+$lang['options'] = 'Ações';
 ?>
