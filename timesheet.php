@@ -160,13 +160,14 @@ function timesheet_init_menu_and_permissions()
         ]);
     }
 
-    // 3) PERMISSÕES (sem mudança)
+    // 3) PERMISSÕES - Registrar todas as capacidades incluindo 'approve'
     $capabilities = [];
     $capabilities['capabilities'] = [
         'view'   => _l('permission_view') . '(' . _l('permission_global') . ')',
         'create' => _l('permission_create'),
         'edit'   => _l('permission_edit'),
         'delete' => _l('permission_delete'),
+        'approve' => 'Aprovar Timesheet',
     ];
     register_staff_capabilities('timesheet', $capabilities, _l('timesheet'));
 }
