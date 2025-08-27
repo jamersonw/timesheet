@@ -1,0 +1,73 @@
+Corrigindo Permissões do Módulo Timesheet
+Debug - Conteúdo do database.php (primeiras 500 chars):
+<?php
+
+defined('BASEPATH') or exit('No direct script access allowed');
+include_once(APPPATH . 'config/app-config.php');
+
+/*
+| -------------------------------------------------------------------
+| DATABASE CONNECTIVITY SETTINGS
+| -------------------------------------------------------------------
+| This file will contain the settings needed to access your database.
+|
+| For complete instructions please consult the 'Database Connection'
+| page of the User Guide.
+|
+| ------------------...
+ℹ️ Detectado uso do app-config.php. Tentando extrair configurações...
+
+✅ Arquivo app-config.php encontrado
+
+Debug - Conteúdo do app-config.php (primeiras 800 chars):
+<?php
+
+defined('BASEPATH') or exit('No direct script access allowed');
+/*
+* --------------------------------------------------------------------------
+* Base Site URL
+* --------------------------------------------------------------------------
+*
+* URL to your CodeIgniter root. Typically this will be your base URL,
+* WITH a trailing slash:
+*
+*   http://example.com/
+*
+* If this is not set then CodeIgniter will try guess the protocol, domain
+* and path to your installation. However, you should always configure this
+* explicitly and never rely on auto-guessing, especially in production
+* environments.
+*
+*/
+define('APP_BASE_URL', 'https://perfex.neurodeep.com.br/');
+
+/*
+* --------------------------------------------------------------------------
+* Encryption Key
+* IMPORT...
+Tentando extrair configurações...
+Buscando hostname:
+✅ Encontrado: localhost
+
+Buscando username:
+✅ Encontrado: u755875096_jamersonw
+
+Buscando password:
+✅ Encontrado: 59886320#Jw
+
+Buscando database:
+✅ Encontrado: u755875096_perfex
+
+Buscando dbprefix:
+⚠️ Não encontrado
+
+Configurações detectadas:
+
+Host: localhost
+Database: u755875096_perfex
+Prefix: tbl_
+✅ Conectado ao banco de dados
+
+Tabela de permissões: tbl_staff_permissions
+
+❌ Tabela tbl_staff_permissions não existe. Verifique se o Perfex CRM está instalado corretamente.
