@@ -1,0 +1,225 @@
+Corrigindo Permissões do Módulo Timesheet
+Debug - Conteúdo do database.php (primeiras 500 chars):
+<?php
+
+defined('BASEPATH') or exit('No direct script access allowed');
+include_once(APPPATH . 'config/app-config.php');
+
+/*
+| -------------------------------------------------------------------
+| DATABASE CONNECTIVITY SETTINGS
+| -------------------------------------------------------------------
+| This file will contain the settings needed to access your database.
+|
+| For complete instructions please consult the 'Database Connection'
+| page of the User Guide.
+|
+| ------------------...
+ℹ️ Detectado uso do app-config.php. Tentando extrair configurações...
+
+✅ Arquivo app-config.php encontrado
+
+Debug - Conteúdo do app-config.php (primeiras 800 chars):
+<?php
+
+defined('BASEPATH') or exit('No direct script access allowed');
+/*
+* --------------------------------------------------------------------------
+* Base Site URL
+* --------------------------------------------------------------------------
+*
+* URL to your CodeIgniter root. Typically this will be your base URL,
+* WITH a trailing slash:
+*
+*   http://example.com/
+*
+* If this is not set then CodeIgniter will try guess the protocol, domain
+* and path to your installation. However, you should always configure this
+* explicitly and never rely on auto-guessing, especially in production
+* environments.
+*
+*/
+define('APP_BASE_URL', 'https://perfex.neurodeep.com.br/');
+
+/*
+* --------------------------------------------------------------------------
+* Encryption Key
+* IMPORT...
+Tentando extrair configurações...
+Buscando hostname:
+✅ Encontrado: localhost
+
+Buscando username:
+✅ Encontrado: u755875096_jamersonw
+
+Buscando password:
+✅ Encontrado: 59886320#Jw
+
+Buscando database:
+✅ Encontrado: u755875096_perfex
+
+Buscando dbprefix:
+⚠️ Não encontrado
+
+Configurações detectadas:
+
+Host: localhost
+Database: u755875096_perfex
+Prefix: tbl_
+✅ Conectado ao banco de dados
+
+🔍 Investigando estrutura do banco de dados...
+Tabelas encontradas com prefixo 'tbl_':
+
+❌ Nenhuma tabela encontrada com prefixo 'tbl_'
+🔍 Tentando detectar prefixo correto...
+
+✅ Prefixo detectado: 'tbl' (baseado na tabela 'tblstaff')
+
+Tabelas encontradas com prefixo correto 'tbl':
+
+tblactivity_log
+tblannouncements
+tblclients
+tblconsent_purposes
+tblconsents
+tblcontact_permissions
+tblcontacts
+tblcontract_comments
+tblcontract_renewals
+tblcontracts
+tblcontracts_types
+tblcountries
+tblcreditnote_refunds
+tblcreditnotes
+tblcredits
+tblcurrencies
+tblcustomer_admins
+tblcustomer_groups
+tblcustomers_groups
+tblcustomfields
+tblcustomfieldsvalues
+tbldepartments
+tbldismissed_announcements
+tblemailtemplates
+tblestimate_request_forms
+tblestimate_request_status
+tblestimate_requests
+tblestimates
+tblevents
+tblexpenses
+tblexpenses_categories
+tblfiles
+tblfilter_defaults
+tblfilters
+tblform_question_box
+tblform_question_box_description
+tblform_questions
+tblform_results
+tblgdpr_requests
+tblinvoicepaymentrecords
+tblinvoices
+tblitem_tax
+tblitemable
+tblitems
+tblitems_groups
+tblknowedge_base_article_feedback
+tblknowledge_base
+tblknowledge_base_groups
+tbllead_activity_log
+tbllead_integration_emails
+tblleads
+tblleads_email_integration
+tblleads_sources
+tblleads_status
+tblmail_queue
+tblmigrations
+tblmilestones
+tblmodules
+tblnewsfeed_comment_likes
+tblnewsfeed_post_comments
+tblnewsfeed_post_likes
+tblnewsfeed_posts
+tblnotes
+tblnotifications
+tbloptions
+tblpayment_attempts
+tblpayment_modes
+tblpinned_projects
+tblproject_activity
+tblproject_files
+tblproject_members
+tblproject_notes
+tblproject_settings
+tblprojectdiscussioncomments
+tblprojectdiscussions
+tblprojects
+tblproposal_comments
+tblproposals
+tblrelated_items
+tblreminders
+tblroles
+tblsales_activity
+tblscheduled_emails
+tblservices
+tblsessions
+tblshared_customer_files
+tblspam_filters
+tblstaff
+tblstaff_departments
+tblstaff_permissions
+tblsubscriptions
+tbltaggables
+tbltags
+tbltask_assigned
+tbltask_checklist_items
+tbltask_comments
+tbltask_followers
+tbltasks
+tbltasks_checklist_templates
+tbltaskstimers
+tbltaxes
+tbltemplates
+tblticket_attachments
+tblticket_replies
+tbltickets
+tbltickets_pipe_log
+tbltickets_predefined_replies
+tbltickets_priorities
+tbltickets_status
+tbltimesheet_approvals
+tbltimesheet_entries
+tbltodos
+tbltracked_mails
+tbltwocheckout_log
+tbluser_auto_login
+tbluser_meta
+tblvault
+tblviews_tracking
+tblweb_to_lead
+🔍 Procurando tabela de permissões...
+✅ Tabela encontrada: tblstaff_permissions
+
+✅ Permissões antigas removidas da tabela tblstaff_permissions
+
+✅ Permissão 'view' (Visualizar) adicionada à tabela tblstaff_permissions
+
+✅ Permissão 'create' (Criar) adicionada à tabela tblstaff_permissions
+
+✅ Permissão 'edit' (Editar) adicionada à tabela tblstaff_permissions
+
+✅ Permissão 'delete' (Deletar) adicionada à tabela tblstaff_permissions
+
+✅ Permissão 'approve' (Aprovar Timesheet) adicionada à tabela tblstaff_permissions
+
+Permissões Instaladas na tabela tblstaff_permissions:
+view - Visualizar
+create - Criar
+edit - Editar
+delete - Deletar
+approve - Aprovar Timesheet
+✅ Correção concluída! Vá para Configurações > Equipe > Cargos e verifique as permissões do módulo Timesheet.
+
+Nota: Pode ser necessário fazer logout e login novamente para as permissões fazerem efeito.
+
+Importante: Este script é apenas para correção emergencial. Na instalação normal do módulo através do painel administrativo, essas permissões são criadas automaticamente.
