@@ -1,4 +1,3 @@
-
 <?php
 /**
  * Script para corrigir permissões do módulo Timesheet
@@ -34,15 +33,15 @@ echo "<pre>" . htmlspecialchars(substr($db_config_content, 0, 500)) . "...</pre>
 // Verificar se database.php inclui app-config.php
 if (strpos($db_config_content, 'app-config.php') !== false) {
     echo "<p style='color: blue;'>ℹ️ Detectado uso do app-config.php. Tentando extrair configurações...</p>";
-    
+
     $app_config_file = $perfex_root . '/application/config/app-config.php';
     if (file_exists($app_config_file)) {
         echo "<p style='color: green;'>✅ Arquivo app-config.php encontrado</p>";
         $app_config_content = file_get_contents($app_config_file);
-        
+
         echo "<h3>Debug - Conteúdo do app-config.php (primeiras 800 chars):</h3>";
         echo "<pre>" . htmlspecialchars(substr($app_config_content, 0, 800)) . "...</pre>";
-        
+
         // Usar app-config.php em vez do database.php
         $db_config_content = $app_config_content;
     } else {
@@ -53,38 +52,43 @@ if (strpos($db_config_content, 'app-config.php') !== false) {
 // Padrões mais abrangentes incluindo variáveis PHP
 $patterns = [
     'hostname' => [
-        "/\\\$db\['default'\]\['hostname'\]\s*=\s*['\"]([^'\"]+)['\"]/",
-        "/\\\$database\['hostname'\]\s*=\s*['\"]([^'\"]+)['\"]/", 
+        "/\$db\['default'\]\['hostname'\]\s*=\s*['\"]([^'\"]+)['\"]/",
+        "/\$database\['hostname'\]\s*=\s*['\"]([^'\"]+)['\"]/", 
         "/define\(['\"]APP_DB_HOSTNAME['\"],\s*['\"]([^'\"]+)['\"]\)/",
-        "/\\\$hostname\s*=\s*['\"]([^'\"]+)['\"]/",
+        "/\$hostname\s*=\s*['\"]([^'\"]+)['\"]/",
+        " பகிregistry['hostname']\s*=\s*['\"]([^'\"]+)['\"]/",
         "/['\"]hostname['\"]?\s*=>\s*['\"]([^'\"]+)['\"]/",
     ],
     'username' => [
-        "/\\\$db\['default'\]\['username'\]\s*=\s*['\"]([^'\"]+)['\"]/",
-        "/\\\$database\['username'\]\s*=\s*['\"]([^'\"]+)['\"]/",
+        "/\$db\['default'\]\['username'\]\s*=\s*['\"]([^'\"]+)['\"]/",
+        "/\$database\['username'\]\s*=\s*['\"]([^'\"]+)['\"]/",
         "/define\(['\"]APP_DB_USERNAME['\"],\s*['\"]([^'\"]+)['\"]\)/",
-        "/\\\$username\s*=\s*['\"]([^'\"]+)['\"]/",
+        "/\$username\s*=\s*['\"]([^'\"]+)['\"]/",
+        " பகிregistry['username']\s*=\s*['\"]([^'\"]+)['\"]/",
         "/['\"]username['\"]?\s*=>\s*['\"]([^'\"]+)['\"]/",
     ],
     'password' => [
-        "/\\\$db\['default'\]\['password'\]\s*=\s*['\"]([^'\"]*)['\"]/",
-        "/\\\$database\['password'\]\s*=\s*['\"]([^'\"]*)['\"]/",
+        "/\$db\['default'\]\['password'\]\s*=\s*['\"]([^'\"]*)['\"]/",
+        "/\$database\['password'\]\s*=\s*['\"]([^'\"]*)['\"]/",
         "/define\(['\"]APP_DB_PASSWORD['\"],\s*['\"]([^'\"]*)['\"]\)/",
-        "/\\\$password\s*=\s*['\"]([^'\"]*)['\"]/",
+        "/\$password\s*=\s*['\"]([^'\"]*)['\"]/",
+        " பகிregistry['password']\s*=\s*['\"]([^'\"]*)['\"]/",
         "/['\"]password['\"]?\s*=>\s*['\"]([^'\"]*)['\"]/",
     ],
     'database' => [
-        "/\\\$db\['default'\]\['database'\]\s*=\s*['\"]([^'\"]+)['\"]/",
-        "/\\\$database\['database'\]\s*=\s*['\"]([^'\"]+)['\"]/",
+        "/\$db\['default'\]\['database'\]\s*=\s*['\"]([^'\"]+)['\"]/",
+        "/\$database\['database'\]\s*=\s*['\"]([^'\"]+)['\"]/",
         "/define\(['\"]APP_DB_NAME['\"],\s*['\"]([^'\"]+)['\"]\)/",
-        "/\\\$dbname\s*=\s*['\"]([^'\"]+)['\"]/",
+        "/\$dbname\s*=\s*['\"]([^'\"]+)['\"]/",
+        " பகிregistry['database']\s*=>\s*['\"]([^'\"]+)['\"]/",
         "/['\"]database['\"]?\s*=>\s*['\"]([^'\"]+)['\"]/",
     ],
     'dbprefix' => [
-        "/\\\$db\['default'\]\['dbprefix'\]\s*=\s*['\"]([^'\"]*)['\"]/",
-        "/\\\$database\['dbprefix'\]\s*=\s*['\"]([^'\"]*)['\"]/",
+        "/\$db\['default'\]\['dbprefix'\]\s*=\s*['\"]([^'\"]*)['\"]/",
+        "/\$database\['dbprefix'\]\s*=\s*['\"]([^'\"]*)['\"]/",
         "/define\(['\"]APP_DB_PREFIX['\"],\s*['\"]([^'\"]*)['\"]\)/",
-        "/\\\$dbprefix\s*=\s*['\"]([^'\"]*)['\"]/",
+        "/\$dbprefix\s*=\s*['\"]([^'\"]*)['\"]/",
+        " பகிregistry['dbprefix']\s*=\s*['\"]([^'\"]*)['\"]/",
         "/['\"]dbprefix['\"]?\s*=>\s*['\"]([^'\"]*)['\"]/",
     ]
 ];
@@ -96,7 +100,7 @@ echo "<h3>Tentando extrair configurações...</h3>";
 foreach ($patterns as $key => $pattern_list) {
     $found = false;
     echo "<strong>Buscando $key:</strong><br>";
-    
+
     foreach ($pattern_list as $pattern) {
         if (preg_match($pattern, $db_config_content, $matches)) {
             $config[$key] = $matches[1];
@@ -105,7 +109,7 @@ foreach ($patterns as $key => $pattern_list) {
             break;
         }
     }
-    
+
     if (!$found) {
         echo "<span style='color: orange;'>⚠️ Não encontrado</span><br>";
         if ($key !== 'dbprefix' && $key !== 'password') {
@@ -172,9 +176,108 @@ try {
         'approve' => 'Aprovar Timesheet'
     ];
 
-    $table_name = $dbprefix . 'staff_permissions';
-    
-    echo "<p>Tabela de permissões: <strong>$table_name</strong></p>";
+    // Primeiro, vamos listar todas as tabelas para entender a estrutura
+    echo "<h3>🔍 Investigando estrutura do banco de dados...</h3>";
+    $tables_query = $mysqli->query("SHOW TABLES");
+    $all_tables = [];
+    while ($row = $tables_query->fetch_row()) {
+        $all_tables[] = $row[0];
+    }
+
+    echo "<p><strong>Tabelas encontradas com prefixo '$dbprefix':</strong></p><ul>";
+    $perfex_tables = array_filter($all_tables, function($table) use ($dbprefix) {
+        return strpos($table, $dbprefix) === 0;
+    });
+
+    foreach ($perfex_tables as $table) {
+        echo "<li>$table</li>";
+    }
+    echo "</ul>";
+
+    // Tentar várias possibilidades de tabelas de permissões do Perfex
+    $possible_tables = [
+        $dbprefix . 'staff_permissions',
+        $dbprefix . 'permissions', 
+        $dbprefix . 'module_permissions',
+        $dbprefix . 'staff_permissions_modules',
+        $dbprefix . 'roles_permissions',
+        $dbprefix . 'staff_role_permissions'
+    ];
+
+    $table_name = null;
+    echo "<h3>🔍 Procurando tabela de permissões...</h3>";
+    foreach ($possible_tables as $possible_table) {
+        $table_check = $mysqli->query("SHOW TABLES LIKE '$possible_table'");
+        if ($table_check->num_rows > 0) {
+            $table_name = $possible_table;
+            echo "<p style='color: green;'>✅ Tabela encontrada: <strong>$table_name</strong></p>";
+            break;
+        } else {
+            echo "<p style='color: orange;'>⚠️ $possible_table não existe</p>";
+        }
+    }
+
+    if (!$table_name) {
+        echo "<p style='color: orange;'>⚠️ Nenhuma tabela de permissões padrão encontrada. Vamos usar método de configuração direta...</p>";
+        // Método alternativo: Verificar se existe tabela de roles/cargos
+        $roles_table = $dbprefix . 'roles';
+        $roles_check = $mysqli->query("SHOW TABLES LIKE '$roles_table'");
+
+        if ($roles_check->num_rows > 0) {
+            echo "<p style='color: blue;'>📋 Encontrada tabela de cargos: <strong>$roles_table</strong></p>";
+
+            // Verificar estrutura da tabela roles
+            $roles_structure = $mysqli->query("DESCRIBE `$roles_table`");
+            echo "<p><strong>Estrutura da tabela de cargos:</strong></p><ul>";
+            while ($field = $roles_structure->fetch_assoc()) {
+                echo "<li><strong>{$field['Field']}</strong> ({$field['Type']})</li>";
+            }
+            echo "</ul>";
+
+            // Tentar inserir permissões na tabela de options como fallback
+            $options_table = $dbprefix . 'options';
+            $options_check = $mysqli->query("SHOW TABLES LIKE '$options_table'");
+
+            if ($options_check->num_rows > 0) {
+                echo "<p style='color: blue;'>💾 Configurando permissões via sistema de opções...</p>";
+
+                $permission_options = [
+                    'timesheet_module_enabled' => '1',
+                    'timesheet_permissions_configured' => '1'
+                ];
+
+                foreach ($permission_options as $option_name => $option_value) {
+                    // Verificar se já existe
+                    $check_query = "SELECT * FROM `$options_table` WHERE name = '$option_name'";
+                    $check_result = $mysqli->query($check_query);
+
+                    if ($check_result->num_rows == 0) {
+                        $insert_query = "INSERT INTO `$options_table` (name, value, autoload) VALUES ('$option_name', '$option_value', 1)";
+                        if ($mysqli->query($insert_query)) {
+                            echo "<p style='color: green;'>✅ Opção '$option_name' criada</p>";
+                        }
+                    } else {
+                        echo "<p style='color: blue;'>ℹ️ Opção '$option_name' já existe</p>";
+                    }
+                }
+
+                echo "<p style='color: green; font-weight: bold;'>✅ Configurações básicas do módulo aplicadas!</p>";
+                echo "<p style='color: orange;'><strong>⚠️ IMPORTANTE:</strong> As permissões específicas devem ser configuradas manualmente em:</p>";
+                echo "<p><strong>Configurações → Equipe → Cargos → [Seu Cargo] → Editar Permissões</strong></p>";
+                echo "<p>Procure por 'Timesheet' na lista de módulos e ative as permissões desejadas.</p>";
+                $mysqli->close();
+                exit;
+            } else {
+                echo "<p style='color: red;'>❌ Tabela de opções ('$options_table') não encontrada. Não é possível aplicar permissões via método alternativo.</p>";
+            }
+        } else {
+            echo "<p style='color: red;'>❌ Tabela de cargos ('$roles_table') não encontrada. Não é possível aplicar permissões via método alternativo.</p>";
+        }
+        
+        echo "<p style='color: red; font-weight: bold;'>❌ Falha ao encontrar ou aplicar permissões. Verifique manualmente as tabelas do seu Perfex CRM.</p>";
+        $mysqli->close();
+        exit;
+    }
 
     // Verificar se a tabela existe
     $table_check = $mysqli->query("SHOW TABLES LIKE '$table_name'");
@@ -187,29 +290,35 @@ try {
     // Limpar permissões existentes do timesheet
     $delete_sql = "DELETE FROM `$table_name` WHERE feature = 'timesheet'";
     if ($mysqli->query($delete_sql)) {
-        echo "<p style='color: green;'>✅ Permissões antigas removidas</p>";
+        echo "<p style='color: green;'>✅ Permissões antigas removidas da tabela $table_name</p>";
+    } else {
+        echo "<p style='color: red;'>❌ Erro ao remover permissões antigas: " . $mysqli->error . "</p>";
     }
 
     // Inserir permissões corretas
     foreach ($permissions as $permission => $name) {
         $insert_sql = "INSERT INTO `$table_name` (feature, capability) VALUES ('timesheet', '$permission')";
-        
+
         if ($mysqli->query($insert_sql)) {
-            echo "<p style='color: green;'>✅ Permissão '$permission' ($name) adicionada</p>";
+            echo "<p style='color: green;'>✅ Permissão '$permission' ($name) adicionada à tabela $table_name</p>";
         } else {
-            echo "<p style='color: red;'>❌ Erro ao adicionar '$permission': " . $mysqli->error . "</p>";
+            echo "<p style='color: red;'>❌ Erro ao adicionar '$permission' à tabela $table_name: " . $mysqli->error . "</p>";
         }
     }
 
     // Verificar resultado final
     $check_sql = "SELECT * FROM `$table_name` WHERE feature = 'timesheet'";
     $result = $mysqli->query($check_sql);
-    
-    echo "<h3>Permissões Instaladas:</h3>";
+
+    echo "<h3>Permissões Instaladas na tabela $table_name:</h3>";
     echo "<ul>";
-    while ($row = $result->fetch_assoc()) {
-        $perm_name = isset($permissions[$row['capability']]) ? $permissions[$row['capability']] : $row['capability'];
-        echo "<li><strong>" . $row['capability'] . "</strong> - " . $perm_name . "</li>";
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $perm_name = isset($permissions[$row['capability']]) ? $permissions[$row['capability']] : $row['capability'];
+            echo "<li><strong>" . $row['capability'] . "</strong> - " . $perm_name . "</li>";
+        }
+    } else {
+        echo "<p style='color: red;'>❌ Erro ao verificar permissões: " . $mysqli->error . "</p>";
     }
     echo "</ul>";
 
