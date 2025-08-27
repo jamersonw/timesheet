@@ -67,35 +67,52 @@ hooks()->add_action('admin_init', 'timesheet_init_menu_and_permissions');
 
 function timesheet_init_menu_and_permissions()
 {
-    $CI = &get_instance();
+    $CI =& get_instance();
 
-    // 1. REGISTRO DOS ITENS DE MENU
-    if (has_permission('timesheet', '', 'view')) {
-        $CI->app_menu->add_sidebar_menu_item('timesheet', [
-            'name'     => _l('timesheet_my_timesheet'),
-            'href'     => admin_url('timesheet'),
-            'icon'     => 'fa fa-clock-o',
+    // 1) CRIA O GRUPO (sem href) – aparece para quem tiver QUALQUER uma das permissões abaixo
+    if (has_permission('timesheet', '', 'view') || is_admin() || timesheet_can_manage_any_project(get_staff_user_id())) {
+        $CI->app_menu->add_sidebar_menu_item('timesheet_group', [
+            'name'     => _l('timesheet'),
+            'icon'     => 'fa fa-calendar', // use ícone garantido no FA 4.7
             'position' => 30,
         ]);
     }
 
-    if (is_admin() || timesheet_can_manage_any_project(get_staff_user_id())) {
-        $CI->app_menu->add_sidebar_menu_item('timesheet_manage', [
-            'name'     => _l('timesheet_manage'),
-            'href'     => admin_url('timesheet/manage'),
-            'icon'     => 'fa fa-tasks',
-            'position' => 31,
-        ]);
-        
-        $CI->app_menu->add_sidebar_menu_item('timesheet_weekly_manage', [
-            'name'     => _l('timesheet_weekly_approvals'),
-            'href'     => admin_url('timesheet/manage_weekly'),
-            'icon'     => 'fa fa-calendar-check-o',
-            'position' => 32,
+    // 2) FILHOS DO MENU (cada um com sua regra de visibilidade)
+
+    // Meu Timesheet – para quem pode "view"
+    if (has_permission('timesheet', '', 'view')) {
+        $CI->app_menu->add_sidebar_children_item('timesheet_group', [
+            'slug'     => 'timesheet_my_timesheet',
+            'name'     => _l('timesheet_my_timesheet'),
+            'href'     => admin_url('timesheet'),
+            //'icon'     => 'fa fa-calendar',
+            'position' => 1,
         ]);
     }
 
-    // 2. REGISTRO DAS PERMISSÕES
+    // Aprovação Rápida – só para gestores/admin
+    if (is_admin() || timesheet_can_manage_any_project(get_staff_user_id())) {
+        // Aprovação Semanal – só para gestores/admin
+        $CI->app_menu->add_sidebar_children_item('timesheet_group', [
+            'slug'     => 'timesheet_weekly_manage',
+            'name'     => _l('timesheet_weekly_approvals'),
+            'href'     => admin_url('timesheet/manage_weekly'),
+            //'icon'     => 'fa fa-calendar-o', // evite fa-calendar-check-o (FA5+)
+            'position' => 3,
+        ]);
+
+        // (Opcional) Gerenciar Timesheet – se quiser manter dentro do grupo
+        $CI->app_menu->add_sidebar_children_item('timesheet_group', [
+            'slug'     => 'timesheet_manage',
+            'name'     => _l('timesheet_quick_approvals'),
+            'href'     => admin_url('timesheet/manage'),
+            //'icon'     => 'fa fa-tasks',
+            'position' => 4,
+        ]);
+    }
+
+    // 3) PERMISSÕES (sem mudança)
     $capabilities = [];
     $capabilities['capabilities'] = [
         'view'   => _l('permission_view') . '(' . _l('permission_global') . ')',
@@ -104,8 +121,6 @@ function timesheet_init_menu_and_permissions()
         'delete' => _l('permission_delete'),
     ];
     register_staff_capabilities('timesheet', $capabilities, _l('timesheet'));
-
-    log_activity('[Timesheet v1.4.0] Módulo inicializado - MODO UNIDIRECIONAL (sem hooks bidirecionais)');
 }
 
 /**

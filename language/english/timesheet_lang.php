@@ -76,3 +76,4 @@ $lang['timesheet_cannot_cancel_submission'] = 'Cannot cancel submission';
 $lang['timesheet_approved_successfully'] = 'Timesheet approved successfully';
 $lang['timesheet_rejected_successfully'] = 'Timesheet rejected successfully';
 $lang['timesheet_weekly_approvals'] = 'Weekly Approvals';
+$lang['timesheet_quick_approvals'] = 'Quick Approvals';
