@@ -7,20 +7,44 @@
 
 // Verificar se estamos no ambiente correto
 $perfex_root = dirname(dirname(__DIR__));
-$index_file = $perfex_root . '/index.php';
+$config_file = $perfex_root . '/application/config/config.php';
 
-if (!file_exists($index_file)) {
-    die('Este script deve ser executado a partir do diretório modules/timesheet/');
+if (!file_exists($config_file)) {
+    die('Este script deve ser executado a partir do diretório modules/timesheet/ dentro do Perfex CRM');
 }
 
-// Incluir o bootstrap do Perfex
-define('BASEPATH', true);
-require_once $perfex_root . '/application/config/database.php';
+echo "<h2>Corrigindo Permissões do Módulo Timesheet</h2>";
 
-// Configuração básica do banco
+// Carregar configuração do banco manualmente
+$db_config_file = $perfex_root . '/application/config/database.php';
+
+if (!file_exists($db_config_file)) {
+    die('Arquivo de configuração do banco não encontrado');
+}
+
+// Definir constantes necessárias antes de carregar o config
+if (!defined('BASEPATH')) {
+    define('BASEPATH', true);
+}
+if (!defined('APPPATH')) {
+    define('APPPATH', $perfex_root . '/application/');
+}
+if (!defined('ENVIRONMENT')) {
+    define('ENVIRONMENT', 'production');
+}
+
+// Carregar configuração do banco
+$db = array();
+include $db_config_file;
+
+if (empty($db['default'])) {
+    die('Configuração do banco de dados não encontrada');
+}
+
 $db_config = $db['default'];
 
 try {
+    // Conectar ao banco
     $mysqli = new mysqli(
         $db_config['hostname'], 
         $db_config['username'], 
@@ -32,7 +56,7 @@ try {
         die('Erro de conexão: ' . $mysqli->connect_error);
     }
 
-    echo "<h2>Corrigindo Permissões do Módulo Timesheet</h2>";
+    echo "<p style='color: green;'>✅ Conectado ao banco de dados</p>";
 
     // Definir permissões corretas
     $permissions = [
@@ -46,6 +70,14 @@ try {
     $table_name = $db_config['dbprefix'] . 'staff_permissions';
     
     echo "<p>Tabela de permissões: <strong>$table_name</strong></p>";
+
+    // Verificar se a tabela existe
+    $table_check = $mysqli->query("SHOW TABLES LIKE '$table_name'");
+    if ($table_check->num_rows == 0) {
+        echo "<p style='color: red;'>❌ Tabela $table_name não existe. Verifique se o Perfex CRM está instalado corretamente.</p>";
+        $mysqli->close();
+        exit;
+    }
 
     // Limpar permissões existentes do timesheet
     $delete_sql = "DELETE FROM `$table_name` WHERE feature = 'timesheet'";
@@ -77,6 +109,7 @@ try {
     echo "</ul>";
 
     echo "<p style='color: green; font-weight: bold;'>✅ Correção concluída! Vá para Configurações > Equipe > Cargos e verifique as permissões do módulo Timesheet.</p>";
+    echo "<p><em>Nota: Pode ser necessário fazer logout e login novamente para as permissões fazerem efeito.</em></p>";
 
     $mysqli->close();
 
