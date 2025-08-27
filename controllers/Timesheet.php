@@ -8,7 +8,13 @@ class Timesheet extends AdminController
     {
         parent::__construct();
         $this->load->model('timesheet/timesheet_model');
-        $this->load->helper('timesheet/timesheet');
+        
+        // Verificar se o helper existe antes de carregar
+        if (file_exists(APPPATH . 'modules/timesheet/helpers/timesheet_helper.php')) {
+            $this->load->helper('timesheet/timesheet');
+        } else {
+            log_message('error', 'Timesheet helper file not found');
+        }
     }
 
     public function index()
@@ -304,6 +310,9 @@ class Timesheet extends AdminController
         }
 
         try {
+            // Carregar helper necessário
+            $this->load->helper('timesheet/timesheet');
+            
             $week_start = $this->input->get('week') ?: timesheet_get_week_start();
             $data['week_start'] = $week_start;
             $data['week_end'] = timesheet_get_week_end($week_start);
@@ -311,10 +320,12 @@ class Timesheet extends AdminController
             $data['weekly_approvals'] = $this->timesheet_model->get_weekly_approvals($week_start);
             $data['title'] = _l('timesheet_weekly_approvals');
 
+            log_activity('[Timesheet] Aprovações semanais carregadas para semana: ' . $week_start);
             $this->load->view('timesheet/manage_weekly', $data);
         } catch (Exception $e) {
             log_message('error', 'Timesheet manage_weekly error: ' . $e->getMessage());
-            show_error('Erro ao carregar aprovações semanais: ' . $e->getMessage(), 500, 'Erro Interno');
+            log_activity('[Timesheet ERROR] Erro ao carregar aprovações semanais: ' . $e->getMessage());
+            show_error('Erro ao carregar aprovações semanais. Verifique os logs para mais detalhes.', 500, 'Erro Interno');
         }
     }
 

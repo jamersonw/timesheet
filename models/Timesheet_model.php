@@ -538,9 +538,6 @@ class Timesheet_model extends App_Model
             return [];
         }
     }
-        $this->db->order_by('s.firstname', 'ASC');
-        return $this->db->get()->result();
-    }
 
     /**
      * Cancel an approval and revert to draft status
