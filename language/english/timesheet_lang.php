@@ -62,7 +62,7 @@ $lang['timesheet_permission_delete'] = 'Delete Timesheet';
 $lang['timesheet_permission_approve'] = 'Approve Timesheet';
 
 // Weekly approvals
-$lang['timesheet_weekly_approvals'] = 'Weekly Approvals';
+$lang['timesheet_weekly_approvals'] = 'Weekly Management';
 $lang['timesheet_quick_approvals'] = 'Quick Approvals';
 $lang['timesheet_no_approvals_this_week'] = 'No timesheets submitted for this week.';
 $lang['timesheet_cancel_approval'] = 'Cancel Approval';

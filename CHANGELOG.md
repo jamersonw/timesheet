@@ -13,7 +13,7 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ### Enhanced
 - Interface mais intuitiva para gerentes
-- Navegação semanal com filtros visuais
+- Navegação semanal com filters visuais
 - Histórico completo das decisões tomadas
 - Remoção automática de timers ao cancelar aprovação
 - Sincronização automática entre as telas
@@ -24,7 +24,25 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 - View: `manage_weekly.php` para interface semanal
 - JavaScript: `manage_weekly.js` com funcionalidades específicas
 
-## [1.4.0] - 2025-01-25
+## [1.4.0] - 2025-01-26
+### Added
+- Nova tela de aprovações semanais com navegação por semana
+- Funcionalidade de cancelar aprovação e reverter para draft
+- Sistema de notificações quando aprovação é cancelada
+- Menus separados para aprovações rápidas e semanais
+- Interface melhorada com status visual e ações contextuais
+
+### Changed  
+- Reorganização dos menus de aprovação em estrutura hierárquica
+- Melhor experiência do usuário para gerentes
+- Nomes dos menus mais intuitivos
+
+### Fixed
+- Correção da estrutura de menus (agrupados em submenu)
+- Aprovações processadas agora aparecem no histórico
+- Carregamento correto de dados nas aprovações semanais
+- Interface com abas para melhor organização
+
 ### Changed
 - **ARQUITETURA**: Módulo agora opera em modo **UNIDIRECIONAL**
 - Timesheet → Quadro de horas (apenas nesta direção)
@@ -41,7 +59,6 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 - Sincronização Quadro → Timesheet (modo bidirecional)
 - Processamento automático de alterações no quadro
 - Endpoint de sincronização AJAX
-</original>
 
 ## [1.3.18] - 2025-01-26
 

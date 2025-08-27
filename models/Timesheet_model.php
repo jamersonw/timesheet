@@ -443,6 +443,17 @@ class Timesheet_model extends App_Model
         $this->db->from(db_prefix() . 'timesheet_approvals ta');
         $this->db->join(db_prefix() . 'staff s', 's.staffid = ta.staff_id');
         $this->db->where('ta.status', 'pending');
+        $this->db->order_by('ta.submitted_at', 'DESC');
+        return $this->db->get()->result();
+    }
+
+    public function get_all_approvals($manager_id, $limit = 50)
+    {
+        $this->db->select('ta.*, s.firstname, s.lastname, s.email');
+        $this->db->from(db_prefix() . 'timesheet_approvals ta');
+        $this->db->join(db_prefix() . 'staff s', 's.staffid = ta.staff_id');
+        $this->db->order_by('ta.submitted_at', 'DESC');
+        $this->db->limit($limit);
         return $this->db->get()->result();
     }
 

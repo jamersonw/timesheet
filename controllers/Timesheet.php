@@ -159,6 +159,7 @@ class Timesheet extends AdminController
         }
 
         $data['pending_approvals'] = $this->timesheet_model->get_pending_approvals(get_staff_user_id());
+        $data['all_approvals'] = $this->timesheet_model->get_all_approvals(get_staff_user_id());
         $data['title'] = _l('timesheet_manage');
 
         $this->load->view('timesheet/manage', $data);

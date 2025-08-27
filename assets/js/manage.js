@@ -6,9 +6,16 @@ $(document).ready(function() {
     console.log('Botões de aprovação encontrados:', $('.approve-btn').length);
     console.log('Botões de rejeição encontrados:', $('.reject-btn').length);
     
-    // Load total hours for each approval
+    // Load total hours for pending approvals
     if (typeof manage_data !== 'undefined' && manage_data.pending_approvals) {
         manage_data.pending_approvals.forEach(function(approval) {
+            loadTotalHours(approval.id, approval.staff_id, approval.week_start_date);
+        });
+    }
+
+    // Load total hours for all approvals
+    if (typeof manage_data !== 'undefined' && manage_data.all_approvals) {
+        manage_data.all_approvals.forEach(function(approval) {
             loadTotalHours(approval.id, approval.staff_id, approval.week_start_date);
         });
     }

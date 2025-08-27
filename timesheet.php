@@ -72,23 +72,33 @@ function timesheet_init_menu_and_permissions()
     // 1. REGISTRO DOS ITENS DE MENU
     // Atualizado para refletir a Opção B - Menus Separados
 
-    // Menu para Aprovações Rápidas (tela atual melhorada)
+    // Menu principal Timesheet
     if (has_permission('timesheet', '', 'view')) {
-        $CI->app_menu->add_sidebar_menu_item('timesheet_quick_approvals', [
-            'name'     => _l('timesheet_quick_approvals'),
-            'href'     => admin_url('timesheet/manage'),
-            'icon'     => 'fa fa-flash',
+        $CI->app_menu->add_sidebar_menu_item('timesheet_main', [
+            'name'     => _l('timesheet'),
+            'href'     => admin_url('timesheet'),
+            'icon'     => 'fa fa-clock-o',
             'position' => 30,
         ]);
     }
 
-    // Menu para Aprovações Semanais (nova tela com navegação semanal)
+    // Submenu para Aprovações Rápidas
+    if (has_permission('timesheet', '', 'view')) {
+        $CI->app_menu->add_sidebar_children_item('timesheet_main', [
+            'slug'     => 'timesheet_quick_approvals',
+            'name'     => _l('timesheet_quick_approvals'),
+            'href'     => admin_url('timesheet/manage'),
+            'icon'     => 'fa fa-flash',
+        ]);
+    }
+
+    // Submenu para Aprovações Semanais
     if (is_admin() || timesheet_can_manage_any_project(get_staff_user_id())) {
-        $CI->app_menu->add_sidebar_menu_item('timesheet_weekly_approvals', [
+        $CI->app_menu->add_sidebar_children_item('timesheet_main', [
+            'slug'     => 'timesheet_weekly_approvals', 
             'name'     => _l('timesheet_weekly_approvals'),
             'href'     => admin_url('timesheet/manage_weekly'),
             'icon'     => 'fa fa-calendar',
-            'position' => 31,
         ]);
     }
 
