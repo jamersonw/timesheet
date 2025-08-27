@@ -7,13 +7,13 @@ defined('BASEPATH') or exit('No direct script access allowed');
 /*
 Module Name: Timesheet
 Description: Sistema de apontamento de horas com aprovação para profissionais e gerentes de projeto - Versão Simplificada
-Version: 1.4.0
+Version: 1.5.1
 Requires at least: 2.3.*
 Author: Perfex CRM Module Developer
 */
 
 define('TIMESHEET_MODULE_NAME', 'timesheet');
-define('TIMESHEET_MODULE_VERSION', '1.4.0');
+define('TIMESHEET_MODULE_VERSION', '1.5.1');
 
 /**
  * Register activation hook
@@ -122,7 +122,7 @@ function timesheet_init_menu_and_permissions()
     ];
     register_staff_capabilities('timesheet', $capabilities, _l('timesheet'));
 
-    log_activity('[Timesheet v1.4.0] Módulo inicializado - MODO UNIDIRECIONAL (sem hooks bidirecionais)');
+    log_activity('[Timesheet v1.5.1] Módulo inicializado - MODO UNIDIRECIONAL (sem hooks bidirecionais)');
 }
 
 /**

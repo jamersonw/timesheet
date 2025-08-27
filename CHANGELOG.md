@@ -2,6 +2,23 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.5.1] - 2025-01-27
+### Fixed
+- **Interface de Aprovações**: Tradução de cabeçalhos da tabela para português
+- **Menu Principal**: Restaurado menu "Meu Timesheet" que havia desaparecido
+- **Idioma**: Adicionado suporte completo ao português brasileiro
+- **UX**: Removido texto desnecessário "Options" da interface
+
+### Added
+- Traduções completas para portuguese_br
+- Navegação melhorada entre aprovações rápidas e semanais
+- Interface mais limpa e intuitiva
+
+### Enhanced
+- Menu de navegação mais organizado
+- Consistência nas traduções entre todas as telas
+- Melhor experiência do usuário para gerentes e funcionários
+
 ## [1.5.0] - 2025-01-25
 ### Added
 - **NOVA INTERFACE**: Sistema de aprovações com menus separados
