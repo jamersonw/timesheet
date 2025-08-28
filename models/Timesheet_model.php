@@ -38,8 +38,9 @@ class Timesheet_model extends App_Model
 
     /**
      * Get timesheet entries for a staff member and week, grouped by project/task.
+     * (CORRIGIDO COM FILTRO DE GERENTE)
      */
-    public function get_week_entries_grouped($staff_id, $week_start_date)
+    public function get_week_entries_grouped($staff_id, $week_start_date, $manager_id = null)
     {
         $this->db->select('te.*, p.name as project_name, t.name as task_name');
         $this->db->from(db_prefix() . 'timesheet_entries te');
@@ -47,6 +48,13 @@ class Timesheet_model extends App_Model
         $this->db->join(db_prefix() . 'tasks t', 't.id = te.task_id', 'left');
         $this->db->where('te.staff_id', $staff_id);
         $this->db->where('te.week_start_date', $week_start_date);
+
+        // LÓGICA DE FILTRO ADICIONADA
+        if ($manager_id && !is_admin($manager_id)) {
+            $this->db->join(db_prefix() . 'project_members pm', 'pm.project_id = te.project_id');
+            $this->db->where('pm.staff_id', $manager_id);
+        }
+
         $entries = $this->db->get()->result();
 
         $grouped = [];
@@ -688,203 +696,117 @@ class Timesheet_model extends App_Model
     }
 
     /**
-     * Get ALL approvals for a specific week (pending + approved)
-     * Retorna aprovações agrupadas por funcionário, mostrando pending e approved
+     * Get ALL approvals for a specific week, filtered by manager's projects.
+     * Returns approvals grouped by staff member.
+     * @param  string|null $week_start_date
+     * @param  int|null    $manager_id
+     * @return array
      */
-    public function get_weekly_all_approvals($week_start_date = null) {
-        try {
-            log_activity('[Weekly Model] ======== INICIANDO get_weekly_all_approvals ========');
+    public function get_weekly_all_approvals($week_start_date = null, $manager_id = null)
+    {
+        if (is_null($manager_id)) {
+            $manager_id = get_staff_user_id();
+        }
+
+        if (!$week_start_date) {
+            $week_start_date = date('Y-m-d', strtotime('monday this week'));
+        }
+
+        $approvals_table = db_prefix() . 'timesheet_approvals';
+        $staff_table = db_prefix() . 'staff';
+        $project_members_table = db_prefix() . 'project_members';
+
+        $project_ids = [];
+
+        // Admins can see everything. For others, get their projects.
+        if (!is_admin($manager_id)) {
+            $this->db->select('project_id');
+            $this->db->where('staff_id', $manager_id);
+            $member_of_projects = $this->db->get($project_members_table)->result_array();
             
-            if (!$week_start_date) {
-                $week_start_date = date('Y-m-d', strtotime('monday this week'));
-                log_activity('[Weekly Model] Week start não informado, usando semana atual: ' . $week_start_date);
-            } else {
-                log_activity('[Weekly Model] Week start informado: ' . $week_start_date);
+            if (empty($member_of_projects)) {
+                return []; // This manager is not in any projects, so they can't approve anything.
             }
+            $project_ids = array_column($member_of_projects, 'project_id');
+        }
 
-            // Validar formato da data
-            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $week_start_date)) {
-                log_activity('[Weekly Model ERROR] Formato de data inválido: ' . $week_start_date);
-                return [];
-            }
+        // Fetch all individual task approvals for the given week.
+        // If it's an admin, $project_ids is empty, so the where_in is skipped.
+        // If it's a manager, it filters by their projects.
+        $this->db->select('ta.*, s.firstname, s.lastname, s.email');
+        $this->db->from("{$approvals_table} ta");
+        $this->db->join("{$staff_table} s", 's.staffid = ta.staff_id');
+        $this->db->where('ta.week_start_date', $week_start_date);
+        
+        if (!empty($project_ids)) {
+            $this->db->where_in('ta.project_id', $project_ids);
+        }
+        
+        $this->db->where('ta.status IN (\'pending\', \'approved\')');
+        $this->db->order_by('s.firstname ASC, s.lastname ASC');
+        $all_approvals = $this->db->get()->result();
 
-            $week_end_date = date('Y-m-d', strtotime($week_start_date . ' +6 days'));
-            log_activity('[Weekly Model] Período: ' . $week_start_date . ' até ' . $week_end_date);
+        if (empty($all_approvals)) {
+            return [];
+        }
 
-            // Verificar se tabelas existem
-            $entries_table = db_prefix() . 'timesheet_entries';
-            $staff_table = db_prefix() . 'staff';
-            $approvals_table = db_prefix() . 'timesheet_approvals';
-            
-            log_activity('[Weekly Model] Verificando tabelas:');
-            log_activity('[Weekly Model] - Entries: ' . $entries_table);
-            log_activity('[Weekly Model] - Staff: ' . $staff_table);
-            log_activity('[Weekly Model] - Approvals: ' . $approvals_table);
+        // Now, group the filtered approvals by staff member for the view
+        $result = [];
+        $staff_processed = [];
 
-            // Buscar todos os funcionários com entradas na semana
-            log_activity('[Weekly Model] 1️⃣ Buscando funcionários com entradas...');
-            
-            $this->db->select('DISTINCT(staff_id)');
-            $this->db->where('week_start_date', $week_start_date);
-            $query = $this->db->get($entries_table);
-            
-            if (!$query) {
-                $db_error = $this->db->error();
-                log_activity('[Weekly Model ERROR] Erro na query de entradas: ' . $db_error['message']);
-                return [];
-            }
-            
-            $staff_ids_with_entries = $query->result_array();
-            log_activity('[Weekly Model] Entradas encontradas: ' . count($staff_ids_with_entries));
+        foreach ($all_approvals as $approval) {
+            $staff_id = $approval->staff_id;
 
-            if (empty($staff_ids_with_entries)) {
-                log_activity('[Weekly Model] ❌ Nenhuma entrada de timesheet encontrada para a semana ' . $week_start_date);
-                return [];
-            }
+            if (!in_array($staff_id, $staff_processed)) {
+                $staff_processed[] = $staff_id;
 
-            $staff_ids = array_column($staff_ids_with_entries, 'staff_id');
-            log_activity('[Weekly Model] Staff IDs com entradas: ' . implode(', ', $staff_ids));
-
-            // Buscar informações dos funcionários
-            log_activity('[Weekly Model] 2️⃣ Buscando informações dos funcionários...');
-            
-            $this->db->select('staffid, firstname, lastname, email');
-            $this->db->where_in('staffid', $staff_ids);
-            $query = $this->db->get($staff_table);
-            
-            if (!$query) {
-                $db_error = $this->db->error();
-                log_activity('[Weekly Model ERROR] Erro na query de staff: ' . $db_error['message']);
-                return [];
-            }
-            
-            $staff_with_entries = $query->result();
-            log_activity('[Weekly Model] Funcionários encontrados: ' . count($staff_with_entries));
-
-            if (empty($staff_with_entries)) {
-                log_activity('[Weekly Model ERROR] ❌ Nenhum funcionário encontrado com as IDs: ' . implode(',', $staff_ids));
-                return [];
-            }
-
-            // Log dos funcionários encontrados
-            foreach ($staff_with_entries as $staff) {
-                log_activity('[Weekly Model] Staff: ID=' . $staff->staffid . ', Nome=' . $staff->firstname . ' ' . $staff->lastname);
-            }
-
-            // Buscar aprovações para estes funcionários na semana especificada
-            log_activity('[Weekly Model] 3️⃣ Buscando aprovações...');
-            
-            $this->db->select('ta.*, s.firstname, s.lastname, s.email');
-            $this->db->from("{$approvals_table} ta");
-            $this->db->join("{$staff_table} s", 's.staffid = ta.staff_id');
-            $this->db->where('ta.week_start_date', $week_start_date);
-            $this->db->where_in('ta.staff_id', $staff_ids);
-            $this->db->where('ta.status IN (\'pending\', \'approved\')');
-            $this->db->order_by('s.firstname ASC, s.lastname ASC, ta.status ASC');
-            
-            $query = $this->db->get();
-            
-            if (!$query) {
-                $db_error = $this->db->error();
-                log_activity('[Weekly Model ERROR] Erro na query de aprovações: ' . $db_error['message']);
-                return [];
-            }
-            
-            $all_approvals = $query->result();
-            log_activity('[Weekly Model] ✅ Total de aprovações encontradas: ' . count($all_approvals));
-
-            // Log das aprovações encontradas
-            foreach ($all_approvals as $approval) {
-                log_activity('[Weekly Model] Aprovação: ID=' . $approval->id . ', Staff=' . $approval->staff_id . ', Status=' . $approval->status . ', Task=' . $approval->task_id);
-            }
-
-            log_activity('[Weekly Model] 4️⃣ Processando dados por funcionário...');
-            $result = [];
-
-            foreach ($staff_with_entries as $staff) {
-                $staff_id = $staff->staffid;
-                log_activity('[Weekly Model] Processando staff ID: ' . $staff_id . ' (' . $staff->firstname . ' ' . $staff->lastname . ')');
-
-                // Filtrar aprovações deste funcionário específico
-                $staff_approvals = array_filter($all_approvals, function($approval) use ($staff_id) {
-                    return $approval->staff_id == $staff_id;
+                $staff_approvals = array_filter($all_approvals, function($a) use ($staff_id) {
+                    return $a->staff_id == $staff_id;
                 });
 
                 $total_tasks = count($staff_approvals);
-                log_activity('[Weekly Model] - Total de tarefas: ' . $total_tasks);
+                $pending_tasks = count(array_filter($staff_approvals, function($a){ return $a->status == 'pending'; }));
+                $approved_tasks = $total_tasks - $pending_tasks;
+                $general_status = ($pending_tasks > 0) ? 'pending' : 'approved';
 
-                // Contar pendentes e aprovadas
-                $pending_tasks = 0;
-                $approved_tasks = 0;
-                
-                foreach ($staff_approvals as $approval) {
-                    if ($approval->status == 'pending') {
-                        $pending_tasks++;
-                    } elseif ($approval->status == 'approved') {
-                        $approved_tasks++;
-                    }
-                }
-
-                log_activity('[Weekly Model] - Pendentes: ' . $pending_tasks . ', Aprovadas: ' . $approved_tasks);
-
-                // Determinar status geral
-                $general_status = ($pending_tasks > 0) ? 'pending' : ($total_tasks > 0 ? 'approved' : 'draft');
-                log_activity('[Weekly Model] - Status geral: ' . $general_status);
-
-                // Buscar dados da submissão
-                $approval_data = null;
-                if (!empty($staff_approvals)) {
-                    usort($staff_approvals, function($a, $b) {
-                        return strtotime($a->submitted_at) <=> strtotime($b->submitted_at);
-                    });
-                    $approval_data = reset($staff_approvals);
-                    log_activity('[Weekly Model] - Approval data ID: ' . $approval_data->id);
-                }
-
-                // Criar objeto resultado
-                $staff_result = (object)[
-                    'id'             => $approval_data ? $approval_data->id : 0,
+                $result[] = (object)[
+                    'id'             => $approval->id,
                     'staff_id'       => (int)$staff_id,
-                    'firstname'      => $staff->firstname ?: '',
-                    'lastname'       => $staff->lastname ?: '',
-                    'email'          => $staff->email ?: '',
+                    'firstname'      => $approval->firstname,
+                    'lastname'       => $approval->lastname,
+                    'email'          => $approval->email,
                     'week_start_date'=> $week_start_date,
                     'status'         => $general_status,
                     'total_tasks'    => (int)$total_tasks,
                     'pending_tasks'  => (int)$pending_tasks,
                     'approved_tasks' => (int)$approved_tasks,
-                    'submitted_at'   => $approval_data ? $approval_data->submitted_at : null,
-                    'approved_at'    => $approval_data ? $approval_data->approved_at : null,
-                    'approved_by'    => $approval_data ? $approval_data->approved_by : null,
-                    'rejected_at'    => $approval_data ? $approval_data->rejected_at : null,
-                    'rejected_by'    => $approval_data ? $approval_data->rejected_by : null,
-                    'rejection_reason' => $approval_data ? $approval_data->rejection_reason : null
+                    'submitted_at'   => $approval->submitted_at,
+                    'approved_at'    => $approval->approved_at,
+                    'approved_by'    => $approval->approved_by,
                 ];
-
-                $result[] = $staff_result;
-                log_activity('[Weekly Model] ✅ Staff adicionado ao resultado: ' . $staff->firstname . ' ' . $staff->lastname);
             }
-
-            log_activity('[Weekly Model] ========= RESULTADO FINAL =========');
-            log_activity('[Weekly Model] Total de aprovações semanais retornadas: ' . count($result));
-            log_activity('[Weekly Model] ===================================');
-            
-            return $result;
-
-        } catch (Exception $e) {
-            log_activity('[Weekly Model FATAL ERROR] Erro fatal em get_weekly_all_approvals: ' . $e->getMessage());
-            log_activity('[Weekly Model FATAL ERROR] Arquivo: ' . $e->getFile() . ' - Linha: ' . $e->getLine());
-            log_activity('[Weekly Model FATAL ERROR] Stack trace: ' . $e->getTraceAsString());
-            return [];
         }
+        
+        return $result;
     }
 
-    public function get_week_total_hours($staff_id, $week_start_date)
+    /**
+     * Get week total hours (CORRIGIDO COM FILTRO DE GERENTE)
+     */
+    public function get_week_total_hours($staff_id, $week_start_date, $manager_id = null)
     {
         $this->db->select_sum('hours');
-        $this->db->where('staff_id', $staff_id);
-        $this->db->where('week_start_date', $week_start_date);
-        $result = $this->db->get(db_prefix() . 'timesheet_entries')->row();
+        $this->db->from(db_prefix() . 'timesheet_entries te');
+        $this->db->where('te.staff_id', $staff_id);
+        $this->db->where('te.week_start_date', $week_start_date);
+
+        // LÓGICA DE FILTRO ADICIONADA
+        if ($manager_id && !is_admin($manager_id)) {
+            $this->db->join(db_prefix() . 'project_members pm', 'pm.project_id = te.project_id');
+            $this->db->where('pm.staff_id', $manager_id);
+        }
+
+        $result = $this->db->get()->row();
         return $result ? $result->hours : 0;
     }
 
@@ -902,12 +824,22 @@ class Timesheet_model extends App_Model
         return $result ? $result->hours : 0;
     }
 
-    public function get_week_daily_totals($staff_id, $week_start_date)
+    /**
+     * Get week daily totals (CORRIGIDO COM FILTRO DE GERENTE)
+     */
+    public function get_week_daily_totals($staff_id, $week_start_date, $manager_id = null)
     {
         $this->db->select('day_of_week, SUM(hours) as total_hours');
-        $this->db->from(db_prefix() . 'timesheet_entries');
-        $this->db->where('staff_id', $staff_id);
-        $this->db->where('week_start_date', $week_start_date);
+        $this->db->from(db_prefix() . 'timesheet_entries te');
+        $this->db->where('te.staff_id', $staff_id);
+        $this->db->where('te.week_start_date', $week_start_date);
+
+        // LÓGICA DE FILTRO ADICIONADA
+        if ($manager_id && !is_admin($manager_id)) {
+            $this->db->join(db_prefix() . 'project_members pm', 'pm.project_id = te.project_id');
+            $this->db->where('pm.staff_id', $manager_id);
+        }
+
         $this->db->group_by('day_of_week');
         $results = $this->db->get()->result();
         $totals = array_fill(1, 7, 0);
@@ -1103,6 +1035,64 @@ class Timesheet_model extends App_Model
         } catch (Exception $e) {
             log_activity('[Task Approvals ERROR] Erro ao buscar aprovações de tarefas: ' . $e->getMessage());
             throw $e;
+        }
+    }
+    
+    /**
+     * Cancels a single approved task, reverting it to pending status.
+     * @param  int $approval_id The ID from the timesheet_approvals table.
+     * @param  int $canceller_id The staff ID of the manager cancelling.
+     * @return bool
+     */
+    public function cancel_individual_task_approval($approval_id, $canceller_id)
+    {
+        try {
+            // 1. Find the approval record
+            $approval = $this->db->get_where(db_prefix() . 'timesheet_approvals', ['id' => $approval_id])->row();
+            if (!$approval || $approval->status !== 'approved') {
+                log_activity('[Timesheet Cancel Task] Aprovação ID ' . $approval_id . ' não encontrada ou não está aprovada.');
+                return false;
+            }
+
+            // 2. Find and remove associated Perfex timers for that specific task/week/staff
+            $this->db->select('id, perfex_timer_id');
+            $this->db->where('staff_id', $approval->staff_id);
+            $this->db->where('week_start_date', $approval->week_start_date);
+            $this->db->where('task_id', $approval->task_id);
+            $this->db->where('perfex_timer_id IS NOT NULL');
+            $entries = $this->db->get(db_prefix() . 'timesheet_entries')->result();
+
+            foreach ($entries as $entry) {
+                if ($entry->perfex_timer_id) {
+                    $this->db->where('id', $entry->perfex_timer_id);
+                    $this->db->delete(db_prefix() . 'taskstimers');
+                    
+                    // Clear the reference
+                    $this->db->where('id', $entry->id);
+                    $this->db->update(db_prefix() . 'timesheet_entries', ['perfex_timer_id' => null]);
+                }
+            }
+
+            // 3. Revert the approval status back to 'pending'
+            $this->db->where('id', $approval_id);
+            $this->db->update(db_prefix() . 'timesheet_approvals', [
+                'status' => 'pending',
+                'approved_by' => null,
+                'approved_at' => null
+            ]);
+
+            // 4. Revert the entries status back to 'submitted'
+            $this->db->where('staff_id', $approval->staff_id);
+            $this->db->where('week_start_date', $approval->week_start_date);
+            $this->db->where('task_id', $approval->task_id);
+            $this->db->update(db_prefix() . 'timesheet_entries', ['status' => 'submitted']);
+
+            log_activity('[Timesheet Cancel Task] Aprovação da tarefa ID ' . $approval_id . ' cancelada por: ' . $canceller_id);
+            return true;
+
+        } catch (Exception $e) {
+            log_activity('[Timesheet Cancel Task ERROR] Erro fatal: ' . $e->getMessage());
+            return false;
         }
     }
 }
