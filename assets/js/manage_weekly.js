@@ -671,10 +671,13 @@ $(document).ready(function() {
             return;
         }
 
-        // Adicionar coluna de checkbox no cabeçalho
+        // Adicionar coluna de checkbox no cabeçalho (substituir a primeira célula)
         var $headerRow = $table.find('thead tr');
-        if ($headerRow.length > 0 && $headerRow.find('.select-user-tasks-header').length === 0) {
-            $headerRow.prepend('<th width="40" class="text-center"><input type="checkbox" class="select-user-tasks-header" data-user-id="' + approvalId + '" title="Selecionar todas as tarefas deste usuário"></th>');
+        if ($headerRow.length > 0) {
+            var $firstHeaderCell = $headerRow.find('th:first');
+            if ($firstHeaderCell.length > 0) {
+                $firstHeaderCell.replaceWith('<th width="40" class="text-center"><input type="checkbox" class="select-user-tasks-header" data-user-id="' + approvalId + '" title="Selecionar todas as tarefas deste usuário"></th>');
+            }
         }
 
         // Obter linhas do tbody (excluir linha de total se existir)
@@ -685,28 +688,30 @@ $(document).ready(function() {
 
         console.log('[Task Checkboxes] Encontradas', $dataRows.length, 'linhas de dados');
 
-        // Adicionar checkboxes nas linhas de tarefas
+        // Substituir primeira célula das linhas de dados com checkboxes
         $dataRows.each(function(index) {
             var $row = $(this);
+            var $firstCell = $row.find('td:first');
 
             if (index < tasks.length) {
                 var task = tasks[index];
                 var isDisabled = task.status !== 'pending' ? 'disabled' : '';
                 var checkboxHtml = '<td class="text-center"><input type="checkbox" class="task-checkbox" value="' + task.id + '" data-status="' + task.status + '" data-user-id="' + approvalId + '" ' + isDisabled + '></td>';
-                $row.prepend(checkboxHtml);
-                console.log('[Task Checkboxes] Adicionado checkbox para tarefa:', task.id, 'status:', task.status);
+                $firstCell.replaceWith(checkboxHtml);
+                console.log('[Task Checkboxes] Substituído checkbox para tarefa:', task.id, 'status:', task.status);
             } else {
-                $row.prepend('<td class="text-center">-</td>');
+                $firstCell.replaceWith('<td class="text-center">-</td>');
             }
         });
 
-        // Adicionar célula vazia na linha de total (se existir)
+        // Substituir primeira célula da linha de total (se existir)
         var $totalRow = $bodyRows.filter(function() {
             return $(this).find('td:contains("Total:")').length > 0;
         });
 
         if ($totalRow.length > 0) {
-            $totalRow.prepend('<td class="text-center"><strong>-</strong></td>');
+            var $totalFirstCell = $totalRow.find('td:first');
+            $totalFirstCell.replaceWith('<td class="text-center"><strong>-</strong></td>');
         }
 
         console.log('[Task Checkboxes] Renderização concluída');
