@@ -1,4 +1,3 @@
-
 <?php
 
 defined('BASEPATH') or exit('No direct script access allowed');
@@ -7,13 +6,13 @@ defined('BASEPATH') or exit('No direct script access allowed');
 function safe_log_activity($message, $level = 'INFO') {
     $timestamp = date('Y-m-d H:i:s');
     $formatted_message = "[{$timestamp}] [{$level}] {$message}";
-    
+
     if (function_exists('log_activity')) {
         log_activity($formatted_message);
     } else {
         error_log($formatted_message);
     }
-    
+
     // Log adicional em arquivo específico para debug
     $log_file = __DIR__ . '/timesheet_install.log';
     file_put_contents($log_file, $formatted_message . "\n", FILE_APPEND | LOCK_EX);
@@ -87,7 +86,7 @@ function safe_db_prefix() {
 function check_database_connection($CI) {
     try {
         safe_log_activity("Testando conectividade do banco de dados...", 'DEBUG');
-        
+
         // Teste básico de conexão
         $test_query = $CI->db->query('SELECT 1 as test');
         if (!$test_query) {
@@ -95,7 +94,7 @@ function check_database_connection($CI) {
             safe_log_activity("Falha no teste de conexão: " . $error['message'], 'ERROR');
             return false;
         }
-        
+
         $result = $test_query->row();
         if ($result && $result->test == 1) {
             safe_log_activity("Teste de conexão bem-sucedido", 'INFO');
@@ -104,7 +103,7 @@ function check_database_connection($CI) {
             safe_log_activity("Teste de conexão retornou resultado inesperado", 'ERROR');
             return false;
         }
-        
+
     } catch (Exception $e) {
         safe_log_activity("Exceção durante teste de conexão: " . $e->getMessage(), 'ERROR');
         return false;
@@ -115,21 +114,21 @@ function check_database_connection($CI) {
 function check_table_creation_permissions($CI, $db_prefix) {
     try {
         safe_log_activity("Verificando permissões para criação de tabelas...", 'DEBUG');
-        
+
         $test_table = $db_prefix . 'timesheet_test_permissions';
-        
+
         // Tentar criar tabela de teste
         $create_sql = "CREATE TABLE `{$test_table}` (
             `id` int(11) NOT NULL AUTO_INCREMENT,
             `test_field` varchar(255) DEFAULT NULL,
             PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci";
-        
+
         $create_result = $CI->db->query($create_sql);
-        
+
         if ($create_result) {
             safe_log_activity("Tabela de teste criada com sucesso", 'INFO');
-            
+
             // Tentar inserir dados
             $insert_result = $CI->db->query("INSERT INTO `{$test_table}` (test_field) VALUES ('test_data')");
             if ($insert_result) {
@@ -137,18 +136,18 @@ function check_table_creation_permissions($CI, $db_prefix) {
             } else {
                 safe_log_activity("Falha na inserção de teste", 'WARNING');
             }
-            
+
             // Limpar tabela de teste
             $CI->db->query("DROP TABLE IF EXISTS `{$test_table}`");
             safe_log_activity("Tabela de teste removida", 'DEBUG');
-            
+
             return true;
         } else {
             $error = $CI->db->error();
             safe_log_activity("Falha ao criar tabela de teste: " . $error['message'], 'ERROR');
             return false;
         }
-        
+
     } catch (Exception $e) {
         safe_log_activity("Exceção durante verificação de permissões: " . $e->getMessage(), 'ERROR');
         return false;
@@ -156,11 +155,11 @@ function check_table_creation_permissions($CI, $db_prefix) {
 }
 
 try {
-    safe_log_activity('=== INICIANDO INSTALAÇÃO DO MÓDULO TIMESHEET v1.4.4 ===', 'INFO');
+    safe_log_activity('=== INICIANDO INSTALAÇÃO DO MÓDULO TIMESHEET v1.4.5 ===', 'INFO');
     safe_log_activity('PHP Version: ' . PHP_VERSION, 'DEBUG');
     safe_log_activity('Memory Limit: ' . ini_get('memory_limit'), 'DEBUG');
     safe_log_activity('Max Execution Time: ' . ini_get('max_execution_time'), 'DEBUG');
-    
+
     // Verificar se CI está disponível
     if (!isset($CI)) {
         safe_log_activity('Variável $CI não definida, tentando obter instância...', 'DEBUG');
@@ -170,7 +169,7 @@ try {
             throw new Exception('CodeIgniter instance not available');
         }
     }
-    
+
     safe_log_activity('CodeIgniter instance obtida com sucesso', 'INFO');
     safe_log_activity('CI Class: ' . get_class($CI), 'DEBUG');
 
@@ -182,7 +181,7 @@ try {
 
     safe_log_activity('Database instance disponível', 'INFO');
     safe_log_activity('Database Driver: ' . $CI->db->platform(), 'DEBUG');
-    
+
     // Testar conectividade do banco
     if (!check_database_connection($CI)) {
         throw new Exception('Database connection test failed');
@@ -190,7 +189,7 @@ try {
 
     $db_prefix = safe_db_prefix();
     safe_log_activity('Usando prefixo de banco: ' . $db_prefix, 'INFO');
-    
+
     // Verificar permissões de criação de tabelas
     if (!check_table_creation_permissions($CI, $db_prefix)) {
         safe_log_activity('AVISO: Permissões de criação de tabela podem estar limitadas', 'WARNING');
@@ -199,12 +198,12 @@ try {
     // ===============================
     // CRIAÇÃO DA TABELA timesheet_entries
     // ===============================
-    
+
     safe_log_activity('--- VERIFICANDO TABELA timesheet_entries ---', 'INFO');
-    
+
     $entries_table = $db_prefix . 'timesheet_entries';
     $table_exists = false;
-    
+
     try {
         $table_exists = $CI->db->table_exists($entries_table);
         safe_log_activity("Verificação table_exists para '{$entries_table}': " . ($table_exists ? 'TRUE' : 'FALSE'), 'DEBUG');
@@ -223,7 +222,7 @@ try {
 
     if (!$table_exists) {
         safe_log_activity('Criando tabela timesheet_entries...', 'INFO');
-        
+
         $sql = "CREATE TABLE `{$entries_table}` (
             `id` int(11) NOT NULL AUTO_INCREMENT,
             `staff_id` int(11) NOT NULL,
@@ -245,9 +244,9 @@ try {
             KEY `week_start_date` (`week_start_date`),
             KEY `status` (`status`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci";
-        
+
         safe_log_activity('SQL para timesheet_entries: ' . substr($sql, 0, 200) . '...', 'DEBUG');
-        
+
         try {
             $result = $CI->db->query($sql);
             if ($result) {
@@ -264,7 +263,7 @@ try {
         }
     } else {
         safe_log_activity('✓ Tabela timesheet_entries já existe', 'INFO');
-        
+
         // Verificar se todas as colunas necessárias existem
         $required_columns = ['perfex_timer_id'];
         foreach ($required_columns as $column) {
@@ -284,12 +283,12 @@ try {
     // ===============================
     // CRIAÇÃO DA TABELA timesheet_approvals
     // ===============================
-    
+
     safe_log_activity('--- VERIFICANDO TABELA timesheet_approvals ---', 'INFO');
-    
+
     $approvals_table = $db_prefix . 'timesheet_approvals';
     $table_exists = false;
-    
+
     try {
         $table_exists = $CI->db->table_exists($approvals_table);
         safe_log_activity("Verificação table_exists para '{$approvals_table}': " . ($table_exists ? 'TRUE' : 'FALSE'), 'DEBUG');
@@ -307,7 +306,7 @@ try {
 
     if (!$table_exists) {
         safe_log_activity('Criando tabela timesheet_approvals...', 'INFO');
-        
+
         $sql = "CREATE TABLE `{$approvals_table}` (
             `id` int(11) NOT NULL AUTO_INCREMENT,
             `staff_id` int(11) NOT NULL,
@@ -324,9 +323,9 @@ try {
             INDEX `idx_status` (`status`),
             INDEX `idx_project_task` (`project_id`, `task_id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci";
-        
+
         safe_log_activity('SQL para timesheet_approvals: ' . substr($sql, 0, 200) . '...', 'DEBUG');
-        
+
         try {
             $result = $CI->db->query($sql);
             if ($result) {
@@ -343,7 +342,7 @@ try {
         }
     } else {
         safe_log_activity('✓ Tabela timesheet_approvals já existe', 'INFO');
-        
+
         // Verificar se as novas colunas existem (para migração de versões antigas)
         $required_columns = ['project_id', 'task_id'];
         foreach ($required_columns as $column) {
@@ -364,7 +363,7 @@ try {
                 safe_log_activity("Erro ao verificar/adicionar coluna '{$column}': " . $e->getMessage(), 'ERROR');
             }
         }
-        
+
         // Atualizar índices se necessário
         try {
             safe_log_activity('Atualizando índices da tabela timesheet_approvals...', 'DEBUG');
@@ -380,9 +379,9 @@ try {
     // ===============================
     // CONFIGURAÇÃO DE OPÇÕES PADRÃO
     // ===============================
-    
+
     safe_log_activity('--- CONFIGURANDO OPÇÕES PADRÃO ---', 'INFO');
-    
+
     $options = [
         'timesheet_default_hours_per_day' => '8',
         'timesheet_allow_future_entries' => '0',
@@ -409,12 +408,12 @@ try {
     // ===============================
     // CONFIGURAÇÃO DE PERMISSÕES
     // ===============================
-    
+
     safe_log_activity('--- CONFIGURANDO PERMISSÕES DO MÓDULO ---', 'INFO');
-    
+
     $permissions = [
         'view' => 'Visualizar',
-        'create' => 'Criar', 
+        'create' => 'Criar',
         'edit' => 'Editar',
         'delete' => 'Deletar',
         'approve' => 'Aprovar Timesheet'
@@ -423,28 +422,28 @@ try {
     try {
         if (isset($CI) && method_exists($CI, 'load')) {
             safe_log_activity('Configurando permissões via método nativo...', 'DEBUG');
-            
+
             // Verificar se a tabela de permissões existe
             $permissions_table = $db_prefix . 'staff_permissions';
             $table_exists = $CI->db->table_exists($permissions_table);
-            
+
             if ($table_exists) {
                 safe_log_activity("Tabela de permissões '{$permissions_table}' encontrada", 'DEBUG');
-                
+
                 foreach ($permissions as $permission => $name) {
                     try {
                         $check = $CI->db->get_where($permissions_table, [
                             'feature' => 'timesheet',
                             'capability' => $permission
                         ]);
-                        
+
                         if ($check->num_rows() == 0) {
                             $insert_data = [
                                 'feature' => 'timesheet',
                                 'capability' => $permission,
                                 'created' => date('Y-m-d H:i:s')
                             ];
-                            
+
                             if ($CI->db->insert($permissions_table, $insert_data)) {
                                 safe_log_activity("✅ Permissão '{$permission}' ({$name}) adicionada", 'SUCCESS');
                             } else {
@@ -458,12 +457,12 @@ try {
                         safe_log_activity("Erro ao processar permissão '{$permission}': " . $e->getMessage(), 'ERROR');
                     }
                 }
-                
+
                 safe_log_activity('✅ Permissões do módulo configuradas', 'SUCCESS');
             } else {
                 safe_log_activity("❌ Tabela de permissões '{$permissions_table}' não encontrada", 'ERROR');
             }
-            
+
         } else {
             safe_log_activity('CI não disponível para configurar permissões', 'WARNING');
         }
@@ -475,10 +474,10 @@ try {
     // ===============================
     // CONFIGURAÇÃO DA VERSÃO
     // ===============================
-    
+
     safe_log_activity('--- CONFIGURANDO VERSÃO DO MÓDULO ---', 'INFO');
-    
-    $version = '1.4.4';
+
+    $version = '1.4.5';
     try {
         if (!safe_get_option('timesheet_module_version')) {
             if (safe_add_option('timesheet_module_version', $version, 1)) {
@@ -499,7 +498,7 @@ try {
 
     safe_log_activity('=== INSTALAÇÃO CONCLUÍDA COM SUCESSO! ===', 'SUCCESS');
     safe_log_activity('Módulo Timesheet v' . $version . ' instalado e configurado', 'INFO');
-    
+
     return true;
 
 } catch (Exception $e) {
@@ -508,10 +507,10 @@ try {
     safe_log_activity('Arquivo: ' . $e->getFile(), 'FATAL');
     safe_log_activity('Linha: ' . $e->getLine(), 'FATAL');
     safe_log_activity('Stack trace: ' . $e->getTraceAsString(), 'DEBUG');
-    
+
     // Log no error_log do PHP como backup
     error_log('[Timesheet Install] FATAL ERROR: ' . $e->getMessage());
-    
+
     return false;
 } finally {
     safe_log_activity('=== FIM DO PROCESSO DE INSTALAÇÃO ===', 'INFO');

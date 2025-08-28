@@ -2,6 +2,34 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.4.5] - 2025-01-28
+
+### 🐛 **CORREÇÃO CRÍTICA - ERRO DE SINTAXE JAVASCRIPT**
+
+### ✅ **PROBLEMA RESOLVIDO**
+- **Erro de sintaxe**: Corrigido erro "Unexpected token ')'" na linha 123 do `manage_weekly.js`
+- **Código duplicado**: Removido texto `irmed) {` incorretamente duplicado
+- **Tela semanal**: Aprovação semanal funcionando perfeitamente
+- **Preview de timesheet**: Visualização de horas funcionando corretamente
+
+### 🔧 **CORREÇÕES TÉCNICAS**
+- **Linha 123**: Correção de `if (confirmed) {irmed) {` para `if (confirmed) {`
+- **Sintaxe JavaScript**: Estrutura condicional corrigida
+- **Carregamento da página**: Sem mais erros de JavaScript
+- **Funcionalidade completa**: Todas as ações de aprovação/rejeição operacionais
+
+### 🎯 **IMPACTO FUNCIONAL**
+- **Tela semanal**: Totalmente funcional sem erros JavaScript
+- **Preview de timesheets**: Carregamento correto dos dados
+- **Botões de ação**: Aprovar/rejeitar/cancelar funcionando
+- **UX perfeita**: Interface responsiva e sem travamentos
+
+### 📋 **VALIDAÇÃO**
+- ✅ **Sintaxe JavaScript válida** em todos os arquivos
+- ✅ **Preview de timesheet** carregando corretamente
+- ✅ **Ações de aprovação** funcionando perfeitamente
+- ✅ **Logs detalhados** para debugging
+
 ## [1.4.3] - 2025-01-27
 
 ### 🐛 **CORREÇÃO CRÍTICA - CAMPOS DESABILITADOS APÓS CANCELAMENTO**
