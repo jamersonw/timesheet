@@ -154,13 +154,6 @@ class Timesheet_model extends App_Model
             $submitted_at = date('Y-m-d H:i:s');
 
             foreach ($tasks as $task) {
-                // Verificar se já existe aprovação para esta tarefa específica
-                $this->db->where('staff_id', $staff_id);
-                $this->db->where('project_id', $task->project_id);
-                $this->db->where('task_id', $task->task_id);
-                $this->db->where('week_start_date', $week_start_date);
-                $existing = $this->db->get(db_prefix() . 'timesheet_approvals')->row();
-
                 $approval_data = [
                     'staff_id'        => $staff_id,
                     'project_id'      => $task->project_id,
@@ -170,19 +163,29 @@ class Timesheet_model extends App_Model
                     'submitted_at'    => $submitted_at,
                 ];
 
-                if ($existing) {
-                    // Atualizar aprovação existente
-                    $this->db->where('id', $existing->id);
-                    if ($this->db->update(db_prefix() . 'timesheet_approvals', $approval_data)) {
+                // Usar INSERT ... ON DUPLICATE KEY UPDATE para lidar com constraint única
+                $query = "INSERT INTO `" . db_prefix() . "timesheet_approvals` 
+                         (`staff_id`, `project_id`, `task_id`, `week_start_date`, `status`, `submitted_at`) 
+                         VALUES (?, ?, ?, ?, ?, ?) 
+                         ON DUPLICATE KEY UPDATE 
+                         `status` = VALUES(`status`), 
+                         `submitted_at` = VALUES(`submitted_at`)";
+
+                try {
+                    if ($this->db->query($query, [
+                        $staff_id,
+                        $task->project_id,
+                        $task->task_id,
+                        $week_start_date,
+                        'pending',
+                        $submitted_at
+                    ])) {
                         $approvals_created++;
-                        log_activity('[Timesheet Submit] Aprovação atualizada - Task ID: ' . $task->task_id . ', Staff: ' . $staff_id);
+                        log_activity('[Timesheet Submit] Aprovação processada - Task ID: ' . $task->task_id . ', Staff: ' . $staff_id);
                     }
-                } else {
-                    // Criar nova aprovação
-                    if ($this->db->insert(db_prefix() . 'timesheet_approvals', $approval_data)) {
-                        $approvals_created++;
-                        log_activity('[Timesheet Submit] Nova aprovação criada - Task ID: ' . $task->task_id . ', Staff: ' . $staff_id);
-                    }
+                } catch (Exception $e) {
+                    log_activity('[Timesheet Submit ERROR] Erro ao processar tarefa ' . $task->task_id . ': ' . $e->getMessage());
+                    continue;
                 }
             }
 
