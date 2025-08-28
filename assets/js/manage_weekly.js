@@ -3,25 +3,113 @@ $(document).ready(function() {
     
     var currentApprovalId = null;
     
-    // Debug: verificar se os dados estão carregados
-    console.log('Manage Weekly carregado:', manage_weekly_data);
-    console.log('Aprovações semanais encontradas:', manage_weekly_data.weekly_approvals.length);
+    // Debug detalhado: verificar se os dados estão carregados
+    console.log('[Weekly JS Debug] Manage Weekly carregado');
+    console.log('[Weekly JS Debug] Dados recebidos:', manage_weekly_data);
     
-    // Load total hours and preview for each approval
-    if (manage_weekly_data.weekly_approvals && manage_weekly_data.weekly_approvals.length > 0) {
-        manage_weekly_data.weekly_approvals.forEach(function(approval) {
+    if (typeof manage_weekly_data === 'undefined') {
+        console.error('[Weekly JS Debug] ERRO: manage_weekly_data não está definido!');
+        alert('ERRO: Dados da página não foram carregados corretamente. Verifique os logs do servidor.');
+        return;
+    }
+    
+    if (!manage_weekly_data.weekly_approvals) {
+        console.error('[Weekly JS Debug] ERRO: weekly_approvals não existe nos dados!');
+        console.log('[Weekly JS Debug] Propriedades disponíveis:', Object.keys(manage_weekly_data));
+        return;
+    }
+    
+    console.log('[Weekly JS Debug] Aprovações semanais encontradas:', manage_weekly_data.weekly_approvals.length);
+    
+    // Debug de cada aprovação
+    if (manage_weekly_data.weekly_approvals.length > 0) {
+        manage_weekly_data.weekly_approvals.forEach(function(approval, index) {
+            console.log('[Weekly JS Debug] Aprovação ' + (index + 1) + ':', approval);
+            console.log('[Weekly JS Debug] - Staff ID:', approval.staff_id);
+            console.log('[Weekly JS Debug] - Nome:', approval.firstname + ' ' + approval.lastname);
+            console.log('[Weekly JS Debug] - Status:', approval.status);
+            console.log('[Weekly JS Debug] - Total tarefas:', approval.total_tasks);
+            
             loadTotalHours(approval.id, approval.staff_id, approval.week_start_date);
             loadTimesheetPreview(approval.id, approval.staff_id, approval.week_start_date);
         });
+    } else {
+        console.log('[Weekly JS Debug] Nenhuma aprovação encontrada para esta semana');
     }
     
+    // Function to load total hours for a specific approval
+    function loadTotalHours(approvalId, staffId, weekStartDate) {
+        console.log('[Weekly JS Debug] Carregando total de horas para:', {
+            approvalId: approvalId,
+            staffId: staffId,
+            weekStartDate: weekStartDate
+        });
+        
+        var $totalDisplay = $('.total-hours-display[data-approval-id="' + approvalId + '"]');
+        
+        if ($totalDisplay.length === 0) {
+            console.warn('[Weekly JS Debug] Elemento total-hours-display não encontrado para approval:', approvalId);
+            return;
+        }
+        
+        $.get(manage_weekly_data.admin_url + 'timesheet/get_week_total', {
+            staff_id: staffId,
+            week_start_date: weekStartDate
+        })
+        .done(function(response) {
+            console.log('[Weekly JS Debug] Resposta total de horas:', response);
+            if (response.success) {
+                $totalDisplay.html('<strong>' + parseFloat(response.total_hours).toFixed(1) + 'h</strong>');
+            } else {
+                $totalDisplay.html('<span class="text-danger">Erro</span>');
+            }
+        })
+        .fail(function(xhr, status, error) {
+            console.error('[Weekly JS Debug] Erro ao carregar total de horas:', error);
+            $totalDisplay.html('<span class="text-danger">Erro</span>');
+        });
+    }
+    
+    // Function to load timesheet preview
+    function loadTimesheetPreview(approvalId, staffId, weekStartDate) {
+        console.log('[Weekly JS Debug] Carregando preview para:', {
+            approvalId: approvalId,
+            staffId: staffId,
+            weekStartDate: weekStartDate
+        });
+        
+        var $previewContainer = $('#preview-' + approvalId);
+        
+        if ($previewContainer.length === 0) {
+            console.warn('[Weekly JS Debug] Container de preview não encontrado para approval:', approvalId);
+            return;
+        }
+        
+        $.get(manage_weekly_data.admin_url + 'timesheet/get_timesheet_preview', {
+            staff_id: staffId,
+            week_start_date: weekStartDate
+        })
+        .done(function(response) {
+            console.log('[Weekly JS Debug] Resposta preview:', response);
+            if (response.success) {
+                $previewContainer.html(response.html);
+            } else {
+                $previewContainer.html('<div class="text-center text-danger">Erro ao carregar preview</div>');
+            }
+        })
+        .fail(function(xhr, status, error) {
+            console.error('[Weekly JS Debug] Erro ao carregar preview:', error);
+            $previewContainer.html('<div class="text-center text-danger">Erro ao carregar dados</div>');
+        });
+    }
+
     // Approve button click
     $(document).on('click', 'button.approve-btn, a.approve-btn', function(e) {
         e.preventDefault();
         e.stopPropagation();
         
         var approvalId = $(this).data('approval-id');
-        console.log('Clicou em aprovar semanal, ID:', approvalId);
+        console.log('[Weekly JS Debug] Clicou em aprovar semanal, ID:', approvalId);
         
         TimesheetModals.confirm({
             title: 'Aprovar Timesheet',
@@ -31,8 +119,8 @@ $(document).ready(function() {
             cancelText: 'Cancelar',
             confirmClass: 'timesheet-modal-btn-success'
         }).then(function(confirmed) {
-            console.log('Resultado da confirmação semanal:', confirmed);
-            if (confirmed) {
+            console.log('[Weekly JS Debug] Resultado da confirmação semanal:', confirmed);
+            if (confirmed) {irmed) {
                 approveRejectTimesheet(approvalId, 'approved');
             }
         });

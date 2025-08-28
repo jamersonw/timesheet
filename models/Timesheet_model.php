@@ -693,58 +693,87 @@ class Timesheet_model extends App_Model
      */
     public function get_weekly_all_approvals($manager_id, $week_start_date)
     {
-        // Buscar funcionários únicos que têm aprovações na semana
-        $this->db->select('DISTINCT ta.staff_id, s.firstname, s.lastname, s.email');
-        $this->db->from(db_prefix() . 'timesheet_approvals ta');
-        $this->db->join(db_prefix() . 'staff s', 's.staffid = ta.staff_id');
-        $this->db->where('ta.week_start_date', $week_start_date);
-        $this->db->where_in('ta.status', ['pending', 'approved']);
-        $this->db->order_by('s.firstname', 'ASC');
-        $staff_list = $this->db->get()->result();
-
-        $weekly_approvals = [];
-
-        foreach ($staff_list as $staff) {
-            // Para cada funcionário, buscar suas aprovações
-            $this->db->select('ta.*, p.name as project_name, t.name as task_name');
+        try {
+            log_activity('[Weekly Model Debug] Iniciando busca de aprovações semanais para semana: ' . $week_start_date);
+            
+            // Buscar funcionários únicos que têm aprovações na semana
+            $this->db->select('DISTINCT ta.staff_id, s.firstname, s.lastname, s.email');
             $this->db->from(db_prefix() . 'timesheet_approvals ta');
-            $this->db->join(db_prefix() . 'projects p', 'p.id = ta.project_id', 'left');
-            $this->db->join(db_prefix() . 'tasks t', 't.id = ta.task_id', 'left');
-            $this->db->where('ta.staff_id', $staff->staff_id);
+            $this->db->join(db_prefix() . 'staff s', 's.staffid = ta.staff_id');
             $this->db->where('ta.week_start_date', $week_start_date);
             $this->db->where_in('ta.status', ['pending', 'approved']);
-            $this->db->order_by('ta.status', 'ASC'); // pending primeiro
-            $this->db->order_by('p.name', 'ASC');
-            $task_approvals = $this->db->get()->result();
+            $this->db->order_by('s.firstname', 'ASC');
+            
+            log_activity('[Weekly Model Debug] Query funcionários: ' . $this->db->last_query());
+            
+            $staff_list = $this->db->get()->result();
+            
+            log_activity('[Weekly Model Debug] Funcionários encontrados: ' . count($staff_list));
 
-            if (!empty($task_approvals)) {
-                // Criar objeto consolidado para compatibilidade com a view
-                $consolidated = (object) [
-                    'id' => 'staff_' . $staff->staff_id, // ID único para o agrupamento
-                    'staff_id' => $staff->staff_id,
-                    'firstname' => $staff->firstname,
-                    'lastname' => $staff->lastname,
-                    'email' => $staff->email,
-                    'week_start_date' => $week_start_date,
-                    'submitted_at' => $task_approvals[0]->submitted_at,
-                    'task_approvals' => $task_approvals, // Lista de aprovações por tarefa
-                    'total_tasks' => count($task_approvals),
-                    'pending_tasks' => count(array_filter($task_approvals, function($a) { return $a->status == 'pending'; })),
-                    'approved_tasks' => count(array_filter($task_approvals, function($a) { return $a->status == 'approved'; }))
-                ];
+            $weekly_approvals = [];
 
-                // Determinar status consolidado
-                if ($consolidated->pending_tasks > 0) {
-                    $consolidated->status = 'pending';
-                } else {
-                    $consolidated->status = 'approved';
+            foreach ($staff_list as $staff) {
+                log_activity('[Weekly Model Debug] Processando funcionário: ' . $staff->firstname . ' ' . $staff->lastname . ' (ID: ' . $staff->staff_id . ')');
+                
+                // Para cada funcionário, buscar suas aprovações
+                $this->db->select('ta.*, p.name as project_name, t.name as task_name');
+                $this->db->from(db_prefix() . 'timesheet_approvals ta');
+                $this->db->join(db_prefix() . 'projects p', 'p.id = ta.project_id', 'left');
+                $this->db->join(db_prefix() . 'tasks t', 't.id = ta.task_id', 'left');
+                $this->db->where('ta.staff_id', $staff->staff_id);
+                $this->db->where('ta.week_start_date', $week_start_date);
+                $this->db->where_in('ta.status', ['pending', 'approved']);
+                $this->db->order_by('ta.status', 'ASC'); // pending primeiro
+                $this->db->order_by('p.name', 'ASC');
+                
+                log_activity('[Weekly Model Debug] Query tarefas para staff ' . $staff->staff_id . ': ' . $this->db->last_query());
+                
+                $task_approvals = $this->db->get()->result();
+                
+                log_activity('[Weekly Model Debug] Tarefas encontradas para ' . $staff->firstname . ': ' . count($task_approvals));
+
+                if (!empty($task_approvals)) {
+                    // Debug das tarefas encontradas
+                    foreach ($task_approvals as $task) {
+                        log_activity('[Weekly Model Debug] Tarefa: ' . $task->task_name . ' (ID: ' . $task->task_id . ') - Status: ' . $task->status . ' - Projeto: ' . $task->project_name);
+                    }
+                    
+                    // Criar objeto consolidado para compatibilidade com a view
+                    $consolidated = (object) [
+                        'id' => 'staff_' . $staff->staff_id, // ID único para o agrupamento
+                        'staff_id' => $staff->staff_id,
+                        'firstname' => $staff->firstname,
+                        'lastname' => $staff->lastname,
+                        'email' => $staff->email,
+                        'week_start_date' => $week_start_date,
+                        'submitted_at' => $task_approvals[0]->submitted_at,
+                        'task_approvals' => $task_approvals, // Lista de aprovações por tarefa
+                        'total_tasks' => count($task_approvals),
+                        'pending_tasks' => count(array_filter($task_approvals, function($a) { return $a->status == 'pending'; })),
+                        'approved_tasks' => count(array_filter($task_approvals, function($a) { return $a->status == 'approved'; }))
+                    ];
+
+                    // Determinar status consolidado
+                    if ($consolidated->pending_tasks > 0) {
+                        $consolidated->status = 'pending';
+                    } else {
+                        $consolidated->status = 'approved';
+                    }
+
+                    log_activity('[Weekly Model Debug] Consolidado criado para ' . $staff->firstname . ' - Status: ' . $consolidated->status . ' - Total: ' . $consolidated->total_tasks . ' tarefas');
+
+                    $weekly_approvals[] = $consolidated;
                 }
-
-                $weekly_approvals[] = $consolidated;
             }
-        }
 
-        return $weekly_approvals;
+            log_activity('[Weekly Model Debug] Total de aprovações semanais retornadas: ' . count($weekly_approvals));
+            return $weekly_approvals;
+            
+        } catch (Exception $e) {
+            log_activity('[Weekly Model Debug ERROR] Erro fatal: ' . $e->getMessage());
+            log_activity('[Weekly Model Debug ERROR] Stack trace: ' . $e->getTraceAsString());
+            return [];
+        }
     }
 
     public function get_week_total_hours($staff_id, $week_start_date)
