@@ -137,7 +137,8 @@ class Timesheet_model extends App_Model
             $this->db->update(db_prefix() . 'timesheet_entries', ['status' => 'submitted']);
 
             // Buscar todas as tarefas únicas da semana com horas > 0
-            $this->db->select('DISTINCT project_id, task_id');
+            $this->db->select('project_id, task_id');
+            $this->db->distinct();
             $this->db->where('staff_id', $staff_id);
             $this->db->where('week_start_date', $week_start_date);
             $this->db->where('hours >', 0);
