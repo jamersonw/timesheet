@@ -74,8 +74,8 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="checkbox">
-                                                <label>
-                                                    <input type="checkbox" id="select-all-tasks" />
+                                                <input type="checkbox" id="select-all-tasks" />
+                                                <label for="select-all-tasks">
                                                     <strong>Selecionar Todas as Tarefas Pendentes</strong>
                                                 </label>
                                             </div>
