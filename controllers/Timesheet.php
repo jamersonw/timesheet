@@ -264,7 +264,7 @@ class Timesheet extends AdminController
         $result = $this->timesheet_model->batch_approve_reject_tasks($task_ids, $action, $reason);
         
         header('Content-Type: application/json');
-        echo json_encode($result);mesheet/manage_weekly', $data);
+        echo json_encode($result);
     }
 
     /**
@@ -485,32 +485,7 @@ class Timesheet extends AdminController
         }
     }
 
-    /**
-     * Get task approvals for a week (for detailed task selection)
-     */
-    public function get_week_task_approvals()
-    {
-        if (!has_permission('timesheet', '', 'view') && !has_permission('timesheet', '', 'approve') && !is_admin()) {
-            echo json_encode(['success' => false, 'message' => 'Access denied']);
-            return;
-        }
-        
-        $staff_id = $this->input->get('staff_id');
-        $week_start_date = $this->input->get('week_start_date');
-        
-        if (!$staff_id || !$week_start_date) {
-            echo json_encode(['success' => false, 'message' => 'Parâmetros obrigatórios: staff_id e week_start_date']);
-            return;
-        }
-        
-        try {
-            $task_approvals = $this->timesheet_model->get_week_task_approvals($staff_id, $week_start_date);
-            echo json_encode(['success' => true, 'tasks' => $task_approvals]);
-        } catch (Exception $e) {
-            log_activity('[Weekly Task Approvals ERROR] Erro ao buscar aprovações: ' . $e->getMessage());
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-        }
-    }
+    
 
     /**
      * FUNCIONALIDADE REMOVIDA - VERSÃO 1.4.0
