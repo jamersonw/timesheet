@@ -475,18 +475,31 @@ $(document).ready(function () {
     // Handler para checkbox "Selecionar Todos" (global)
     $(document).on("change", "#select-all-tasks", function () {
         var isChecked = $(this).is(":checked");
-        $(".task-checkbox:enabled")
-            .prop("checked", isChecked)
-            .trigger("change");
+        
+        // Selecionar/deselecionar todos os checkboxes de tarefas
+        $(".task-checkbox:enabled").prop("checked", isChecked);
+        
+        // Também sincronizar todos os checkboxes de cabeçalho de usuário
+        $(".select-user-tasks-header").prop("checked", isChecked);
+        
+        // Atualizar os controles após a mudança
+        updateSelectedTasks();
+        updateBatchControls();
+        updateUserBatchControls();
     });
 
     // Handler para checkbox "Selecionar Todas do Usuário" (cabeçalho da tabela)
     $(document).on("change", ".select-user-tasks-header", function () {
         var isChecked = $(this).is(":checked");
         var userId = $(this).data("user-id");
-        $('.approval-panel[data-approval-id="' + userId + '"] .task-checkbox:enabled')
-            .prop("checked", isChecked)
-            .trigger("change");
+        
+        // Selecionar/deselecionar checkboxes do usuário específico
+        $('#preview-' + userId + ' .task-checkbox:enabled').prop("checked", isChecked);
+        
+        // Atualizar os controles após a mudança
+        updateSelectedTasks();
+        updateBatchControls();
+        updateUserBatchControls();
     });
 
 
@@ -531,6 +544,19 @@ $(document).ready(function () {
 
         $("#select-all-tasks").prop("checked", allChecked);
         $("#select-all-tasks").prop("indeterminate", someChecked);
+        
+        // Atualizar checkboxes de cabeçalho por usuário
+        $(".select-user-tasks-header").each(function() {
+            var userId = $(this).data("user-id");
+            var userTotalPending = $('#preview-' + userId + ' .task-checkbox[data-status="pending"]:enabled').length;
+            var userSelectedCount = $('#preview-' + userId + ' .task-checkbox:checked').length;
+            
+            var userAllChecked = userSelectedCount > 0 && userSelectedCount === userTotalPending;
+            var userSomeChecked = userSelectedCount > 0 && userSelectedCount < userTotalPending;
+            
+            $(this).prop("checked", userAllChecked);
+            $(this).prop("indeterminate", userSomeChecked);
+        });
     }
 
     // Atualizar controles de ação por usuário
@@ -538,15 +564,25 @@ $(document).ready(function () {
         // Para cada usuário, verificar se há tarefas selecionadas
         $(".user-batch-approve-btn").each(function() {
             var userId = $(this).data("user-id");
-            var userSelectedTasks = $(
-                '.approval-panel[data-approval-id="' + userId + '"] .task-checkbox:checked'
-            );
+            var userSelectedTasks = $('#preview-' + userId + ' .task-checkbox:checked');
             var selectedCount = userSelectedTasks.length;
 
             // Habilitar/desabilitar botões por usuário baseado nas seleções
             $(
                 '.user-batch-approve-btn[data-user-id="' + userId + '"], .user-batch-reject-btn[data-user-id="' + userId + '"]'
             ).prop("disabled", selectedCount === 0);
+            
+            // Atualizar estado do checkbox de cabeçalho do usuário
+            var userTotalPending = $('#preview-' + userId + ' .task-checkbox[data-status="pending"]:enabled').length;
+            var userHeaderCheckbox = $('.select-user-tasks-header[data-user-id="' + userId + '"]');
+            
+            if (userHeaderCheckbox.length > 0) {
+                var userAllChecked = selectedCount > 0 && selectedCount === userTotalPending;
+                var userSomeChecked = selectedCount > 0 && selectedCount < userTotalPending;
+                
+                userHeaderCheckbox.prop("checked", userAllChecked);
+                userHeaderCheckbox.prop("indeterminate", userSomeChecked);
+            }
         });
     }
 
