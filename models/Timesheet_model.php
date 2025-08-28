@@ -706,9 +706,16 @@ class Timesheet_model extends App_Model
             $this->db->where('ta.week_start_date', $week_start_date);
             $this->db->where_in('ta.status', ['pending', 'approved']); // Mostrar pending e approved
             $this->db->order_by('s.firstname, s.lastname');
+            
             $staff_with_approvals = $this->db->get()->result();
 
-            log_activity('[Weekly Model Debug] Query funcionários: ' . $this->db->last_query());
+            // Verificar se houve erro na query
+            if ($this->db->error()['code'] !== 0) {
+                $db_error = $this->db->error();
+                log_activity('[Weekly Model Debug ERROR] Erro na query de funcionários: ' . $db_error['message']);
+                return [];
+            }
+
             log_activity('[Weekly Model Debug] Funcionários com aprovações encontrados: ' . count($staff_with_approvals));
 
             $result = [];
@@ -723,9 +730,15 @@ class Timesheet_model extends App_Model
                 $this->db->where('ta.week_start_date', $week_start_date);
                 $this->db->where_in('ta.status', ['pending', 'approved']);
                 $this->db->order_by('ta.status ASC, ta.submitted_at DESC'); // Pending primeiro
+                
+                log_activity('[Weekly Model Debug] Query aprovações: ' . $this->db->get_compiled_select());
                 $task_approvals = $this->db->get()->result();
 
-                log_activity('[Weekly Model Debug] Query aprovações: ' . $this->db->last_query());
+                if ($this->db->error()['code'] !== 0) {
+                    $db_error = $this->db->error();
+                    log_activity('[Weekly Model Debug ERROR] Erro na query de aprovações: ' . $db_error['message']);
+                    continue;
+                }
                 log_activity('[Weekly Model Debug] Aprovações para ' . $staff->firstname . ' ' . $staff->lastname . ': ' . count($task_approvals));
 
                 if (!empty($task_approvals)) {
