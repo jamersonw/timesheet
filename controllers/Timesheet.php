@@ -332,29 +332,7 @@ class Timesheet extends AdminController
         ]);
     }
 
-    /**
-     * Batch approve/reject multiple tasks (AJAX)
-     */
-    public function batch_approve_reject()
-    {
-        $task_ids = $this->input->post('task_ids');
-        $action = $this->input->post('action');
-        $reason = $this->input->post('reason');
-
-        if (!$task_ids || !$action || !in_array($action, ['approved', 'rejected'])) {
-            header('Content-Type: application/json');
-            echo json_encode([
-                'success' => false,
-                'message' => 'Parâmetros inválidos'
-            ]);
-            return;
-        }
-
-        $result = $this->timesheet_model->batch_approve_reject_tasks($task_ids, $action, $reason);
-
-        header('Content-Type: application/json');
-        echo json_encode($result);
-    }
+    
 
     /**
      * Get week total hours via AJAX for manager view
