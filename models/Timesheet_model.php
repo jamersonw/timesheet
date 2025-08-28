@@ -74,24 +74,24 @@ class Timesheet_model extends App_Model
     public function debug_list_perfex_timers($limit = 10) {
         try {
             log_activity('[Timesheet Debug] Listando últimos ' . $limit . ' timers do Perfex...');
-            
+
             $this->db->select('*');
             $this->db->from(db_prefix() . 'taskstimers');
             $this->db->order_by('id', 'DESC');
             $this->db->limit($limit);
             $timers = $this->db->get()->result();
-            
+
             log_activity('[Timesheet Debug] Encontrados ' . count($timers) . ' timers');
-            
+
             foreach ($timers as $timer) {
                 $start_time = is_numeric($timer->start_time) ? date('Y-m-d H:i:s', $timer->start_time) : $timer->start_time;
                 $end_time = $timer->end_time ? (is_numeric($timer->end_time) ? date('Y-m-d H:i:s', $timer->end_time) : $timer->end_time) : 'EM ANDAMENTO';
-                
+
                 log_activity('[Timesheet Debug] Timer ID: ' . $timer->id . ' | Task: ' . $timer->task_id . ' | Staff: ' . $timer->staff_id . ' | Início: ' . $start_time . ' | Fim: ' . $end_time);
             }
-            
+
             return $timers;
-            
+
         } catch (Exception $e) {
             log_activity('[Timesheet Debug ERROR] Erro ao listar timers: ' . $e->getMessage());
             return false;
@@ -273,7 +273,7 @@ class Timesheet_model extends App_Model
                     }
                     break;
             }
-            
+
             // Manter o timestamp da submissão mais recente
             if (!$latest_submission || $approval->submitted_at > $latest_submission) {
                 $latest_submission = $approval->submitted_at;
@@ -282,7 +282,7 @@ class Timesheet_model extends App_Model
 
         // Determinar status consolidado
         $consolidated_status = 'pending'; // Default
-        
+
         if ($rejected_count > 0) {
             // Se qualquer tarefa foi rejeitada, status geral é rejeitado
             $consolidated_status = 'rejected';
@@ -345,7 +345,7 @@ class Timesheet_model extends App_Model
             $this->db->where('project_id', $approval->project_id);
             $this->db->where('task_id', $approval->task_id);
             $this->db->where('week_start_date', $approval->week_start_date);
-            
+
             $new_entry_status = ($action === 'approved' ? 'approved' : 'draft');
             if (!$this->db->update(db_prefix() . 'timesheet_entries', ['status' => $new_entry_status])) {
                 log_activity('[Timesheet Approval] ERRO: Falha ao atualizar status das entradas para tarefa ' . $approval->task_id);
@@ -444,7 +444,7 @@ class Timesheet_model extends App_Model
 
                     if ($this->db->insert(db_prefix() . 'taskstimers', $timer_data)) {
                         $timer_id = $this->db->insert_id();
-                        
+
                         // Salvar referência
                         $this->db->where('id', $entry->id);
                         $this->db->update(db_prefix() . 'timesheet_entries', ['perfex_timer_id' => $timer_id]);
@@ -628,7 +628,7 @@ class Timesheet_model extends App_Model
                     // Atualizar referência na entrada
                     $this->db->where('id', $entry->id);
                     $this->db->update(db_prefix() . 'timesheet_entries', ['perfex_timer_id' => $existing_timer->id]);
-                    
+
                     log_activity('[Timesheet→Perfex] Timer atualizado ID ' . $existing_timer->id . ' para ' . $entry->hours . 'h');
                     return $existing_timer->id;
                 }
@@ -644,11 +644,11 @@ class Timesheet_model extends App_Model
 
                 if ($this->db->insert(db_prefix() . 'taskstimers', $timer_data)) {
                     $timer_id = $this->db->insert_id();
-                    
+
                     // Salvar referência na entrada
                     $this->db->where('id', $entry->id);
                     $this->db->update(db_prefix() . 'timesheet_entries', ['perfex_timer_id' => $timer_id]);
-                    
+
                     log_activity('[Timesheet→Perfex] Timer criado ID ' . $timer_id . ' para ' . $entry->hours . 'h');
                     return $timer_id;
                 }
@@ -691,84 +691,51 @@ class Timesheet_model extends App_Model
      * Get ALL approvals for a specific week (pending + approved, rejected hidden)
      * VERSÃO 2.0: Agrupa por funcionário mas mantém detalhes das tarefas
      */
-    public function get_weekly_all_approvals($manager_id, $week_start_date)
-    {
+    public function get_weekly_all_approvals($week_start_date = null) {
         try {
+            if (!$week_start_date) {
+                $week_start_date = date('Y-m-d', strtotime('monday this week'));
+            }
+
             log_activity('[Weekly Model Debug] Iniciando busca de aprovações semanais para semana: ' . $week_start_date);
-            
-            // Buscar funcionários únicos que têm aprovações na semana
-            $this->db->select('DISTINCT ta.staff_id, s.firstname, s.lastname, s.email');
-            $this->db->from(db_prefix() . 'timesheet_approvals ta');
-            $this->db->join(db_prefix() . 'staff s', 's.staffid = ta.staff_id');
-            $this->db->where('ta.week_start_date', $week_start_date);
-            $this->db->where_in('ta.status', ['pending', 'approved']);
-            $this->db->order_by('s.firstname', 'ASC');
-            
-            log_activity('[Weekly Model Debug] Query funcionários: ' . $this->db->last_query());
-            
+
+            // Primeiro, buscar todos os funcionários
+            $this->db->select('staffid as staff_id, firstname, lastname, email');
+            $this->db->from(db_prefix() . 'staff');
+            $this->db->where('active', 1);
+            $this->db->order_by('firstname, lastname');
             $staff_list = $this->db->get()->result();
-            
+
+            log_activity('[Weekly Model Debug] Query funcionários: ' . $this->db->last_query());
             log_activity('[Weekly Model Debug] Funcionários encontrados: ' . count($staff_list));
 
-            $weekly_approvals = [];
+            $result = [];
 
             foreach ($staff_list as $staff) {
-                log_activity('[Weekly Model Debug] Processando funcionário: ' . $staff->firstname . ' ' . $staff->lastname . ' (ID: ' . $staff->staff_id . ')');
-                
-                // Para cada funcionário, buscar suas aprovações
-                $this->db->select('ta.*, p.name as project_name, t.name as task_name');
+                // Buscar aprovações desta semana para este funcionário
+                $this->db->select('ta.*, t.name as task_name, p.name as project_name');
                 $this->db->from(db_prefix() . 'timesheet_approvals ta');
-                $this->db->join(db_prefix() . 'projects p', 'p.id = ta.project_id', 'left');
-                $this->db->join(db_prefix() . 'tasks t', 't.id = ta.task_id', 'left');
+                $this->db->join(db_prefix() . 'tasks t', 'ta.task_id = t.id', 'left');
+                $this->db->join(db_prefix() . 'projects p', 't.rel_id = p.id AND t.rel_type = "project"', 'left');
                 $this->db->where('ta.staff_id', $staff->staff_id);
                 $this->db->where('ta.week_start_date', $week_start_date);
-                $this->db->where_in('ta.status', ['pending', 'approved']);
-                $this->db->order_by('ta.status', 'ASC'); // pending primeiro
-                $this->db->order_by('p.name', 'ASC');
-                
-                log_activity('[Weekly Model Debug] Query tarefas para staff ' . $staff->staff_id . ': ' . $this->db->last_query());
-                
-                $task_approvals = $this->db->get()->result();
-                
-                log_activity('[Weekly Model Debug] Tarefas encontradas para ' . $staff->firstname . ': ' . count($task_approvals));
+                $this->db->order_by('ta.created_at', 'DESC');
+                $approvals = $this->db->get()->result();
 
-                if (!empty($task_approvals)) {
-                    // Debug das tarefas encontradas
-                    foreach ($task_approvals as $task) {
-                        log_activity('[Weekly Model Debug] Tarefa: ' . $task->task_name . ' (ID: ' . $task->task_id . ') - Status: ' . $task->status . ' - Projeto: ' . $task->project_name);
-                    }
-                    
-                    // Criar objeto consolidado para compatibilidade com a view
-                    $consolidated = (object) [
-                        'id' => 'staff_' . $staff->staff_id, // ID único para o agrupamento
-                        'staff_id' => $staff->staff_id,
-                        'firstname' => $staff->firstname,
-                        'lastname' => $staff->lastname,
-                        'email' => $staff->email,
-                        'week_start_date' => $week_start_date,
-                        'submitted_at' => $task_approvals[0]->submitted_at,
-                        'task_approvals' => $task_approvals, // Lista de aprovações por tarefa
-                        'total_tasks' => count($task_approvals),
-                        'pending_tasks' => count(array_filter($task_approvals, function($a) { return $a->status == 'pending'; })),
-                        'approved_tasks' => count(array_filter($task_approvals, function($a) { return $a->status == 'approved'; }))
+                log_activity('[Weekly Model Debug] Query aprovações: ' . $this->db->last_query());
+                log_activity('[Weekly Model Debug] Aprovações para ' . $staff->firstname . ' ' . $staff->lastname . ': ' . count($approvals));
+
+                if (!empty($approvals)) {
+                    $result[] = [
+                        'staff' => $staff,
+                        'approvals' => $approvals
                     ];
-
-                    // Determinar status consolidado
-                    if ($consolidated->pending_tasks > 0) {
-                        $consolidated->status = 'pending';
-                    } else {
-                        $consolidated->status = 'approved';
-                    }
-
-                    log_activity('[Weekly Model Debug] Consolidado criado para ' . $staff->firstname . ' - Status: ' . $consolidated->status . ' - Total: ' . $consolidated->total_tasks . ' tarefas');
-
-                    $weekly_approvals[] = $consolidated;
                 }
             }
 
-            log_activity('[Weekly Model Debug] Total de aprovações semanais retornadas: ' . count($weekly_approvals));
-            return $weekly_approvals;
-            
+            log_activity('[Weekly Model Debug] Total de funcionários com aprovações: ' . count($result));
+            return $result;
+
         } catch (Exception $e) {
             log_activity('[Weekly Model Debug ERROR] Erro fatal: ' . $e->getMessage());
             log_activity('[Weekly Model Debug ERROR] Stack trace: ' . $e->getTraceAsString());
