@@ -94,6 +94,8 @@ $(document).ready(function() {
             console.log('[Weekly JS Debug] Resposta preview:', response);
             if (response.success) {
                 $previewContainer.html(response.html);
+                // Carregar detalhes das tarefas automaticamente após carregar o preview
+                loadTaskDetails(approvalId, staffId, weekStartDate);
             } else {
                 $previewContainer.html('<div class="text-center text-danger">Erro ao carregar preview</div>');
             }
@@ -372,11 +374,19 @@ $(document).ready(function() {
         $('.task-checkbox:enabled').prop('checked', isChecked).trigger('change');
     });
     
-    // Handler para checkbox "Selecionar Todas do Usuário"
+    // Handler para checkbox "Selecionar Todas do Usuário" (cabeçalho da tabela)
+    $(document).on('change', '.select-user-tasks-header', function() {
+        var isChecked = $(this).is(':checked');
+        var userId = $(this).data('user-id');
+        $('.task-checkbox[data-user-id="' + userId + '"]:enabled').prop('checked', isChecked).trigger('change');
+    });
+    
+    // Handler para checkbox "Selecionar Todas do Usuário" (controle acima da tabela)
     $(document).on('change', '.select-user-tasks', function() {
         var isChecked = $(this).is(':checked');
         var userId = $(this).data('user-id');
         $('.task-checkbox[data-user-id="' + userId + '"]:enabled').prop('checked', isChecked).trigger('change');
+        $('.select-user-tasks-header[data-user-id="' + userId + '"]').prop('checked', isChecked);
     });
     
     // Handler para checkboxes individuais de tarefas
@@ -430,12 +440,15 @@ $(document).ready(function() {
             // Habilitar/desabilitar botões por usuário
             $('.user-batch-approve-btn[data-user-id="' + userId + '"], .user-batch-reject-btn[data-user-id="' + userId + '"]').prop('disabled', selectedCount === 0);
             
-            // Atualizar estado do checkbox "Selecionar Todas do Usuário"
+            // Atualizar estado dos checkboxes "Selecionar Todas do Usuário"
             var allChecked = (selectedCount > 0 && selectedCount === totalCount);
             var someChecked = (selectedCount > 0 && selectedCount < totalCount);
             
+            // Sincronizar ambos os checkboxes (controle e cabeçalho da tabela)
             $(this).prop('checked', allChecked);
             $(this).prop('indeterminate', someChecked);
+            $('.select-user-tasks-header[data-user-id="' + userId + '"]').prop('checked', allChecked);
+            $('.select-user-tasks-header[data-user-id="' + userId + '"]').prop('indeterminate', someChecked);
         });
     }
     
@@ -636,43 +649,40 @@ $(document).ready(function() {
         });
     }
     
-    // Renderizar checkboxes das tarefas
+    // Renderizar checkboxes das tarefas diretamente na tabela
     function renderTaskCheckboxes(approvalId, tasks) {
         var $previewContainer = $('#preview-' + approvalId);
-        var $existingPreview = $previewContainer.find('.timesheet-preview');
+        var $table = $previewContainer.find('table');
         
-        if (tasks.length === 0) {
+        if (tasks.length === 0 || $table.length === 0) {
             return;
         }
         
-        var taskSelectionHtml = '<div class="task-selection-area" style="margin-bottom: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">';
-        taskSelectionHtml += '<h5><i class="fa fa-tasks"></i> Seleção Individual de Tarefas:</h5>';
-        taskSelectionHtml += '<div class="row">';
+        // Adicionar coluna de checkbox no cabeçalho
+        var $headerRow = $table.find('thead tr');
+        $headerRow.prepend('<th width="40" class="text-center"><input type="checkbox" class="select-user-tasks-header" data-user-id="' + approvalId + '" title="Selecionar todas as tarefas deste usuário"></th>');
         
-        tasks.forEach(function(task, index) {
-            var isDisabled = task.status !== 'pending' ? 'disabled' : '';
-            var statusBadge = task.status === 'pending' ? 
-                '<span class="label label-warning">Pendente</span>' : 
-                '<span class="label label-success">Aprovada</span>';
+        // Adicionar checkboxes nas linhas de tarefas
+        var $dataRows = $table.find('tbody tr').not(':last'); // Excluir linha de total
+        
+        $dataRows.each(function(index) {
+            var $row = $(this);
             
-            taskSelectionHtml += '<div class="col-md-6" style="margin-bottom: 10px;">';
-            taskSelectionHtml += '<div class="checkbox">';
-            taskSelectionHtml += '<label>';
-            taskSelectionHtml += '<input type="checkbox" class="task-checkbox" value="' + task.id + '" data-status="' + task.status + '" data-user-id="' + approvalId + '" ' + isDisabled + '>';
-            taskSelectionHtml += '<strong>' + (task.project_name || 'Projeto') + '</strong>';
-            if (task.task_name) {
-                taskSelectionHtml += '<br><small class="text-muted">' + task.task_name + '</small>';
+            // Tentar encontrar a tarefa correspondente
+            var task = tasks[index];
+            if (task) {
+                var isDisabled = task.status !== 'pending' ? 'disabled' : '';
+                var checkboxHtml = '<td class="text-center"><input type="checkbox" class="task-checkbox" value="' + task.id + '" data-status="' + task.status + '" data-user-id="' + approvalId + '" ' + isDisabled + '></td>';
+                $row.prepend(checkboxHtml);
+            } else {
+                // Se não há tarefa correspondente, adicionar célula vazia
+                $row.prepend('<td class="text-center">-</td>');
             }
-            taskSelectionHtml += '<span style="margin-left: 10px;">' + statusBadge + '</span>';
-            taskSelectionHtml += '<span style="margin-left: 5px;"><small>(' + (task.total_hours || 0) + 'h)</small></span>';
-            taskSelectionHtml += '</label>';
-            taskSelectionHtml += '</div>';
-            taskSelectionHtml += '</div>';
         });
         
-        taskSelectionHtml += '</div></div>';
-        
-        $previewContainer.prepend(taskSelectionHtml);
+        // Adicionar célula vazia na linha de total
+        var $totalRow = $table.find('tbody tr:last');
+        $totalRow.prepend('<td class="text-center"><strong>-</strong></td>');
         
         // Após inserir os checkboxes, atualizar os controles
         updateUserBatchControls();
