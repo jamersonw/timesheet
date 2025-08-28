@@ -4,6 +4,56 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 
 
+
+## [1.4.8] - 2025-08-28
+
+### 🔧 ALTERAÇÕES
+- Sistema de seleção múltipla finalizado - Aprovação semanal completa com checkboxes funcionais
+
+
+## [1.4.8] - 2025-01-28
+
+### ✅ **SELEÇÃO MÚLTIPLA FINALIZADA - APROVAÇÃO SEMANAL COMPLETA**
+
+### 🎯 **FUNCIONALIDADES IMPLEMENTADAS**
+- **Checkbox de seleção individual**: Primeira coluna com seleção por tarefa
+- **Checkbox de cabeçalho por usuário**: Selecionar/desmarcar todas as tarefas de um usuário
+- **Checkbox global**: Selecionar/desmarcar todas as tarefas da página
+- **Botões de aprovação em lote**: Por usuário e globais funcionando perfeitamente
+- **Estados visuais inteligentes**: Indeterminate, checked e unchecked baseados na seleção
+- **Contadores dinâmicos**: Exibição em tempo real de tarefas selecionadas
+
+### 🔧 **CORREÇÕES TÉCNICAS CRÍTICAS**
+- **DOM Structure**: Corrigido seletor para buscar checkboxes no preview correto (`#preview-{userId}`)
+- **Event Handlers**: Handlers de aprovação por usuário funcionando com seleção correta
+- **Batch Processing**: Lógica de processamento em lote totalmente funcional
+- **Visual Feedback**: Botões habilitados/desabilitados baseados na seleção
+- **State Management**: Gerenciamento de estado dos checkboxes aprimorado
+
+### 🎯 **FLUXO DE TRABALHO COMPLETO**
+1. ✅ **Seleção individual**: Checkbox por tarefa funcionando
+2. ✅ **Seleção por usuário**: Checkbox de cabeçalho seleciona todas as tarefas do usuário
+3. ✅ **Seleção global**: Checkbox global seleciona todas as tarefas da página
+4. ✅ **Aprovação em lote**: Botões por usuário e globais processando seleções
+5. ✅ **Estados visuais**: Indeterminate, checked, unchecked funcionando
+6. ✅ **Contadores**: Exibição dinâmica de tarefas selecionadas
+
+### 📋 **MELHORIAS DE UX**
+- **Interface intuitiva**: Seleção múltipla familiar aos usuários
+- **Feedback visual**: Status claro de seleção em tempo real
+- **Eficiência**: Aprovação de múltiplas tarefas com poucos cliques
+- **Flexibilidade**: Opções de seleção individual, por usuário ou global
+- **Confirmações**: Modais informativos sobre quantidade de tarefas selecionadas
+
+### 🛡️ **VALIDAÇÕES E SEGURANÇA**
+- **Seleção obrigatória**: Botões desabilitados quando nenhuma tarefa selecionada
+- **Consistência**: Estados de checkbox sempre sincronizados
+- **Prevenção de erros**: Validação antes de processar ações em lote
+- **Logs detalhados**: Debug completo para identificação de problemas
+
+### 🎉 **RESULTADO FINAL**
+Sistema de aprovação semanal com seleção múltipla **100% funcional**, proporcionando uma experiência de usuário moderna e eficiente para gerentes aprovarem timesheets em lote.
+
 ## [1.4.7] - 2025-08-28
 
 ### 🔧 ALTERAÇÕES
