@@ -137,31 +137,6 @@ $(document).ready(function () {
     // ===================================================================
     // AÇÕES E MODAIS (APROVAR/REJEITAR/CANCELAR)
     // ===================================================================
-    // NOVO: Handler para cancelar aprovação de TAREFA INDIVIDUAL
-    $(document).on("click", ".cancel-task-btn", function () {
-        var approvalId = $(this).data("approval-id");
-        
-        TimesheetModals.confirm({
-            title: "Cancelar Aprovação da Tarefa",
-            message: "Tem certeza que deseja cancelar a aprovação desta tarefa específica? As horas serão removidas do quadro de horas e a tarefa voltará para o status pendente.",
-            confirmText: "Sim, Cancelar",
-            confirmClass: "timesheet-modal-btn-danger"
-        }).then(function (confirmed) {
-            if (confirmed) {
-                $.post(manage_weekly_data.admin_url + "timesheet/cancel_task_approval", { approval_id: approvalId }, function(response) {
-                    if (response.success) {
-                        TimesheetModals.alert({ title: "Sucesso", message: response.message, type: "success" })
-                            .then(function() { location.reload(); });
-                    } else {
-                        TimesheetModals.alert({ title: "Erro", message: response.message, type: "error" });
-                    }
-                }, 'json').fail(function() {
-                    TimesheetModals.alert({ title: "Erro", message: "Erro de comunicação com o servidor.", type: "error" });
-                });
-            }
-        });
-    });
-    
     $(document).on("click", "button.approve-btn, a.approve-btn", function(e) { e.preventDefault(); var t = $(this).data("approval-id"); TimesheetModals.confirm({ title: "Aprovar Timesheet", message: "Tem certeza que deseja aprovar este timesheet? Esta ação não pode ser desfeita.", confirmText: "Aprovar" }).then(function(e) { e && approveRejectTimesheet(t, "approved") }) }), $(document).on("click", "button.reject-btn, a.reject-btn", function(e) { e.preventDefault(); var t = $(this).data("approval-id"); TimesheetModals.prompt({ title: "Rejeitar Timesheet", message: "Por favor, informe o motivo da rejeição:", required: !0 }).then(function(e) { e && approveRejectTimesheet(t, "rejected", e) }) }), $(document).on("click", ".cancel-approval-btn", function(e) { e.preventDefault(); var t = $(this).data("approval-id"); TimesheetModals.confirm({ title: "Cancelar Aprovação", message: "Tem certeza que deseja cancelar esta aprovação? O timesheet voltará ao status de rascunho.", confirmText: "Sim, Cancelar" }).then(function(e) { e && cancelApproval(t) }) }), $(document).on("click", ".batch-approve-btn", function() { 0 !== selectedTasks.length && TimesheetModals.confirm({ title: "Aprovação em Lote", message: "Tem certeza que deseja aprovar " + selectedTasks.length + " tarefas selecionadas?", confirmText: "Aprovar Todas" }).then(function(e) { e && processBatchAction("approved", null, selectedTasks) }) }), $(document).on("click", ".batch-reject-btn", function() { 0 !== selectedTasks.length && TimesheetModals.prompt({ title: "Rejeição em Lote", message: "Informe o motivo para rejeitar " + selectedTasks.length + " tarefas selecionadas:", required: !0 }).then(function(e) { e && processBatchAction("rejected", e, selectedTasks) }) }), $(document).on("click", ".user-batch-approve-btn", function() { var e = $(this).data("user-id"), t = [];
         $("#preview-" + e + " .task-checkbox:checked").each(function() { t.push($(this).val()) }), 0 !== t.length && TimesheetModals.confirm({ title: "Aprovação em Lote - Usuário", message: "Tem certeza que deseja aprovar " + t.length + " tarefas selecionadas deste usuário?", confirmText: "Aprovar Selecionadas" }).then(function(e) { e && processBatchAction("approved", null, t) }) }), $(document).on("click", ".user-batch-reject-btn", function() { var e = $(this).data("user-id"), t = [];
         $("#preview-" + e + " .task-checkbox:checked").each(function() { t.push($(this).val()) }), 0 !== t.length && TimesheetModals.prompt({ title: "Rejeição em Lote - Usuário", message: "Informe o motivo para rejeitar " + t.length + " tarefas selecionadas deste usuário:", required: !0 }).then(function(e) { e && processBatchAction("rejected", e, t) }) });
