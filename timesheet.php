@@ -203,6 +203,37 @@ function timesheet_load_admin_assets()
     }
 }
 
+// NOVO HOOK: Adiciona CSS customizado para esconder elementos
+hooks()->add_action('app_admin_head', 'timesheet_hide_native_log_time_elements');
+
+/**
+ * NOVA FUNÇÃO: Injeta CSS para esconder o botão e o formulário de apontamento manual de horas do projeto.
+ * Esta é a abordagem mais segura, pois não modifica os arquivos do núcleo do Perfex.
+ */
+function timesheet_hide_native_log_time_elements()
+{
+    // A verificação esconde os elementos apenas se o usuário NÃO for admin.
+    if (!is_admin()) {
+        $CI = &get_instance();
+        // Verifica se estamos na página de um projeto específico para aplicar o CSS
+        if ($CI->uri->segment(1) == 'admin' && $CI->uri->segment(2) == 'projects' && $CI->uri->segment(3) == 'view') {
+            echo '<style>
+                /* * ALTERAÇÃO: O seletor foi atualizado para ser mais específico,
+                 * usando o atributo onclick, conforme confirmado na inspeção.
+                 */
+                a[onclick="new_timesheet();return false;"] {
+                    display: none !important;
+                }
+
+                /* Esconde a seção inteira de entrada manual de tempo para garantir */
+                #timesheet-entry {
+                    display: none !important;
+                }
+            </style>';
+        }
+    }
+}
+
 /**
  * Carrega o helper do módulo.
  */
