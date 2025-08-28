@@ -6,10 +6,10 @@ $(document).ready(function() {
     console.log('Botões de aprovação encontrados:', $('.approve-btn').length);
     console.log('Botões de rejeição encontrados:', $('.reject-btn').length);
     
-    // Load total hours for each approval
+    // Load total hours for each approval (agora por tarefa específica)
     if (typeof manage_data !== 'undefined' && manage_data.pending_approvals) {
         manage_data.pending_approvals.forEach(function(approval) {
-            loadTotalHours(approval.id, approval.staff_id, approval.week_start_date);
+            loadTotalHours(approval.id, approval.staff_id, approval.week_start_date, approval.task_id);
         });
     }
     
@@ -61,17 +61,25 @@ $(document).ready(function() {
         });
     });
     
-    function loadTotalHours(approvalId, staffId, weekStartDate) {
+    function loadTotalHours(approvalId, staffId, weekStartDate, taskId) {
         // Usar a variável correta dependendo da view
         var data_source = (typeof manage_data !== 'undefined') ? manage_data : approval_data;
         
+        // Se taskId for fornecido, buscar horas específicas da tarefa
+        var url = data_source.admin_url + (taskId ? 'timesheet/get_task_total' : 'timesheet/get_week_total');
+        var requestData = {
+            staff_id: staffId,
+            week_start_date: weekStartDate
+        };
+        
+        if (taskId) {
+            requestData.task_id = taskId;
+        }
+        
         $.ajax({
-            url: data_source.admin_url + 'timesheet/get_week_total',
+            url: url,
             type: 'GET',
-            data: {
-                staff_id: staffId,
-                week_start_date: weekStartDate
-            },
+            data: requestData,
             dataType: 'json',
             success: function(response) {
                 if (response.success) {

@@ -134,6 +134,56 @@ try {
         $table_exists = $CI->db->table_exists($db_prefix . 'timesheet_approvals');
     } catch (Exception $e) {
         safe_log_activity('[Timesheet Install ERROR] Erro ao verificar tabela timesheet_approvals: ' . $e->getMessage());
+        $table_exists = false;
+    }
+
+    if (!$table_exists) {
+        safe_log_activity('[Timesheet Install] Criando tabela timesheet_approvals...');
+        
+        $CI->db->query('CREATE TABLE `' . $db_prefix . 'timesheet_approvals` (
+            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `staff_id` int(11) NOT NULL,
+            `project_id` int(11) NOT NULL,
+            `task_id` int(11) NOT NULL,
+            `week_start_date` date NOT NULL,
+            `status` enum("pending","approved","rejected") NOT NULL DEFAULT "pending",
+            `submitted_at` datetime NOT NULL,
+            `approved_by` int(11) NULL,
+            `approved_at` datetime NULL,
+            `rejection_reason` text NULL,
+            PRIMARY KEY (`id`),
+            INDEX `idx_staff_week_task` (`staff_id`, `week_start_date`, `task_id`),
+            INDEX `idx_status` (`status`),
+            INDEX `idx_project_task` (`project_id`, `task_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=' . $CI->db->char_set . ';');
+        
+        safe_log_activity('[Timesheet Install] Tabela timesheet_approvals criada com sucesso');
+    } else {
+        safe_log_activity('[Timesheet Install] Tabela timesheet_approvals já existe');
+        
+        // Verificar se as novas colunas existem (para migração de versões antigas)
+        $has_project_id = $CI->db->field_exists('project_id', $db_prefix . 'timesheet_approvals');
+        $has_task_id = $CI->db->field_exists('task_id', $db_prefix . 'timesheet_approvals');
+        
+        if (!$has_project_id) {
+            safe_log_activity('[Timesheet Install] Adicionando coluna project_id...');
+            $CI->db->query('ALTER TABLE `' . $db_prefix . 'timesheet_approvals` ADD COLUMN `project_id` INT(11) NOT NULL AFTER `staff_id`');
+        }
+        
+        if (!$has_task_id) {
+            safe_log_activity('[Timesheet Install] Adicionando coluna task_id...');
+            $CI->db->query('ALTER TABLE `' . $db_prefix . 'timesheet_approvals` ADD COLUMN `task_id` INT(11) NOT NULL AFTER `project_id`');
+        }
+        
+        // Atualizar índices se necessário
+        try {
+            $CI->db->query('DROP INDEX IF EXISTS `idx_staff_week` ON `' . $db_prefix . 'timesheet_approvals`');
+            $CI->db->query('CREATE INDEX `idx_staff_week_task` ON `' . $db_prefix . 'timesheet_approvals` (`staff_id`, `week_start_date`, `task_id`)');
+            $CI->db->query('CREATE INDEX `idx_project_task` ON `' . $db_prefix . 'timesheet_approvals` (`project_id`, `task_id`)');
+        } catch (Exception $e) {
+            safe_log_activity('[Timesheet Install] Aviso: Erro ao criar índices: ' . $e->getMessage());
+        }
+    }provals: ' . $e->getMessage());
     }
 
     if (!$table_exists) {

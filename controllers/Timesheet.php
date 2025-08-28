@@ -203,6 +203,25 @@ class Timesheet extends AdminController
     }
 
     /**
+     * Get task total hours via AJAX for manager view
+     * VERSÃO 2.0: Busca horas de uma tarefa específica
+     */
+    public function get_task_total()
+    {
+        $staff_id = $this->input->get('staff_id');
+        $week_start_date = $this->input->get('week_start_date');
+        $task_id = $this->input->get('task_id');
+        
+        if (!$task_id) {
+            echo json_encode(['success' => false, 'message' => 'Task ID required']);
+            return;
+        }
+        
+        $total_hours = $this->timesheet_model->get_task_total_hours($staff_id, $week_start_date, $task_id);
+        echo json_encode(['success' => true, 'total_hours' => $total_hours]);
+    }
+
+    /**
      * Get timesheet preview for weekly approval view
      */
     public function get_timesheet_preview()

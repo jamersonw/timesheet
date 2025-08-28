@@ -25,7 +25,7 @@
                                     <thead>
                                         <tr>
                                             <th><?php echo _l('staff'); ?></th>
-                                            <th><?php echo _l('timesheet_week_of'); ?></th>
+                                            <th>Projeto / Tarefa</th>
                                             <th><?php echo _l('timesheet_total'); ?> <?php echo _l('timesheet_hours'); ?></th>
                                             <th><?php echo _l('submitted_at'); ?></th>
                                             <th class="text-center"><?php echo _l('options'); ?></th>
@@ -39,13 +39,15 @@
                                                 <br><small class="text-muted"><?php echo $approval->email; ?></small>
                                             </td>
                                             <td>
-                                                <?php echo _d($approval->week_start_date); ?>
-                                                <br><small class="text-muted">
-                                                    <?php echo _d($approval->week_start_date) . ' - ' . _d(timesheet_get_week_end($approval->week_start_date)); ?>
-                                                </small>
+                                                <strong><?php echo $approval->project_name; ?></strong>
+                                                <br><small class="text-muted"><?php echo $approval->task_name; ?></small>
+                                                <br><span class="label label-default"><?php echo _d($approval->week_start_date); ?></span>
                                             </td>
                                             <td class="text-center">
-                                                <span class="total-hours-display" data-approval-id="<?php echo $approval->id; ?>">
+                                                <span class="total-hours-display" data-approval-id="<?php echo $approval->id; ?>" 
+                                                      data-task-id="<?php echo $approval->task_id; ?>" 
+                                                      data-staff-id="<?php echo $approval->staff_id; ?>" 
+                                                      data-week-start="<?php echo $approval->week_start_date; ?>">
                                                     <i class="fa fa-spinner fa-spin"></i>
                                                 </span>
                                             </td>
