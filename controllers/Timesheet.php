@@ -222,10 +222,25 @@ class Timesheet extends AdminController
      */
     public function get_week_total()
     {
+        if (!has_permission('timesheet', '', 'view') && !has_permission('timesheet', '', 'approve') && !is_admin()) {
+            log_activity('[Weekly AJAX ERROR] Acesso negado ao get_week_total');
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+        
         $staff_id = $this->input->get('staff_id');
         $week_start_date = $this->input->get('week_start_date');
-        $total_hours = $this->timesheet_model->get_week_total_hours($staff_id, $week_start_date);
-        echo json_encode(['success' => true, 'total_hours' => $total_hours]);
+        
+        log_activity('[Weekly AJAX Debug] get_week_total - Staff ID: ' . $staff_id . ', Week: ' . $week_start_date);
+        
+        try {
+            $total_hours = $this->timesheet_model->get_week_total_hours($staff_id, $week_start_date);
+            log_activity('[Weekly AJAX Debug] Total de horas calculado: ' . $total_hours);
+            echo json_encode(['success' => true, 'total_hours' => $total_hours]);
+        } catch (Exception $e) {
+            log_activity('[Weekly AJAX ERROR] Erro ao buscar total de horas: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
     }
 
     /**
@@ -252,16 +267,35 @@ class Timesheet extends AdminController
      */
     public function get_timesheet_preview()
     {
+        if (!has_permission('timesheet', '', 'view') && !has_permission('timesheet', '', 'approve') && !is_admin()) {
+            log_activity('[Weekly AJAX ERROR] Acesso negado ao get_timesheet_preview');
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+        
         $staff_id = $this->input->get('staff_id');
         $week_start_date = $this->input->get('week_start_date');
         
-        $entries = $this->timesheet_model->get_week_entries_grouped($staff_id, $week_start_date);
-        $week_dates = timesheet_get_week_dates($week_start_date);
-        $daily_totals = $this->timesheet_model->get_week_daily_totals($staff_id, $week_start_date);
-        $week_total = $this->timesheet_model->get_week_total_hours($staff_id, $week_start_date);
+        log_activity('[Weekly AJAX Debug] get_timesheet_preview - Staff ID: ' . $staff_id . ', Week: ' . $week_start_date);
         
-        if (empty($entries)) {
-            echo json_encode(['success' => true, 'html' => '<div class="text-center text-muted">Nenhuma entrada encontrada</div>']);
+        try {
+            $entries = $this->timesheet_model->get_week_entries_grouped($staff_id, $week_start_date);
+            log_activity('[Weekly AJAX Debug] Entradas encontradas: ' . count($entries));
+            
+            $week_dates = timesheet_get_week_dates($week_start_date);
+            $daily_totals = $this->timesheet_model->get_week_daily_totals($staff_id, $week_start_date);
+            $week_total = $this->timesheet_model->get_week_total_hours($staff_id, $week_start_date);
+            
+            log_activity('[Weekly AJAX Debug] Dados carregados - Total semana: ' . $week_total);
+            
+            if (empty($entries)) {
+                log_activity('[Weekly AJAX Debug] Nenhuma entrada encontrada, retornando mensagem padrão');
+                echo json_encode(['success' => true, 'html' => '<div class="text-center text-muted">Nenhuma entrada encontrada</div>']);
+                return;
+            }
+        } catch (Exception $e) {
+            log_activity('[Weekly AJAX ERROR] Erro ao carregar preview: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
             return;
         }
         
