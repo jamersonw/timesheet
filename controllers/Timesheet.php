@@ -177,44 +177,113 @@ class Timesheet extends AdminController
      */
     public function manage_weekly()
     {
-        $staff_id = get_staff_user_id();
-        
-        log_activity('[Weekly Debug] Início do acesso à tela semanal - Staff ID: ' . $staff_id);
-        
-        if (!has_permission('timesheet', '', 'approve') && !is_admin() && !timesheet_can_manage_any_project($staff_id)) {
-            log_activity('[Weekly Debug] Acesso negado - Permissões insuficientes');
-            access_denied('timesheet');
-        }
-
-        log_activity('[Weekly Debug] Permissões OK - Iniciando carregamento dos dados');
-
-        $week_start = $this->input->get('week') ?: timesheet_get_week_start();
-        $data['week_start'] = $week_start;
-        $data['week_end'] = timesheet_get_week_end($week_start);
-        $data['week_dates'] = timesheet_get_week_dates($week_start);
-        
-        log_activity('[Weekly Debug] Semana selecionada: ' . $week_start . ' até ' . $data['week_end']);
-        
         try {
-            $weekly_approvals = $this->timesheet_model->get_weekly_all_approvals($week_start);
-            log_activity('[Weekly Debug] Aprovações encontradas: ' . count($weekly_approvals));
+            $staff_id = get_staff_user_id();
             
-            foreach ($weekly_approvals as $index => $approval) {
-                log_activity('[Weekly Debug] Aprovação ' . ($index + 1) . ': Staff ' . $approval->staff_id . ' (' . $approval->firstname . ' ' . $approval->lastname . ') - Status: ' . $approval->status . ' - Total tarefas: ' . $approval->total_tasks);
+            log_activity('[Weekly Debug] =========================');
+            log_activity('[Weekly Debug] INÍCIO - Acesso à tela semanal');
+            log_activity('[Weekly Debug] Staff ID logado: ' . $staff_id);
+            log_activity('[Weekly Debug] User Agent: ' . $_SERVER['HTTP_USER_AGENT']);
+            log_activity('[Weekly Debug] URL solicitada: ' . current_url());
+            log_activity('[Weekly Debug] =========================');
+            
+            // Verificar se função helper está disponível
+            if (!function_exists('timesheet_get_week_start')) {
+                log_activity('[Weekly Debug ERROR] FUNÇÃO timesheet_get_week_start NÃO ENCONTRADA!');
+                show_error('Função helper timesheet não carregada');
+                return;
             }
             
-            $data['weekly_approvals'] = $weekly_approvals;
+            log_activity('[Weekly Debug] Helper functions OK');
+            
+            // Verificar permissões com detalhes
+            $has_approve = has_permission('timesheet', '', 'approve');
+            $is_admin_user = is_admin();
+            $can_manage_projects = timesheet_can_manage_any_project($staff_id);
+            
+            log_activity('[Weekly Debug] Verificando permissões:');
+            log_activity('[Weekly Debug] - has_permission(approve): ' . ($has_approve ? 'SIM' : 'NÃO'));
+            log_activity('[Weekly Debug] - is_admin(): ' . ($is_admin_user ? 'SIM' : 'NÃO'));
+            log_activity('[Weekly Debug] - can_manage_projects: ' . ($can_manage_projects ? 'SIM' : 'NÃO'));
+            
+            if (!$has_approve && !$is_admin_user && !$can_manage_projects) {
+                log_activity('[Weekly Debug ERROR] Acesso negado - Usuário sem permissões suficientes');
+                access_denied('timesheet');
+                return;
+            }
+
+            log_activity('[Weekly Debug] ✅ Permissões OK - Prosseguindo');
+
+            // Obter dados da semana
+            $week_start = $this->input->get('week') ?: timesheet_get_week_start();
+            log_activity('[Weekly Debug] Semana calculada: ' . $week_start);
+            
+            $data['week_start'] = $week_start;
+            $data['week_end'] = timesheet_get_week_end($week_start);
+            $data['week_dates'] = timesheet_get_week_dates($week_start);
+            
+            log_activity('[Weekly Debug] Dados da semana:');
+            log_activity('[Weekly Debug] - week_start: ' . $data['week_start']);
+            log_activity('[Weekly Debug] - week_end: ' . $data['week_end']);
+            log_activity('[Weekly Debug] - week_dates count: ' . count($data['week_dates']));
+            
+            // Verificar se modelo está carregado
+            if (!isset($this->timesheet_model)) {
+                log_activity('[Weekly Debug ERROR] MODELO timesheet_model NÃO CARREGADO!');
+                show_error('Modelo Timesheet não carregado');
+                return;
+            }
+            
+            log_activity('[Weekly Debug] Modelo carregado OK - Buscando aprovações...');
+            
+            try {
+                $weekly_approvals = $this->timesheet_model->get_weekly_all_approvals($week_start);
+                log_activity('[Weekly Debug] ✅ Aprovações obtidas: ' . count($weekly_approvals));
+                
+                if (empty($weekly_approvals)) {
+                    log_activity('[Weekly Debug] ℹ️ Nenhuma aprovação encontrada para a semana');
+                } else {
+                    foreach ($weekly_approvals as $index => $approval) {
+                        log_activity('[Weekly Debug] Aprovação ' . ($index + 1) . ': Staff ' . $approval->staff_id . ' (' . $approval->firstname . ' ' . $approval->lastname . ') - Status: ' . $approval->status . ' - Total tarefas: ' . $approval->total_tasks);
+                    }
+                }
+                
+                $data['weekly_approvals'] = $weekly_approvals;
+                
+            } catch (Exception $e) {
+                log_activity('[Weekly Debug ERROR] ERRO ao buscar aprovações: ' . $e->getMessage());
+                log_activity('[Weekly Debug ERROR] Stack trace: ' . $e->getTraceAsString());
+                $data['weekly_approvals'] = [];
+            }
+            
+            $data['title'] = _l('timesheet_weekly_approvals');
+
+            log_activity('[Weekly Debug] Preparando view:');
+            log_activity('[Weekly Debug] - title: ' . $data['title']);
+            log_activity('[Weekly Debug] - weekly_approvals count: ' . count($data['weekly_approvals']));
+            
+            // Verificar se view existe
+            $view_path = APPPATH . 'modules/timesheet/views/manage_weekly.php';
+            if (!file_exists($view_path)) {
+                log_activity('[Weekly Debug ERROR] VIEW NÃO ENCONTRADA: ' . $view_path);
+                show_error('View manage_weekly.php não encontrada');
+                return;
+            }
+            
+            log_activity('[Weekly Debug] ✅ View encontrada: ' . $view_path);
+            log_activity('[Weekly Debug] 🚀 Carregando view manage_weekly...');
+            
+            $this->load->view('manage_weekly', $data);
+            
+            log_activity('[Weekly Debug] ✅ View carregada com sucesso');
             
         } catch (Exception $e) {
-            log_activity('[Weekly Debug ERROR] Erro ao buscar aprovações: ' . $e->getMessage());
-            $data['weekly_approvals'] = [];
+            log_activity('[Weekly Debug FATAL ERROR] ERRO FATAL na função manage_weekly: ' . $e->getMessage());
+            log_activity('[Weekly Debug FATAL ERROR] Arquivo: ' . $e->getFile() . ' - Linha: ' . $e->getLine());
+            log_activity('[Weekly Debug FATAL ERROR] Stack trace: ' . $e->getTraceAsString());
+            
+            show_error('Erro fatal ao carregar tela semanal. Verifique os logs.');
         }
-        
-        $data['title'] = _l('timesheet_weekly_approvals');
-
-        log_activity('[Weekly Debug] Carregando view manage_weekly com ' . count($data['weekly_approvals']) . ' aprovações');
-        
-        $this->load->view('manage_weekly', $data);
     }
 
     /**

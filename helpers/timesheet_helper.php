@@ -2,6 +2,9 @@
 
 defined('BASEPATH') or exit('No direct script access allowed');
 
+// Log de carregamento do helper
+log_activity('[Timesheet Helper] Helper carregado em: ' . date('Y-m-d H:i:s'));
+
 /**
  * Get week start date (Monday) for a given date
  */

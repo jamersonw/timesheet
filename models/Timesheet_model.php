@@ -693,40 +693,87 @@ class Timesheet_model extends App_Model
      */
     public function get_weekly_all_approvals($week_start_date = null) {
         try {
+            log_activity('[Weekly Model] ======== INICIANDO get_weekly_all_approvals ========');
+            
             if (!$week_start_date) {
                 $week_start_date = date('Y-m-d', strtotime('monday this week'));
+                log_activity('[Weekly Model] Week start não informado, usando semana atual: ' . $week_start_date);
+            } else {
+                log_activity('[Weekly Model] Week start informado: ' . $week_start_date);
             }
 
-            log_activity('[Weekly Model Debug] Início do acesso à tela semanal - Staff ID: ' . $this->session->userdata('staff_id'));
-            log_activity('[Weekly Model Debug] Permissões OK - Iniciando carregamento dos dados');
-            log_activity('[Weekly Model Debug] Semana selecionada: ' . $week_start_date . ' até ' . date('Y-m-d', strtotime($week_start_date . ' +6 days')));
+            // Validar formato da data
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $week_start_date)) {
+                log_activity('[Weekly Model ERROR] Formato de data inválido: ' . $week_start_date);
+                return [];
+            }
+
+            $week_end_date = date('Y-m-d', strtotime($week_start_date . ' +6 days'));
+            log_activity('[Weekly Model] Período: ' . $week_start_date . ' até ' . $week_end_date);
+
+            // Verificar se tabelas existem
+            $entries_table = db_prefix() . 'timesheet_entries';
+            $staff_table = db_prefix() . 'staff';
+            $approvals_table = db_prefix() . 'timesheet_approvals';
+            
+            log_activity('[Weekly Model] Verificando tabelas:');
+            log_activity('[Weekly Model] - Entries: ' . $entries_table);
+            log_activity('[Weekly Model] - Staff: ' . $staff_table);
+            log_activity('[Weekly Model] - Approvals: ' . $approvals_table);
 
             // Buscar todos os funcionários com entradas na semana
-            $entries_table = db_prefix() . 'timesheet_entries';
+            log_activity('[Weekly Model] 1️⃣ Buscando funcionários com entradas...');
+            
             $this->db->select('DISTINCT(staff_id)');
             $this->db->where('week_start_date', $week_start_date);
-            $staff_ids_with_entries = $this->db->get($entries_table)->result_array();
+            $query = $this->db->get($entries_table);
+            
+            if (!$query) {
+                $db_error = $this->db->error();
+                log_activity('[Weekly Model ERROR] Erro na query de entradas: ' . $db_error['message']);
+                return [];
+            }
+            
+            $staff_ids_with_entries = $query->result_array();
+            log_activity('[Weekly Model] Entradas encontradas: ' . count($staff_ids_with_entries));
 
             if (empty($staff_ids_with_entries)) {
-                log_activity('[Weekly Model Debug] Nenhuma entrada de timesheet encontrada para a semana ' . $week_start_date);
+                log_activity('[Weekly Model] ❌ Nenhuma entrada de timesheet encontrada para a semana ' . $week_start_date);
                 return [];
             }
 
             $staff_ids = array_column($staff_ids_with_entries, 'staff_id');
+            log_activity('[Weekly Model] Staff IDs com entradas: ' . implode(', ', $staff_ids));
 
             // Buscar informações dos funcionários
-            $staff_table = db_prefix() . 'staff';
+            log_activity('[Weekly Model] 2️⃣ Buscando informações dos funcionários...');
+            
             $this->db->select('staffid, firstname, lastname, email');
             $this->db->where_in('staffid', $staff_ids);
-            $staff_with_entries = $this->db->get($staff_table)->result();
+            $query = $this->db->get($staff_table);
+            
+            if (!$query) {
+                $db_error = $this->db->error();
+                log_activity('[Weekly Model ERROR] Erro na query de staff: ' . $db_error['message']);
+                return [];
+            }
+            
+            $staff_with_entries = $query->result();
+            log_activity('[Weekly Model] Funcionários encontrados: ' . count($staff_with_entries));
 
             if (empty($staff_with_entries)) {
-                log_activity('[Weekly Model Debug] Nenhum funcionário encontrado com as IDs: ' . implode(',', $staff_ids));
+                log_activity('[Weekly Model ERROR] ❌ Nenhum funcionário encontrado com as IDs: ' . implode(',', $staff_ids));
                 return [];
             }
 
+            // Log dos funcionários encontrados
+            foreach ($staff_with_entries as $staff) {
+                log_activity('[Weekly Model] Staff: ID=' . $staff->staffid . ', Nome=' . $staff->firstname . ' ' . $staff->lastname);
+            }
+
             // Buscar aprovações para estes funcionários na semana especificada
-            $approvals_table = db_prefix() . 'timesheet_approvals';
+            log_activity('[Weekly Model] 3️⃣ Buscando aprovações...');
+            
             $this->db->select('ta.*, s.firstname, s.lastname, s.email');
             $this->db->from("{$approvals_table} ta");
             $this->db->join("{$staff_table} s", 's.staffid = ta.staff_id');
@@ -735,55 +782,66 @@ class Timesheet_model extends App_Model
             $this->db->where('ta.status IN (\'pending\', \'approved\')');
             $this->db->order_by('s.firstname ASC, s.lastname ASC, ta.status ASC');
             
-            $all_approvals = $this->db->get()->result();
+            $query = $this->db->get();
+            
+            if (!$query) {
+                $db_error = $this->db->error();
+                log_activity('[Weekly Model ERROR] Erro na query de aprovações: ' . $db_error['message']);
+                return [];
+            }
+            
+            $all_approvals = $query->result();
+            log_activity('[Weekly Model] ✅ Total de aprovações encontradas: ' . count($all_approvals));
 
-            log_activity('[Weekly Model Debug] Query executada com sucesso');
-            log_activity('[Weekly Model Debug] Total de aprovações encontradas: ' . count($all_approvals));
-            log_activity('[Weekly Model Debug] Funcionários únicos encontrados: ' . count($staff_with_entries));
+            // Log das aprovações encontradas
+            foreach ($all_approvals as $approval) {
+                log_activity('[Weekly Model] Aprovação: ID=' . $approval->id . ', Staff=' . $approval->staff_id . ', Status=' . $approval->status . ', Task=' . $approval->task_id);
+            }
 
+            log_activity('[Weekly Model] 4️⃣ Processando dados por funcionário...');
             $result = [];
 
             foreach ($staff_with_entries as $staff) {
-                $staff_id = $staff->staffid; // Usar staffid do objeto staff
+                $staff_id = $staff->staffid;
+                log_activity('[Weekly Model] Processando staff ID: ' . $staff_id . ' (' . $staff->firstname . ' ' . $staff->lastname . ')');
 
                 // Filtrar aprovações deste funcionário específico
                 $staff_approvals = array_filter($all_approvals, function($approval) use ($staff_id) {
                     return $approval->staff_id == $staff_id;
                 });
 
-                // Contar total de aprovações para este funcionário
                 $total_tasks = count($staff_approvals);
+                log_activity('[Weekly Model] - Total de tarefas: ' . $total_tasks);
 
-                // Contar pendentes
+                // Contar pendentes e aprovadas
                 $pending_tasks = 0;
+                $approved_tasks = 0;
+                
                 foreach ($staff_approvals as $approval) {
                     if ($approval->status == 'pending') {
                         $pending_tasks++;
-                    }
-                }
-
-                // Contar aprovadas
-                $approved_tasks = 0;
-                foreach ($staff_approvals as $approval) {
-                    if ($approval->status == 'approved') {
+                    } elseif ($approval->status == 'approved') {
                         $approved_tasks++;
                     }
                 }
 
-                // Determinar status geral (se todas aprovadas = approved, senão pending)
-                $general_status = ($pending_tasks > 0) ? 'pending' : ($total_tasks > 0 ? 'approved' : 'draft'); // Se não há aprovações, considera draft
+                log_activity('[Weekly Model] - Pendentes: ' . $pending_tasks . ', Aprovadas: ' . $approved_tasks);
 
-                // Buscar dados da submissão (primeira aprovação encontrada, se houver)
+                // Determinar status geral
+                $general_status = ($pending_tasks > 0) ? 'pending' : ($total_tasks > 0 ? 'approved' : 'draft');
+                log_activity('[Weekly Model] - Status geral: ' . $general_status);
+
+                // Buscar dados da submissão
                 $approval_data = null;
                 if (!empty($staff_approvals)) {
-                    // Ordenar por data de submissão para pegar a mais antiga (ou a primeira)
                     usort($staff_approvals, function($a, $b) {
                         return strtotime($a->submitted_at) <=> strtotime($b->submitted_at);
                     });
                     $approval_data = reset($staff_approvals);
+                    log_activity('[Weekly Model] - Approval data ID: ' . $approval_data->id);
                 }
 
-                // Garantir que todos os campos necessários existam
+                // Criar objeto resultado
                 $staff_result = (object)[
                     'id'             => $approval_data ? $approval_data->id : 0,
                     'staff_id'       => (int)$staff_id,
@@ -804,16 +862,19 @@ class Timesheet_model extends App_Model
                 ];
 
                 $result[] = $staff_result;
-
-                log_activity('[Weekly Model Debug] Staff processado: ' . $staff->firstname . ' ' . $staff->lastname . ' - Status: ' . $general_status . ' - Total: ' . $total_tasks . ' - Pending: ' . $pending_tasks . ' - Approved: ' . $approved_tasks . ' - ID: ' . $staff_result->id);
+                log_activity('[Weekly Model] ✅ Staff adicionado ao resultado: ' . $staff->firstname . ' ' . $staff->lastname);
             }
 
-            log_activity('[Weekly Model Debug] Total de aprovações semanais retornadas: ' . count($result));
+            log_activity('[Weekly Model] ========= RESULTADO FINAL =========');
+            log_activity('[Weekly Model] Total de aprovações semanais retornadas: ' . count($result));
+            log_activity('[Weekly Model] ===================================');
+            
             return $result;
 
         } catch (Exception $e) {
-            log_activity('[Weekly Model Debug ERROR] Erro fatal: ' . $e->getMessage());
-            log_activity('[Weekly Model Debug ERROR] Stack trace: ' . $e->getTraceAsString());
+            log_activity('[Weekly Model FATAL ERROR] Erro fatal em get_weekly_all_approvals: ' . $e->getMessage());
+            log_activity('[Weekly Model FATAL ERROR] Arquivo: ' . $e->getFile() . ' - Linha: ' . $e->getLine());
+            log_activity('[Weekly Model FATAL ERROR] Stack trace: ' . $e->getTraceAsString());
             return [];
         }
     }
