@@ -146,7 +146,6 @@ $(document).ready(function () {
                     $previewContainer.html(response.html);
                     // Atualizar controles após carregar
                     setTimeout(function () {
-                        updateUserBatchControls();
                         updateBatchControls();
                     }, 100);
                 } else {
@@ -490,18 +489,7 @@ $(document).ready(function () {
             .trigger("change");
     });
 
-    // Handler para checkbox "Selecionar Todas do Usuário" (controle acima da tabela)
-    $(document).on("change", ".select-user-tasks", function () {
-        var isChecked = $(this).is(":checked");
-        var userId = $(this).data("user-id");
-        $('.task-checkbox[data-user-id="' + userId + '"]:enabled')
-            .prop("checked", isChecked)
-            .trigger("change");
-        $('.select-user-tasks-header[data-user-id="' + userId + '"]').prop(
-            "checked",
-            isChecked,
-        );
-    });
+    
 
     // Handler para checkboxes individuais de tarefas
     $(document).on("change", ".task-checkbox", function () {
@@ -547,47 +535,18 @@ $(document).ready(function () {
 
     // Atualizar controles de ação por usuário
     function updateUserBatchControls() {
-        $(".select-user-tasks").each(function () {
+        // Para cada usuário, verificar se há tarefas selecionadas
+        $(".user-batch-approve-btn").each(function() {
             var userId = $(this).data("user-id");
-            var userTasks = $(
-                '.task-checkbox[data-user-id="' + userId + '"]:enabled',
-            );
             var userSelectedTasks = $(
-                '.task-checkbox[data-user-id="' + userId + '"]:checked',
+                '.task-checkbox[data-user-id="' + userId + '"]:checked'
             );
-
             var selectedCount = userSelectedTasks.length;
-            var totalCount = userTasks.length;
 
-            // Atualizar contador por usuário
-            $('.user-selection-counter[data-user-id="' + userId + '"]').html(
-                "<strong>" + selectedCount + "</strong> tarefas selecionadas",
-            );
-
-            // Habilitar/desabilitar botões por usuário
+            // Habilitar/desabilitar botões por usuário baseado nas seleções
             $(
-                '.user-batch-approve-btn[data-user-id="' +
-                    userId +
-                    '"], .user-batch-reject-btn[data-user-id="' +
-                    userId +
-                    '"]',
+                '.user-batch-approve-btn[data-user-id="' + userId + '"], .user-batch-reject-btn[data-user-id="' + userId + '"]'
             ).prop("disabled", selectedCount === 0);
-
-            // Atualizar estado dos checkboxes "Selecionar Todas do Usuário"
-            var allChecked = selectedCount > 0 && selectedCount === totalCount;
-            var someChecked = selectedCount > 0 && selectedCount < totalCount;
-
-            // Sincronizar ambos os checkboxes (controle e cabeçalho da tabela)
-            $(this).prop("checked", allChecked);
-            $(this).prop("indeterminate", someChecked);
-            $('.select-user-tasks-header[data-user-id="' + userId + '"]').prop(
-                "checked",
-                allChecked,
-            );
-            $('.select-user-tasks-header[data-user-id="' + userId + '"]').prop(
-                "indeterminate",
-                someChecked,
-            );
         });
     }
 

@@ -1,4 +1,3 @@
-
 <?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
 <?php init_head(); ?>
 <link rel="stylesheet" href="<?php echo module_dir_url('timesheet', 'assets/css/timesheet.css'); ?>">
@@ -118,18 +117,18 @@
                                                    class="btn btn-sm btn-info" title="Ver Detalhes">
                                                     <i class="fa fa-eye"></i> Ver
                                                 </a>
-                                                
+
                                                 <?php if ($approval->status == 'pending'): ?>
                                                     <!-- Status Pendente - Botões Aprovar e Rejeitar -->
-                                                    <button type="button" class="btn btn-sm btn-success approve-btn" 
-                                                            data-approval-id="<?php echo $approval->id; ?>" 
-                                                            title="Aprovar Timesheet">
-                                                        <i class="fa fa-check"></i> Aprovar
+                                                    <button type="button" class="btn btn-sm btn-success user-batch-approve-btn" 
+                                                            data-user-id="<?php echo $approval->id; ?>" 
+                                                            title="Aprovar Tarefas Selecionadas">
+                                                        <i class="fa fa-check"></i> Aprovar Selecionadas
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-danger reject-btn" 
-                                                            data-approval-id="<?php echo $approval->id; ?>" 
-                                                            title="Rejeitar Timesheet">
-                                                        <i class="fa fa-times"></i> Rejeitar
+                                                    <button type="button" class="btn btn-sm btn-danger user-batch-reject-btn" 
+                                                            data-user-id="<?php echo $approval->id; ?>" 
+                                                            title="Rejeitar Tarefas Selecionadas">
+                                                        <i class="fa fa-times"></i> Rejeitar Selecionadas
                                                     </button>
                                                 <?php elseif ($approval->status == 'approved'): ?>
                                                     <!-- Status Aprovado - Botão Cancelar Aprovação -->
@@ -158,43 +157,10 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <!-- Timesheet Preview -->
                                 <div class="panel-body">
-                                    <!-- Controles de Seleção por Usuário -->
-                                <div class="user-batch-controls" style="margin-bottom: 15px; padding: 10px; background-color: #f0f8ff; border: 1px solid #d1ecf1; border-radius: 5px;">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="checkbox">
-                                                <label>
-                                                    <input type="checkbox" class="select-user-tasks" data-user-id="<?php echo $approval->id; ?>" />
-                                                    <strong>Selecionar Todas as Tarefas deste Usuário</strong>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6 text-right">
-                                            <span class="user-selection-counter" data-user-id="<?php echo $approval->id; ?>">
-                                                <strong>0</strong> tarefas selecionadas
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div class="row" style="margin-top: 10px;">
-                                        <div class="col-md-12 text-right">
-                                            <div class="btn-group user-batch-actions">
-                                                <button type="button" class="btn btn-success btn-sm user-batch-approve-btn" 
-                                                        data-user-id="<?php echo $approval->id; ?>" disabled>
-                                                    <i class="fa fa-check"></i> Aprovar Selecionadas
-                                                </button>
-                                                <button type="button" class="btn btn-danger btn-sm user-batch-reject-btn" 
-                                                        data-user-id="<?php echo $approval->id; ?>" disabled>
-                                                    <i class="fa fa-times"></i> Rejeitar Selecionadas
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="timesheet-preview" id="preview-<?php echo $approval->id; ?>">
+                                    <div class="timesheet-preview" id="preview-<?php echo $approval->id; ?>">
                                         <div class="text-center text-muted">
                                             <i class="fa fa-spinner fa-spin"></i> Carregando preview do timesheet...
                                         </div>
@@ -263,17 +229,17 @@ try {
         week_start: '<?php echo $week_start; ?>',
         week_dates: <?php echo json_encode($week_dates); ?>
     };
-    
+
     console.log('[Weekly View] ✅ manage_weekly_data criado com sucesso:');
     console.log('[Weekly View] - admin_url:', manage_weekly_data.admin_url);
     console.log('[Weekly View] - weekly_approvals count:', manage_weekly_data.weekly_approvals.length);
     console.log('[Weekly View] - week_start:', manage_weekly_data.week_start);
     console.log('[Weekly View] - week_dates:', manage_weekly_data.week_dates);
-    
+
     if (manage_weekly_data.weekly_approvals.length > 0) {
         console.log('[Weekly View] Primeira aprovação no JS:', manage_weekly_data.weekly_approvals[0]);
     }
-    
+
 } catch (error) {
     console.error('[Weekly View ERROR] Erro ao criar manage_weekly_data:', error);
     console.error('[Weekly View ERROR] Stack trace:', error.stack);
