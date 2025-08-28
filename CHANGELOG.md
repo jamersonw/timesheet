@@ -2,6 +2,13 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+
+## [1.4.6] - 2025-08-28
+
+### 🔧 ALTERAÇÕES
+- Implementação de checkbox para seleção múltipla na tela de aprovação semanal - Primeira coluna com checkbox de seleção individual e cabeçalho com marcar/desmarcar todos
+
+
 ## [1.4.5] - 2025-01-28
 
 ### 🐛 **CORREÇÃO CRÍTICA - ERRO DE SINTAXE JAVASCRIPT**

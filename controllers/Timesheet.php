@@ -278,10 +278,10 @@ class Timesheet extends AdminController
                 'modules/timesheet/views/manage_weekly.php',
                 dirname(__FILE__) . '/../views/manage_weekly.php'
             ];
-            
+
             $view_found = false;
             $actual_path = '';
-            
+
             foreach ($possible_paths as $path) {
                 if (file_exists($path)) {
                     $view_found = true;
@@ -290,7 +290,7 @@ class Timesheet extends AdminController
                     break;
                 }
             }
-            
+
             if (!$view_found) {
                 log_activity('[Weekly Debug ERROR] VIEW NÃO ENCONTRADA em nenhum dos caminhos:');
                 foreach ($possible_paths as $path) {
@@ -353,7 +353,7 @@ class Timesheet extends AdminController
         ]);
     }
 
-    
+
 
     /**
      * Get week total hours via AJAX for manager view
@@ -424,6 +424,14 @@ class Timesheet extends AdminController
             $daily_totals = $this->timesheet_model->get_week_daily_totals($staff_id, $week_start_date);
             $week_total = $this->timesheet_model->get_week_total_hours($staff_id, $week_start_date);
 
+            // NOVA LINHA: Buscar task approvals para incluir diretamente
+            $task_approvals = $this->timesheet_model->get_week_task_approvals($staff_id, $week_start_date);
+            $approvals_map = [];
+            foreach ($task_approvals as $approval) {
+                $key = $approval->project_id . '_' . $approval->task_id;
+                $approvals_map[$key] = $approval;
+            }
+
             log_activity('[Weekly AJAX Debug] Dados carregados - Total semana: ' . $week_total);
 
             if (empty($entries)) {
@@ -440,6 +448,8 @@ class Timesheet extends AdminController
         // Generate HTML preview
         $html = '<div class="table-responsive"><table class="table table-bordered table-condensed">';
         $html .= '<thead><tr>';
+        // Coluna checkbox com ID único para este usuário
+        $html .= '<th width="40" class="text-center"><input type="checkbox" class="select-user-tasks-header" data-user-id="' . $staff_id . '" title="Selecionar todas as tarefas deste usuário"></th>';
         $html .= '<th width="200">Projeto/Tarefa</th>';
 
         $day_names = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
@@ -451,6 +461,19 @@ class Timesheet extends AdminController
 
         foreach ($entries as $entry) {
             $html .= '<tr>';
+
+            // NOVA LÓGICA: Buscar task approval correspondente
+            $approval_key = $entry['project_id'] . '_' . $entry['task_id'];
+            $task_approval = isset($approvals_map[$approval_key]) ? $approvals_map[$approval_key] : null;
+
+            if ($task_approval) {
+                $is_disabled = $task_approval->status !== 'pending' ? 'disabled' : '';
+                $checkbox = '<input type="checkbox" class="task-checkbox" value="' . $task_approval->id . '" data-status="' . $task_approval->status . '" data-user-id="' . $staff_id . '" ' . $is_disabled . '>';
+            } else {
+                $checkbox = '-';
+            }
+
+            $html .= '<td class="text-center">' . $checkbox . '</td>';
             $html .= '<td><strong>' . $entry['project_name'] . '</strong>';
             if ($entry['task_name']) {
                 $html .= '<br><small class="text-muted">' . $entry['task_name'] . '</small>';
@@ -466,7 +489,7 @@ class Timesheet extends AdminController
         }
 
         // Total row
-        $html .= '<tr class="info"><td><strong>Total:</strong></td>';
+        $html .= '<tr class="info"><td class="text-center"><strong>-</strong></td><td><strong>Total:</strong></td>';
         for ($day = 1; $day <= 7; $day++) {
             $html .= '<td class="text-center"><strong>' . ($daily_totals[$day] > 0 ? number_format($daily_totals[$day], 1) . 'h' : '-') . '</strong></td>';
         }
