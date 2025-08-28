@@ -7,8 +7,10 @@ class Timesheet extends AdminController
     public function __construct()
     {
         parent::__construct();
+        log_activity('[Timesheet Controller] Construtor chamado em ' . date('Y-m-d H:i:s'));
         $this->load->model('timesheet/timesheet_model');
         $this->load->helper('timesheet/timesheet');
+        log_activity('[Timesheet Controller] Model e helper carregados');
     }
 
     public function index()
@@ -177,8 +179,15 @@ class Timesheet extends AdminController
      */
     public function manage_weekly()
     {
+        // Log mais básico possível
+        error_log('[WEEKLY PHP] Function manage_weekly() called at ' . date('Y-m-d H:i:s'));
+        log_activity('[WEEKLY START] Função manage_weekly iniciada em ' . date('Y-m-d H:i:s'));
+        
         try {
+            log_activity('[WEEKLY START] Try block iniciado');
+            
             $staff_id = get_staff_user_id();
+            log_activity('[WEEKLY START] Staff ID obtido: ' . $staff_id);
             
             log_activity('[Weekly Debug] =========================');
             log_activity('[Weekly Debug] INÍCIO - Acesso à tela semanal');
@@ -278,11 +287,22 @@ class Timesheet extends AdminController
             log_activity('[Weekly Debug] ✅ View carregada com sucesso');
             
         } catch (Exception $e) {
+            error_log('[WEEKLY PHP ERROR] Exception caught: ' . $e->getMessage());
+            error_log('[WEEKLY PHP ERROR] File: ' . $e->getFile() . ' Line: ' . $e->getLine());
+            
             log_activity('[Weekly Debug FATAL ERROR] ERRO FATAL na função manage_weekly: ' . $e->getMessage());
             log_activity('[Weekly Debug FATAL ERROR] Arquivo: ' . $e->getFile() . ' - Linha: ' . $e->getLine());
             log_activity('[Weekly Debug FATAL ERROR] Stack trace: ' . $e->getTraceAsString());
             
             show_error('Erro fatal ao carregar tela semanal. Verifique os logs.');
+        } catch (Error $e) {
+            error_log('[WEEKLY PHP FATAL] Fatal error caught: ' . $e->getMessage());
+            error_log('[WEEKLY PHP FATAL] File: ' . $e->getFile() . ' Line: ' . $e->getLine());
+            
+            log_activity('[Weekly Debug FATAL ERROR] ERRO PHP FATAL: ' . $e->getMessage());
+            log_activity('[Weekly Debug FATAL ERROR] Arquivo: ' . $e->getFile() . ' - Linha: ' . $e->getLine());
+            
+            show_error('Erro PHP fatal ao carregar tela semanal. Verifique os logs.');
         }
     }
 
