@@ -282,7 +282,7 @@ class Timesheet extends AdminController
             log_activity('[Weekly Debug] ✅ View encontrada: ' . $view_path);
             log_activity('[Weekly Debug] 🚀 Carregando view manage_weekly...');
 
-            $this->load->view('manage_weekly', $data);
+            $this->load->view('timesheet/manage_weekly', $data);
 
             log_activity('[Weekly Debug] ✅ View carregada com sucesso');
 
