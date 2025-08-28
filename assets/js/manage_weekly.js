@@ -120,7 +120,7 @@ $(document).ready(function() {
             confirmClass: 'timesheet-modal-btn-success'
         }).then(function(confirmed) {
             console.log('[Weekly JS Debug] Resultado da confirmação semanal:', confirmed);
-            if (confirmed) {irmed) {
+            if (confirmed) {
                 approveRejectTimesheet(approvalId, 'approved');
             }
         });
