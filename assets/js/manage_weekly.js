@@ -2,6 +2,7 @@
 $(document).ready(function() {
     
     var currentApprovalId = null;
+    var selectedTasks = []; // Array para armazenar IDs das tarefas selecionadas
     
     // Debug detalhado: verificar se os dados estão carregados
     console.log('[Weekly JS Debug] Manage Weekly carregado');
@@ -361,6 +362,215 @@ $(document).ready(function() {
                 $button.html(originalText).prop('disabled', false);
             }
         });
+    }
+
+    // ===== FUNCIONALIDADES DE SELEÇÃO EM LOTE =====
+    
+    // Handler para checkbox "Selecionar Todos"
+    $(document).on('change', '#select-all-tasks', function() {
+        var isChecked = $(this).is(':checked');
+        $('.task-checkbox:enabled').prop('checked', isChecked).trigger('change');
+    });
+    
+    // Handler para checkboxes individuais de tarefas
+    $(document).on('change', '.task-checkbox', function() {
+        updateSelectedTasks();
+        updateBatchControls();
+    });
+    
+    // Atualizar array de tarefas selecionadas
+    function updateSelectedTasks() {
+        selectedTasks = [];
+        $('.task-checkbox:checked').each(function() {
+            selectedTasks.push($(this).val());
+        });
+        console.log('[Batch Selection] Tarefas selecionadas:', selectedTasks);
+    }
+    
+    // Atualizar controles de ação em lote
+    function updateBatchControls() {
+        var selectedCount = selectedTasks.length;
+        var totalPending = $('.task-checkbox[data-status="pending"]:enabled').length;
+        
+        // Atualizar contador
+        $('.selection-counter').html('<strong>' + selectedCount + '</strong> tarefas selecionadas');
+        
+        // Habilitar/desabilitar botões de ação
+        $('.batch-approve-btn, .batch-reject-btn').prop('disabled', selectedCount === 0);
+        
+        // Atualizar checkbox "Selecionar Todos"
+        var allChecked = (selectedCount > 0 && selectedCount === totalPending);
+        var someChecked = (selectedCount > 0 && selectedCount < totalPending);
+        
+        $('#select-all-tasks').prop('checked', allChecked);
+        $('#select-all-tasks').prop('indeterminate', someChecked);
+    }
+    
+    // Handler para aprovação em lote
+    $(document).on('click', '.batch-approve-btn', function() {
+        if (selectedTasks.length === 0) {
+            alert('Nenhuma tarefa selecionada');
+            return;
+        }
+        
+        TimesheetModals.confirm({
+            title: 'Aprovação em Lote',
+            message: 'Tem certeza que deseja aprovar ' + selectedTasks.length + ' tarefas selecionadas?',
+            icon: 'fa-check-circle',
+            confirmText: 'Aprovar Todas',
+            cancelText: 'Cancelar',
+            confirmClass: 'timesheet-modal-btn-success'
+        }).then(function(confirmed) {
+            if (confirmed) {
+                processBatchAction('approved');
+            }
+        });
+    });
+    
+    // Handler para rejeição em lote
+    $(document).on('click', '.batch-reject-btn', function() {
+        if (selectedTasks.length === 0) {
+            alert('Nenhuma tarefa selecionada');
+            return;
+        }
+        
+        TimesheetModals.prompt({
+            title: 'Rejeição em Lote',
+            message: 'Informe o motivo para rejeitar ' + selectedTasks.length + ' tarefas selecionadas:',
+            placeholder: 'Digite o motivo da rejeição...',
+            icon: 'fa-times-circle',
+            confirmText: 'Rejeitar Todas',
+            cancelText: 'Cancelar',
+            confirmClass: 'timesheet-modal-btn-danger',
+            required: true
+        }).then(function(reason) {
+            if (reason) {
+                processBatchAction('rejected', reason);
+            }
+        });
+    });
+    
+    // Processar ação em lote
+    function processBatchAction(action, reason) {
+        var $button = $('.batch-' + action.replace('ed', '') + '-btn');
+        var originalText = $button.html();
+        
+        // Mostrar loading
+        $button.html('<i class="fa fa-spinner fa-spin"></i> Processando...').prop('disabled', true);
+        
+        var postData = {
+            task_ids: selectedTasks,
+            action: action
+        };
+        
+        if (reason) {
+            postData.reason = reason;
+        }
+        
+        console.log('[Batch Action] Enviando dados:', postData);
+        
+        $.ajax({
+            url: manage_weekly_data.admin_url + 'timesheet/batch_approve_reject',
+            type: 'POST',
+            data: postData,
+            dataType: 'json',
+            success: function(response) {
+                console.log('[Batch Action] Resposta recebida:', response);
+                
+                if (response.success) {
+                    TimesheetModals.alert({
+                        title: 'Sucesso',
+                        message: response.message,
+                        icon: 'fa-check-circle',
+                        type: 'success'
+                    }).then(function() {
+                        // Recarregar a página para atualizar o status
+                        location.reload();
+                    });
+                } else {
+                    TimesheetModals.alert({
+                        title: 'Erro',
+                        message: response.message || 'Erro ao processar ação em lote',
+                        icon: 'fa-exclamation-triangle',
+                        type: 'error'
+                    });
+                    
+                    // Restaurar botão
+                    $button.html(originalText).prop('disabled', selectedTasks.length === 0);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('[Batch Action] Erro AJAX:', xhr.responseText);
+                
+                TimesheetModals.alert({
+                    title: 'Erro de Comunicação',
+                    message: 'Erro ao comunicar com o servidor. Tente novamente.',
+                    icon: 'fa-exclamation-triangle',
+                    type: 'error'
+                });
+                
+                // Restaurar botão
+                $button.html(originalText).prop('disabled', selectedTasks.length === 0);
+            }
+        });
+    }
+    
+    // Carregar tarefas detalhadas quando expandir aprovação
+    function loadTaskDetails(approvalId, staffId, weekStartDate) {
+        console.log('[Task Details] Carregando detalhes das tarefas para approval:', approvalId);
+        
+        $.get(manage_weekly_data.admin_url + 'timesheet/get_week_task_approvals', {
+            staff_id: staffId,
+            week_start_date: weekStartDate
+        })
+        .done(function(response) {
+            console.log('[Task Details] Resposta recebida:', response);
+            if (response.success && response.tasks) {
+                renderTaskCheckboxes(approvalId, response.tasks);
+            }
+        })
+        .fail(function(xhr, status, error) {
+            console.error('[Task Details] Erro ao carregar:', error);
+        });
+    }
+    
+    // Renderizar checkboxes das tarefas
+    function renderTaskCheckboxes(approvalId, tasks) {
+        var $previewContainer = $('#preview-' + approvalId);
+        var $existingPreview = $previewContainer.find('.timesheet-preview');
+        
+        if (tasks.length === 0) {
+            return;
+        }
+        
+        var taskSelectionHtml = '<div class="task-selection-area" style="margin-bottom: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">';
+        taskSelectionHtml += '<h5><i class="fa fa-tasks"></i> Seleção Individual de Tarefas:</h5>';
+        taskSelectionHtml += '<div class="row">';
+        
+        tasks.forEach(function(task, index) {
+            var isDisabled = task.status !== 'pending' ? 'disabled' : '';
+            var statusBadge = task.status === 'pending' ? 
+                '<span class="label label-warning">Pendente</span>' : 
+                '<span class="label label-success">Aprovada</span>';
+            
+            taskSelectionHtml += '<div class="col-md-6" style="margin-bottom: 10px;">';
+            taskSelectionHtml += '<div class="checkbox">';
+            taskSelectionHtml += '<label>';
+            taskSelectionHtml += '<input type="checkbox" class="task-checkbox" value="' + task.id + '" data-status="' + task.status + '" ' + isDisabled + '>';
+            taskSelectionHtml += '<strong>' + (task.project_name || 'Projeto') + '</strong>';
+            if (task.task_name) {
+                taskSelectionHtml += '<br><small class="text-muted">' + task.task_name + '</small>';
+            }
+            taskSelectionHtml += '<span style="margin-left: 10px;">' + statusBadge + '</span>';
+            taskSelectionHtml += '<span style="margin-left: 5px;"><small>(' + (task.total_hours || 0) + 'h)</small></span>';
+            taskSelectionHtml += '</label>';
+            taskSelectionHtml += '</div>';
+            taskSelectionHtml += '</div>';
+        });
+        
+        taskSelectionHtml += '</div></div>';
+        
+        $previewContainer.prepend(taskSelectionHtml);
     }
     
 });

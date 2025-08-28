@@ -400,6 +400,69 @@ class Timesheet extends AdminController
     }
 
     /**
+     * Batch approve/reject multiple tasks
+     */
+    public function batch_approve_reject()
+    {
+        if (!has_permission('timesheet', '', 'approve') && !is_admin() && !timesheet_can_manage_any_project(get_staff_user_id())) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+
+        $task_ids = $this->input->post('task_ids'); // Array de task_approval_ids
+        $action = $this->input->post('action'); // 'approved' ou 'rejected'
+        $reason = $this->input->post('reason'); // Obrigatório para rejeição
+
+        if (empty($task_ids) || !is_array($task_ids) || empty($action) || !in_array($action, ['approved', 'rejected'])) {
+            echo json_encode(['success' => false, 'message' => 'Parâmetros inválidos']);
+            return;
+        }
+
+        if ($action === 'rejected' && empty($reason)) {
+            echo json_encode(['success' => false, 'message' => 'Motivo da rejeição é obrigatório']);
+            return;
+        }
+
+        $result = $this->timesheet_model->batch_approve_reject_tasks($task_ids, $action, get_staff_user_id(), $reason);
+
+        if ($result['success']) {
+            $message = $action == 'approved' ? 
+                'Tarefas aprovadas com sucesso (' . $result['processed'] . ' processadas)' : 
+                'Tarefas rejeitadas com sucesso (' . $result['processed'] . ' processadas)';
+            echo json_encode(['success' => true, 'message' => $message, 'processed' => $result['processed']]);
+        } else {
+            echo json_encode(['success' => false, 'message' => $result['message']]);
+        }
+    }
+
+    /**
+     * Get task approvals for a week (for detailed task selection)
+     */
+    public function get_week_task_approvals()
+    {
+        if (!has_permission('timesheet', '', 'view') && !has_permission('timesheet', '', 'approve') && !is_admin()) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+        
+        $staff_id = $this->input->get('staff_id');
+        $week_start_date = $this->input->get('week_start_date');
+        
+        if (!$staff_id || !$week_start_date) {
+            echo json_encode(['success' => false, 'message' => 'Parâmetros obrigatórios: staff_id e week_start_date']);
+            return;
+        }
+        
+        try {
+            $task_approvals = $this->timesheet_model->get_week_task_approvals($staff_id, $week_start_date);
+            echo json_encode(['success' => true, 'tasks' => $task_approvals]);
+        } catch (Exception $e) {
+            log_activity('[Weekly Task Approvals ERROR] Erro ao buscar aprovações: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    /**
      * FUNCIONALIDADE REMOVIDA - VERSÃO 1.4.0
      * Endpoint de sincronização AJAX não é mais necessário no modo unidirecional.
      */

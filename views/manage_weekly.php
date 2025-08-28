@@ -55,6 +55,46 @@
                                 <br><small>Semana de <?php echo _d($week_start) . ' a ' . _d($week_end); ?></small>
                             </div>
 
+                            <!-- Controles de Seleção em Lote -->
+                            <div class="panel panel-info batch-controls" style="margin-bottom: 20px;">
+                                <div class="panel-heading">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h4 class="panel-title" style="margin: 0;">
+                                                <i class="fa fa-check-square-o"></i> Seleção em Lote
+                                            </h4>
+                                        </div>
+                                        <div class="col-md-6 text-right">
+                                            <span class="selection-counter">
+                                                <strong>0</strong> tarefas selecionadas
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="panel-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" id="select-all-tasks" />
+                                                    <strong>Selecionar Todas as Tarefas Pendentes</strong>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 text-right">
+                                            <div class="btn-group batch-actions" style="margin-left: 10px;">
+                                                <button type="button" class="btn btn-success btn-sm batch-approve-btn" disabled>
+                                                    <i class="fa fa-check"></i> Aprovar Selecionadas
+                                                </button>
+                                                <button type="button" class="btn btn-danger btn-sm batch-reject-btn" disabled>
+                                                    <i class="fa fa-times"></i> Rejeitar Selecionadas
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <?php foreach ($weekly_approvals as $approval): ?>
                             <div class="panel panel-default approval-panel approval-<?php echo $approval->status; ?>" data-approval-id="<?php echo $approval->id; ?>">
                                 <div class="panel-heading">
@@ -226,6 +266,58 @@ var manage_weekly_data = {
 .total-hours-display {
     font-weight: bold;
     color: #2c3e50;
+}
+
+/* Estilos para seleção em lote */
+.batch-controls {
+    border-left: 4px solid #5bc0de;
+}
+
+.batch-controls .panel-heading {
+    background-color: #d9edf7;
+}
+
+.selection-counter {
+    font-size: 14px;
+    color: #31708f;
+}
+
+.task-selection-area {
+    border: 1px solid #ddd;
+}
+
+.task-checkbox {
+    margin-right: 8px;
+}
+
+.task-checkbox:disabled {
+    opacity: 0.5;
+}
+
+.batch-actions .btn {
+    margin-left: 5px;
+}
+
+.batch-actions .btn:disabled {
+    opacity: 0.6;
+}
+
+/* Indicadores visuais para tarefas selecionadas */
+.task-checkbox:checked + strong {
+    color: #3c763d;
+}
+
+/* Animações suaves */
+.batch-controls {
+    transition: all 0.3s ease;
+}
+
+.task-selection-area {
+    transition: background-color 0.2s ease;
+}
+
+.task-selection-area:hover {
+    background-color: #f0f0f0;
 }
 </style>
 

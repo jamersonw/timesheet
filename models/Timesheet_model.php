@@ -967,4 +967,81 @@ class Timesheet_model extends App_Model
             return false;
         }
     }
+
+    /**
+     * Batch approve/reject multiple task approvals
+     */
+    public function batch_approve_reject_tasks($approval_ids, $action, $approver_id, $reason = null)
+    {
+        try {
+            $processed = 0;
+            $errors = [];
+            
+            foreach ($approval_ids as $approval_id) {
+                try {
+                    if ($this->approve_reject_timesheet($approval_id, $action, $approver_id, $reason)) {
+                        $processed++;
+                    } else {
+                        $errors[] = 'Falha ao processar aprovação ID: ' . $approval_id;
+                    }
+                } catch (Exception $e) {
+                    $errors[] = 'Erro na aprovação ID ' . $approval_id . ': ' . $e->getMessage();
+                    log_activity('[Batch Process ERROR] Erro ao processar ID ' . $approval_id . ': ' . $e->getMessage());
+                }
+            }
+            
+            log_activity('[Batch Process] Processadas ' . $processed . ' de ' . count($approval_ids) . ' aprovações - Ação: ' . $action);
+            
+            if ($processed > 0) {
+                return [
+                    'success' => true,
+                    'processed' => $processed,
+                    'total' => count($approval_ids),
+                    'errors' => $errors
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Nenhuma aprovação foi processada. Erros: ' . implode('; ', $errors)
+                ];
+            }
+            
+        } catch (Exception $e) {
+            log_activity('[Batch Process FATAL ERROR] Erro fatal: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Erro fatal no processamento em lote: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Get individual task approvals for a specific week/staff
+     */
+    public function get_week_task_approvals($staff_id, $week_start_date)
+    {
+        try {
+            $this->db->select('ta.*, p.name as project_name, t.name as task_name');
+            $this->db->from(db_prefix() . 'timesheet_approvals ta');
+            $this->db->join(db_prefix() . 'projects p', 'p.id = ta.project_id', 'left');
+            $this->db->join(db_prefix() . 'tasks t', 't.id = ta.task_id', 'left');
+            $this->db->where('ta.staff_id', $staff_id);
+            $this->db->where('ta.week_start_date', $week_start_date);
+            $this->db->where('ta.status IN (\'pending\', \'approved\')');
+            $this->db->order_by('ta.status ASC, p.name ASC, t.name ASC');
+            
+            $task_approvals = $this->db->get()->result();
+            
+            // Enriquecer com informações de horas
+            foreach ($task_approvals as &$task) {
+                $task->total_hours = $this->get_task_total_hours($staff_id, $week_start_date, $task->task_id);
+            }
+            
+            return $task_approvals;
+            
+        } catch (Exception $e) {
+            log_activity('[Task Approvals ERROR] Erro ao buscar aprovações de tarefas: ' . $e->getMessage());
+            throw $e;
+        }
+    }
 }
