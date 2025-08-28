@@ -214,7 +214,57 @@ class Timesheet extends AdminController
 
         log_activity('[Weekly Debug] Carregando view manage_weekly com ' . count($data['weekly_approvals']) . ' aprovações');
         
-        $this->load->view('timesheet/manage_weekly', $data);
+        $this->load->view('manage_weekly', $data);
+    }
+
+    /**
+     * Get individual task approvals for a specific week/staff (AJAX)
+     */
+    public function get_week_task_approvals()
+    {
+        $staff_id = $this->input->get('staff_id');
+        $week_start_date = $this->input->get('week_start_date');
+        
+        if (!$staff_id || !$week_start_date) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => 'Parâmetros obrigatórios não informados'
+            ]);
+            return;
+        }
+        
+        $tasks = $this->timesheet_model->get_week_task_approvals($staff_id, $week_start_date);
+        
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'tasks' => $tasks
+        ]);
+    }
+
+    /**
+     * Batch approve/reject multiple tasks (AJAX)
+     */
+    public function batch_approve_reject()
+    {
+        $task_ids = $this->input->post('task_ids');
+        $action = $this->input->post('action');
+        $reason = $this->input->post('reason');
+        
+        if (!$task_ids || !$action || !in_array($action, ['approved', 'rejected'])) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => 'Parâmetros inválidos'
+            ]);
+            return;
+        }
+        
+        $result = $this->timesheet_model->batch_approve_reject_tasks($task_ids, $action, $reason);
+        
+        header('Content-Type: application/json');
+        echo json_encode($result);mesheet/manage_weekly', $data);
     }
 
     /**

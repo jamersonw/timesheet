@@ -634,58 +634,89 @@ $(document).ready(function() {
     function loadTaskDetails(approvalId, staffId, weekStartDate) {
         console.log('[Task Details] Carregando detalhes das tarefas para approval:', approvalId);
         
-        $.get(manage_weekly_data.admin_url + 'timesheet/get_week_task_approvals', {
-            staff_id: staffId,
-            week_start_date: weekStartDate
-        })
-        .done(function(response) {
-            console.log('[Task Details] Resposta recebida:', response);
-            if (response.success && response.tasks) {
-                renderTaskCheckboxes(approvalId, response.tasks);
-            }
-        })
-        .fail(function(xhr, status, error) {
-            console.error('[Task Details] Erro ao carregar:', error);
-        });
+        // Aguardar um pouco para garantir que a tabela foi renderizada
+        setTimeout(function() {
+            $.get(manage_weekly_data.admin_url + 'timesheet/get_week_task_approvals', {
+                staff_id: staffId,
+                week_start_date: weekStartDate
+            })
+            .done(function(response) {
+                console.log('[Task Details] Resposta recebida:', response);
+                if (response.success && response.tasks) {
+                    renderTaskCheckboxes(approvalId, response.tasks);
+                } else {
+                    console.warn('[Task Details] Nenhuma tarefa encontrada ou erro na resposta');
+                }
+            })
+            .fail(function(xhr, status, error) {
+                console.error('[Task Details] Erro ao carregar:', error);
+            });
+        }, 500); // Aguardar 500ms para garantir que a tabela foi renderizada
     }
     
     // Renderizar checkboxes das tarefas diretamente na tabela
     function renderTaskCheckboxes(approvalId, tasks) {
+        console.log('[Task Checkboxes] Iniciando renderização para approval:', approvalId, 'com', tasks.length, 'tarefas');
+        
         var $previewContainer = $('#preview-' + approvalId);
         var $table = $previewContainer.find('table');
         
-        if (tasks.length === 0 || $table.length === 0) {
+        if ($table.length === 0) {
+            console.warn('[Task Checkboxes] Tabela não encontrada para approval:', approvalId);
+            return;
+        }
+        
+        // Verificar se já existem checkboxes para evitar duplicação
+        if ($table.find('.task-checkbox').length > 0) {
+            console.log('[Task Checkboxes] Checkboxes já existem, pulando renderização');
             return;
         }
         
         // Adicionar coluna de checkbox no cabeçalho
         var $headerRow = $table.find('thead tr');
-        $headerRow.prepend('<th width="40" class="text-center"><input type="checkbox" class="select-user-tasks-header" data-user-id="' + approvalId + '" title="Selecionar todas as tarefas deste usuário"></th>');
+        if ($headerRow.length > 0 && $headerRow.find('.select-user-tasks-header').length === 0) {
+            $headerRow.prepend('<th width="40" class="text-center"><input type="checkbox" class="select-user-tasks-header" data-user-id="' + approvalId + '" title="Selecionar todas as tarefas deste usuário"></th>');
+        }
+        
+        // Obter linhas do tbody (excluir linha de total se existir)
+        var $bodyRows = $table.find('tbody tr');
+        var $dataRows = $bodyRows.filter(function() {
+            return $(this).find('td:contains("Total:")').length === 0;
+        });
+        
+        console.log('[Task Checkboxes] Encontradas', $dataRows.length, 'linhas de dados');
         
         // Adicionar checkboxes nas linhas de tarefas
-        var $dataRows = $table.find('tbody tr').not(':last'); // Excluir linha de total
-        
         $dataRows.each(function(index) {
             var $row = $(this);
             
-            // Tentar encontrar a tarefa correspondente
-            var task = tasks[index];
-            if (task) {
+            if (index < tasks.length) {
+                var task = tasks[index];
                 var isDisabled = task.status !== 'pending' ? 'disabled' : '';
                 var checkboxHtml = '<td class="text-center"><input type="checkbox" class="task-checkbox" value="' + task.id + '" data-status="' + task.status + '" data-user-id="' + approvalId + '" ' + isDisabled + '></td>';
                 $row.prepend(checkboxHtml);
+                console.log('[Task Checkboxes] Adicionado checkbox para tarefa:', task.id, 'status:', task.status);
             } else {
-                // Se não há tarefa correspondente, adicionar célula vazia
                 $row.prepend('<td class="text-center">-</td>');
             }
         });
         
-        // Adicionar célula vazia na linha de total
-        var $totalRow = $table.find('tbody tr:last');
-        $totalRow.prepend('<td class="text-center"><strong>-</strong></td>');
+        // Adicionar célula vazia na linha de total (se existir)
+        var $totalRow = $bodyRows.filter(function() {
+            return $(this).find('td:contains("Total:")').length > 0;
+        });
         
-        // Após inserir os checkboxes, atualizar os controles
-        updateUserBatchControls();
+        if ($totalRow.length > 0) {
+            $totalRow.prepend('<td class="text-center"><strong>-</strong></td>');
+        }
+        
+        console.log('[Task Checkboxes] Renderização concluída');
+        
+        // Atualizar controles após inserir checkboxes
+        setTimeout(function() {
+            updateUserBatchControls();
+            updateBatchControls();
+        }, 100);
     }
     
 });
