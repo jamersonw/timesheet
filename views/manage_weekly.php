@@ -402,6 +402,26 @@ console.log('[Weekly View] ===== FIM DO CARREGAMENTO =====');
 .task-selection-area:hover {
     background-color: #f0f0f0;
 }
+
+/* Estilos específicos para checkboxes na tabela */
+.timesheet-preview .task-checkbox,
+.timesheet-preview .select-user-tasks-header {
+    cursor: pointer;
+    transform: scale(1.2);
+}
+
+.timesheet-preview .task-checkbox:hover,
+.timesheet-preview .select-user-tasks-header:hover {
+    transform: scale(1.3);
+}
+
+.timesheet-preview tr:hover {
+    background-color: #f8f9fa;
+}
+
+.timesheet-preview .task-checkbox:checked {
+    accent-color: #28a745;
+}
 </style>
 
 <?php init_tail(); ?>

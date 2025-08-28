@@ -451,6 +451,7 @@ class Timesheet extends AdminController
 
         foreach ($entries as $entry) {
             $html .= '<tr>';
+            $html .= '<td class="text-center"><input type="checkbox" class="task-checkbox" value="task_' . $entry['task_id'] . '" data-status="pending" data-user-id="' . $staff_id . '"></td>';
             $html .= '<td><strong>' . $entry['project_name'] . '</strong>';
             if ($entry['task_name']) {
                 $html .= '<br><small class="text-muted">' . $entry['task_name'] . '</small>';
@@ -466,7 +467,7 @@ class Timesheet extends AdminController
         }
 
         // Total row
-        $html .= '<tr class="info"><td><strong>Total:</strong></td>';
+        $html .= '<tr class="info"><td class="text-center">-</td><td><strong>Total:</strong></td>';
         for ($day = 1; $day <= 7; $day++) {
             $html .= '<td class="text-center"><strong>' . ($daily_totals[$day] > 0 ? number_format($daily_totals[$day], 1) . 'h' : '-') . '</strong></td>';
         }
