@@ -605,11 +605,15 @@ $(document).ready(function () {
         var userId = $(this).data("user-id");
         var userSelectedTasks = [];
 
-        $('.task-checkbox[data-user-id="' + userId + '"]:checked').each(
-            function () {
-                userSelectedTasks.push($(this).val());
-            },
-        );
+        // Debug: verificar qual userId estamos usando
+        console.log("[User Batch] Aprovação - User ID:", userId);
+
+        // Buscar checkboxes selecionados dentro do preview específico deste usuário
+        $('#preview-' + userId + ' .task-checkbox:checked').each(function () {
+            userSelectedTasks.push($(this).val());
+        });
+
+        console.log("[User Batch] Tarefas encontradas:", userSelectedTasks);
 
         if (userSelectedTasks.length === 0) {
             alert("Nenhuma tarefa selecionada para este usuário");
@@ -638,11 +642,15 @@ $(document).ready(function () {
         var userId = $(this).data("user-id");
         var userSelectedTasks = [];
 
-        $('.task-checkbox[data-user-id="' + userId + '"]:checked').each(
-            function () {
-                userSelectedTasks.push($(this).val());
-            },
-        );
+        // Debug: verificar qual userId estamos usando
+        console.log("[User Batch] Rejeição - User ID:", userId);
+
+        // Buscar checkboxes selecionados dentro do preview específico deste usuário
+        $('#preview-' + userId + ' .task-checkbox:checked').each(function () {
+            userSelectedTasks.push($(this).val());
+        });
+
+        console.log("[User Batch] Tarefas encontradas:", userSelectedTasks);
 
         if (userSelectedTasks.length === 0) {
             alert("Nenhuma tarefa selecionada para este usuário");

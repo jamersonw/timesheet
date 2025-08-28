@@ -112,32 +112,32 @@
                                         </div>
                                         <div class="col-md-4 text-right">
                                             <div class="approval-actions">
-                                                <!-- Botão Ver sempre visível -->
-                                                <a href="<?php echo admin_url('timesheet/view_approval/' . $approval->id); ?>" 
-                                                   class="btn btn-sm btn-info" title="Ver Detalhes">
-                                                    <i class="fa fa-eye"></i> Ver
-                                                </a>
+                                                <!-- Primeira linha: Ver + Aprovar/Rejeitar -->
+                                                <div class="btn-group" style="margin-bottom: 5px;">
+                                                    <a href="<?php echo admin_url('timesheet/view_approval/' . $approval->id); ?>" 
+                                                       class="btn btn-sm btn-info" title="Ver Detalhes">
+                                                        <i class="fa fa-eye"></i> Ver
+                                                    </a>
 
-                                                <?php if ($approval->status == 'pending'): ?>
-                                                    <!-- Status Pendente - Botões Aprovar e Rejeitar -->
-                                                    <button type="button" class="btn btn-sm btn-success user-batch-approve-btn" 
-                                                            data-user-id="<?php echo $approval->id; ?>" 
-                                                            title="Aprovar Tarefas Selecionadas">
-                                                        <i class="fa fa-check"></i> Aprovar Selecionadas
-                                                    </button>
-                                                    <button type="button" class="btn btn-sm btn-danger user-batch-reject-btn" 
-                                                            data-user-id="<?php echo $approval->id; ?>" 
-                                                            title="Rejeitar Tarefas Selecionadas">
-                                                        <i class="fa fa-times"></i> Rejeitar Selecionadas
-                                                    </button>
-                                                <?php elseif ($approval->status == 'approved'): ?>
-                                                    <!-- Status Aprovado - Botão Cancelar Aprovação -->
-                                                    <button type="button" class="btn btn-sm btn-warning cancel-approval-btn" 
-                                                            data-approval-id="<?php echo $approval->id; ?>" 
-                                                            title="Cancelar Aprovação">
-                                                        <i class="fa fa-undo"></i> Cancelar Aprovação
-                                                    </button>
-                                                <?php endif; ?>
+                                                    <?php if ($approval->status == 'pending'): ?>
+                                                        <button type="button" class="btn btn-sm btn-success user-batch-approve-btn" 
+                                                                data-user-id="<?php echo $approval->id; ?>" 
+                                                                title="Aprovar Tarefas Selecionadas">
+                                                            <i class="fa fa-check"></i> Aprovar
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-danger user-batch-reject-btn" 
+                                                                data-user-id="<?php echo $approval->id; ?>" 
+                                                                title="Rejeitar Tarefas Selecionadas">
+                                                            <i class="fa fa-times"></i> Rejeitar
+                                                        </button>
+                                                    <?php elseif ($approval->status == 'approved'): ?>
+                                                        <button type="button" class="btn btn-sm btn-warning cancel-approval-btn" 
+                                                                data-approval-id="<?php echo $approval->id; ?>" 
+                                                                title="Cancelar Aprovação">
+                                                            <i class="fa fa-undo"></i> Cancelar Aprovação
+                                                        </button>
+                                                    <?php endif; ?>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -246,6 +246,50 @@ try {
 }
 
 console.log('[Weekly View] ===== FIM DO CARREGAMENTO =====');
+
+// Correção para a mensagem de erro ao rejeitar tarefas
+document.addEventListener('DOMContentLoaded', function() {
+    const batchRejectBtn = document.querySelector('.batch-reject-btn');
+    const selectionCounter = document.querySelector('.selection-counter strong');
+    const taskCheckboxes = document.querySelectorAll('input[type="checkbox"].task-checkbox'); // Assumindo que as tarefas individuais têm esta classe
+
+    if (batchRejectBtn && selectionCounter && taskCheckboxes.length > 0) {
+        batchRejectBtn.addEventListener('click', function(e) {
+            const selectedCount = parseInt(selectionCounter.textContent);
+            if (selectedCount === 0) {
+                alert('Nenhuma tarefa selecionada para rejeitar.');
+                e.preventDefault(); // Impede a ação do botão se nenhuma tarefa estiver selecionada
+            } else {
+                // Aqui você pode adicionar a lógica para exibir o modal de rejeição
+                // e passar as tarefas selecionadas, se necessário.
+                // Por enquanto, apenas simulamos a exibição do modal.
+                $('#rejection-modal').modal('show');
+            }
+        });
+
+        // Lógica simples para atualizar o contador de seleção (precisa ser mais robusta no contexto real)
+        taskCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                let count = 0;
+                document.querySelectorAll('input[type="checkbox"].task-checkbox:checked').forEach(() => {
+                    count++;
+                });
+                selectionCounter.textContent = count;
+                // Habilitar/Desabilitar botões de ação em lote com base na contagem
+                const approveBtn = document.querySelector('.batch-approve-btn');
+                const rejectBtn = document.querySelector('.batch-reject-btn');
+                if (count > 0) {
+                    approveBtn.disabled = false;
+                    rejectBtn.disabled = false;
+                } else {
+                    approveBtn.disabled = true;
+                    rejectBtn.disabled = true;
+                }
+            });
+        });
+    }
+});
+
 </script>
 
 <style>
