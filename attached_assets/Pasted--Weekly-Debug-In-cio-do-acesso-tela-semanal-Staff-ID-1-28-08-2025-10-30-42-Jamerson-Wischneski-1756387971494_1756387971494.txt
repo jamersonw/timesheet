@@ -1,0 +1,13 @@
+[Weekly Debug] Início do acesso à tela semanal - Staff ID: 1	28/08/2025 10:30:42	Jamerson Wischneski
+[Weekly Debug] Permissões OK - Iniciando carregamento dos dados	28/08/2025 10:30:42	Jamerson Wischneski
+[Weekly Debug] Semana selecionada: 2025-08-25 até 2025-08-31	28/08/2025 10:30:42	Jamerson Wischneski
+[Weekly Model Debug] Iniciando busca de aprovações semanais para semana: 1	28/08/2025 10:30:42	Jamerson Wischneski
+[Weekly Model Debug] Query funcionários: SELECT `staffid` as `staff_id`, `firstname`, `lastname`, `email` FROM `tblstaff` WHERE `active` = 1 ORDER BY `firstname`, `lastname`	28/08/2025 10:30:42	Jamerson Wischneski
+[Weekly Model Debug] Funcionários encontrados: 4	28/08/2025 10:30:42	Jamerson Wischneski
+[Weekly Model Debug] Query aprovações: SELECT `ta`.*, `t`.`name` as `task_name`, `p`.`name` as `project_name` FROM `tbltimesheet_approvals` `ta` LEFT JOIN `tbltasks` `t` ON `ta`.`task_id` = `t`.`id` LEFT JOIN `tblprojects` `p` ON `t`.`rel_id` = `p`.`id` AND `t`.`rel_type` = "project" WHERE `ta`.`staff_id` = '2' AND `ta`.`week_start_date` = '1' ORDER BY `ta`.`created_at` DESC	28/08/2025 10:30:42	Jamerson Wischneski
+[Weekly Model Debug] Aprovações para Agata Castro: 0	28/08/2025 10:30:42	Jamerson Wischneski
+[Weekly Model Debug] Query aprovações: SELECT `ta`.*, `t`.`name` as `task_name`, `p`.`name` as `project_name` FROM `tbltimesheet_approvals` `ta` LEFT JOIN `tbltasks` `t` ON `ta`.`task_id` = `t`.`id` LEFT JOIN `tblprojects` `p` ON `t`.`rel_id` = `p`.`id` AND `t`.`rel_type` = "project" WHERE `ta`.`staff_id` = '4' AND `ta`.`week_start_date` = '1' ORDER BY `ta`.`created_at` DESC	28/08/2025 10:30:42	Jamerson Wischneski
+[Weekly Model Debug] Aprovações para Alex Machado: 0	28/08/2025 10:30:42	Jamerson Wischneski
+[Weekly Model Debug] Query aprovações: SELECT `ta`.*, `t`.`name` as `task_name`, `p`.`name` as `project_name` FROM `tbltimesheet_approvals` `ta` LEFT JOIN `tbltasks` `t` ON `ta`.`task_id` = `t`.`id` LEFT JOIN `tblprojects` `p` ON `t`.`rel_id` = `p`.`id` AND `t`.`rel_type` = "project" WHERE `ta`.`staff_id` = '1' AND `ta`.`week_start_date` = '1' ORDER BY `ta`.`created_at` DESC	28/08/2025 10:30:42	Jamerson Wischneski
+[Weekly Model Debug] Aprovações para Jamerson Wischneski: 0	28/08/2025 10:30:42	Jamerson Wischneski
+[Weekly Model Debug] Query aprovações: SELECT `ta`.*, `t`.`name` as `task_name`, `p`.`name` as `project_name` FROM `tbltimesheet_approvals` `ta` LEFT JOIN `tbltasks` `t` ON `ta`.`task_id` = `t`.`id` LEFT JOIN `tblprojects` `p` ON `t`.`rel_id` = `p`.`id` AND `t`.`rel_type` = "project" WHERE `ta`.`staff_id` = '3' AND `ta`.`week_start_date` = '1' ORDER BY `ta`.`created_at` DESC	28/08/2025 10:30:42	Jamerson Wischneski
