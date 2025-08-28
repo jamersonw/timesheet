@@ -271,18 +271,39 @@ class Timesheet extends AdminController
             log_activity('[Weekly Debug] - title: ' . $data['title']);
             log_activity('[Weekly Debug] - weekly_approvals count: ' . count($data['weekly_approvals']));
 
-            // Verificar se view existe
-            $view_path = APPPATH . 'modules/timesheet/views/manage_weekly.php';
-            if (!file_exists($view_path)) {
-                log_activity('[Weekly Debug ERROR] VIEW NÃO ENCONTRADA: ' . $view_path);
+            // Verificar múltiplos caminhos possíveis para a view
+            $possible_paths = [
+                APPPATH . 'modules/timesheet/views/manage_weekly.php',
+                FCPATH . 'modules/timesheet/views/manage_weekly.php',
+                'modules/timesheet/views/manage_weekly.php',
+                dirname(__FILE__) . '/../views/manage_weekly.php'
+            ];
+            
+            $view_found = false;
+            $actual_path = '';
+            
+            foreach ($possible_paths as $path) {
+                if (file_exists($path)) {
+                    $view_found = true;
+                    $actual_path = $path;
+                    log_activity('[Weekly Debug] ✅ View encontrada em: ' . $actual_path);
+                    break;
+                }
+            }
+            
+            if (!$view_found) {
+                log_activity('[Weekly Debug ERROR] VIEW NÃO ENCONTRADA em nenhum dos caminhos:');
+                foreach ($possible_paths as $path) {
+                    log_activity('[Weekly Debug ERROR] - Testado: ' . $path);
+                }
                 show_error('View manage_weekly.php não encontrada');
                 return;
             }
 
-            log_activity('[Weekly Debug] ✅ View encontrada: ' . $view_path);
             log_activity('[Weekly Debug] 🚀 Carregando view manage_weekly...');
 
-            $this->load->view('timesheet/manage_weekly', $data);
+            // Tentar carregar a view usando o caminho relativo do módulo
+            $this->load->view('manage_weekly', $data);
 
             log_activity('[Weekly Debug] ✅ View carregada com sucesso');
 
