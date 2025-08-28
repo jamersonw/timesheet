@@ -489,7 +489,7 @@ $(document).ready(function () {
             .trigger("change");
     });
 
-    
+
 
     // Handler para checkboxes individuais de tarefas
     $(document).on("change", ".task-checkbox", function () {
@@ -608,8 +608,8 @@ $(document).ready(function () {
         // Debug: verificar qual userId estamos usando
         console.log("[User Batch] Aprovação - User ID:", userId);
 
-        // Buscar checkboxes selecionados dentro da approval panel específica deste usuário
-        $('.approval-panel[data-approval-id="' + userId + '"] .task-checkbox:checked').each(function () {
+        // Buscar checkboxes selecionados dentro do preview específico deste usuário
+        $('#preview-' + userId + ' .task-checkbox:checked').each(function () {
             userSelectedTasks.push($(this).val());
         });
 
@@ -645,8 +645,8 @@ $(document).ready(function () {
         // Debug: verificar qual userId estamos usando
         console.log("[User Batch] Rejeição - User ID:", userId);
 
-        // Buscar checkboxes selecionados dentro da approval panel específica deste usuário
-        $('.approval-panel[data-approval-id="' + userId + '"] .task-checkbox:checked').each(function () {
+        // Buscar checkboxes selecionados dentro do preview específico deste usuário
+        $('#preview-' + userId + ' .task-checkbox:checked').each(function () {
             userSelectedTasks.push($(this).val());
         });
 
