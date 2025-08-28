@@ -700,23 +700,42 @@ class Timesheet_model extends App_Model
             log_activity('[Weekly Model Debug] Iniciando busca de aprovações semanais para semana: ' . $week_start_date);
 
             // Buscar diretamente os funcionários que têm aprovações para a semana específica
-            $this->db->select('DISTINCT ta.staff_id, s.firstname, s.lastname, s.email, ta.week_start_date');
-            $this->db->from(db_prefix() . 'timesheet_approvals ta');
-            $this->db->join(db_prefix() . 'staff s', 's.staffid = ta.staff_id');
+            // Vou usar uma abordagem mais explícita para evitar problemas de sintaxe
+            $approvals_table = db_prefix() . 'timesheet_approvals';
+            $staff_table = db_prefix() . 'staff';
+            
+            $this->db->select("DISTINCT ta.staff_id, s.firstname, s.lastname, s.email, ta.week_start_date");
+            $this->db->from("$approvals_table ta");
+            $this->db->join("$staff_table s", 's.staffid = ta.staff_id');
             $this->db->where('ta.week_start_date', $week_start_date);
             $this->db->where_in('ta.status', ['pending', 'approved']); // Mostrar pending e approved
-            $this->db->order_by('s.firstname, s.lastname');
+            $this->db->order_by('s.firstname ASC, s.lastname ASC');
+            
+            // Debug: mostrar query compilada ANTES de executar
+            $compiled_query = $this->db->get_compiled_select();
+            log_activity('[Weekly Model Debug] Query SQL compilada: ' . $compiled_query);
+            
+            // Reset e executar query
+            $this->db->select("DISTINCT ta.staff_id, s.firstname, s.lastname, s.email, ta.week_start_date");
+            $this->db->from("$approvals_table ta");
+            $this->db->join("$staff_table s", 's.staffid = ta.staff_id');
+            $this->db->where('ta.week_start_date', $week_start_date);
+            $this->db->where_in('ta.status', ['pending', 'approved']);
+            $this->db->order_by('s.firstname ASC, s.lastname ASC');
             
             $staff_with_approvals = $this->db->get()->result();
 
             // Verificar se houve erro na query
-            if ($this->db->error()['code'] !== 0) {
-                $db_error = $this->db->error();
+            $db_error = $this->db->error();
+            if ($db_error['code'] !== 0) {
                 log_activity('[Weekly Model Debug ERROR] Erro na query de funcionários: ' . $db_error['message']);
+                log_activity('[Weekly Model Debug ERROR] Código do erro: ' . $db_error['code']);
+                log_activity('[Weekly Model Debug ERROR] Query que causou o erro: ' . $this->db->last_query());
                 return [];
             }
 
             log_activity('[Weekly Model Debug] Funcionários com aprovações encontrados: ' . count($staff_with_approvals));
+            log_activity('[Weekly Model Debug] Query executada com sucesso: ' . $this->db->last_query());
 
             $result = [];
 
