@@ -366,16 +366,24 @@ $(document).ready(function() {
 
     // ===== FUNCIONALIDADES DE SELEÇÃO EM LOTE =====
     
-    // Handler para checkbox "Selecionar Todos"
+    // Handler para checkbox "Selecionar Todos" (global)
     $(document).on('change', '#select-all-tasks', function() {
         var isChecked = $(this).is(':checked');
         $('.task-checkbox:enabled').prop('checked', isChecked).trigger('change');
+    });
+    
+    // Handler para checkbox "Selecionar Todas do Usuário"
+    $(document).on('change', '.select-user-tasks', function() {
+        var isChecked = $(this).is(':checked');
+        var userId = $(this).data('user-id');
+        $('.task-checkbox[data-user-id="' + userId + '"]:enabled').prop('checked', isChecked).trigger('change');
     });
     
     // Handler para checkboxes individuais de tarefas
     $(document).on('change', '.task-checkbox', function() {
         updateSelectedTasks();
         updateBatchControls();
+        updateUserBatchControls();
     });
     
     // Atualizar array de tarefas selecionadas
@@ -387,7 +395,7 @@ $(document).ready(function() {
         console.log('[Batch Selection] Tarefas selecionadas:', selectedTasks);
     }
     
-    // Atualizar controles de ação em lote
+    // Atualizar controles de ação em lote (global)
     function updateBatchControls() {
         var selectedCount = selectedTasks.length;
         var totalPending = $('.task-checkbox[data-status="pending"]:enabled').length;
@@ -406,7 +414,32 @@ $(document).ready(function() {
         $('#select-all-tasks').prop('indeterminate', someChecked);
     }
     
-    // Handler para aprovação em lote
+    // Atualizar controles de ação por usuário
+    function updateUserBatchControls() {
+        $('.select-user-tasks').each(function() {
+            var userId = $(this).data('user-id');
+            var userTasks = $('.task-checkbox[data-user-id="' + userId + '"]:enabled');
+            var userSelectedTasks = $('.task-checkbox[data-user-id="' + userId + '"]:checked');
+            
+            var selectedCount = userSelectedTasks.length;
+            var totalCount = userTasks.length;
+            
+            // Atualizar contador por usuário
+            $('.user-selection-counter[data-user-id="' + userId + '"]').html('<strong>' + selectedCount + '</strong> tarefas selecionadas');
+            
+            // Habilitar/desabilitar botões por usuário
+            $('.user-batch-approve-btn[data-user-id="' + userId + '"], .user-batch-reject-btn[data-user-id="' + userId + '"]').prop('disabled', selectedCount === 0);
+            
+            // Atualizar estado do checkbox "Selecionar Todas do Usuário"
+            var allChecked = (selectedCount > 0 && selectedCount === totalCount);
+            var someChecked = (selectedCount > 0 && selectedCount < totalCount);
+            
+            $(this).prop('checked', allChecked);
+            $(this).prop('indeterminate', someChecked);
+        });
+    }
+    
+    // Handler para aprovação em lote (global)
     $(document).on('click', '.batch-approve-btn', function() {
         if (selectedTasks.length === 0) {
             alert('Nenhuma tarefa selecionada');
@@ -427,7 +460,7 @@ $(document).ready(function() {
         });
     });
     
-    // Handler para rejeição em lote
+    // Handler para rejeição em lote (global)
     $(document).on('click', '.batch-reject-btn', function() {
         if (selectedTasks.length === 0) {
             alert('Nenhuma tarefa selecionada');
@@ -450,16 +483,85 @@ $(document).ready(function() {
         });
     });
     
+    // Handler para aprovação em lote por usuário
+    $(document).on('click', '.user-batch-approve-btn', function() {
+        var userId = $(this).data('user-id');
+        var userSelectedTasks = [];
+        
+        $('.task-checkbox[data-user-id="' + userId + '"]:checked').each(function() {
+            userSelectedTasks.push($(this).val());
+        });
+        
+        if (userSelectedTasks.length === 0) {
+            alert('Nenhuma tarefa selecionada para este usuário');
+            return;
+        }
+        
+        TimesheetModals.confirm({
+            title: 'Aprovação em Lote - Usuário',
+            message: 'Tem certeza que deseja aprovar ' + userSelectedTasks.length + ' tarefas selecionadas deste usuário?',
+            icon: 'fa-check-circle',
+            confirmText: 'Aprovar Selecionadas',
+            cancelText: 'Cancelar',
+            confirmClass: 'timesheet-modal-btn-success'
+        }).then(function(confirmed) {
+            if (confirmed) {
+                processBatchAction('approved', null, userSelectedTasks);
+            }
+        });
+    });
+    
+    // Handler para rejeição em lote por usuário
+    $(document).on('click', '.user-batch-reject-btn', function() {
+        var userId = $(this).data('user-id');
+        var userSelectedTasks = [];
+        
+        $('.task-checkbox[data-user-id="' + userId + '"]:checked').each(function() {
+            userSelectedTasks.push($(this).val());
+        });
+        
+        if (userSelectedTasks.length === 0) {
+            alert('Nenhuma tarefa selecionada para este usuário');
+            return;
+        }
+        
+        TimesheetModals.prompt({
+            title: 'Rejeição em Lote - Usuário',
+            message: 'Informe o motivo para rejeitar ' + userSelectedTasks.length + ' tarefas selecionadas deste usuário:',
+            placeholder: 'Digite o motivo da rejeição...',
+            icon: 'fa-times-circle',
+            confirmText: 'Rejeitar Selecionadas',
+            cancelText: 'Cancelar',
+            confirmClass: 'timesheet-modal-btn-danger',
+            required: true
+        }).then(function(reason) {
+            if (reason) {
+                processBatchAction('rejected', reason, userSelectedTasks);
+            }
+        });
+    });
+    
     // Processar ação em lote
-    function processBatchAction(action, reason) {
-        var $button = $('.batch-' + action.replace('ed', '') + '-btn');
+    function processBatchAction(action, reason, specificTasks) {
+        var tasksToProcess = specificTasks || selectedTasks;
+        var buttonSelector = specificTasks ? '.user-batch-' + action.replace('ed', '') + '-btn' : '.batch-' + action.replace('ed', '') + '-btn';
+        var $button = $(buttonSelector);
+        
+        // Se há tarefas específicas, encontrar o botão correto
+        if (specificTasks && specificTasks.length > 0) {
+            // Encontrar o botão do usuário correto baseado na primeira tarefa
+            var firstTaskCheckbox = $('.task-checkbox[value="' + specificTasks[0] + '"]');
+            var userId = firstTaskCheckbox.data('user-id');
+            $button = $('.user-batch-' + action.replace('ed', '') + '-btn[data-user-id="' + userId + '"]');
+        }
+        
         var originalText = $button.html();
         
         // Mostrar loading
         $button.html('<i class="fa fa-spinner fa-spin"></i> Processando...').prop('disabled', true);
         
         var postData = {
-            task_ids: selectedTasks,
+            task_ids: tasksToProcess,
             action: action
         };
         
@@ -496,7 +598,7 @@ $(document).ready(function() {
                     });
                     
                     // Restaurar botão
-                    $button.html(originalText).prop('disabled', selectedTasks.length === 0);
+                    $button.html(originalText).prop('disabled', tasksToProcess.length === 0);
                 }
             },
             error: function(xhr, status, error) {
@@ -510,7 +612,7 @@ $(document).ready(function() {
                 });
                 
                 // Restaurar botão
-                $button.html(originalText).prop('disabled', selectedTasks.length === 0);
+                $button.html(originalText).prop('disabled', tasksToProcess.length === 0);
             }
         });
     }
@@ -556,7 +658,7 @@ $(document).ready(function() {
             taskSelectionHtml += '<div class="col-md-6" style="margin-bottom: 10px;">';
             taskSelectionHtml += '<div class="checkbox">';
             taskSelectionHtml += '<label>';
-            taskSelectionHtml += '<input type="checkbox" class="task-checkbox" value="' + task.id + '" data-status="' + task.status + '" ' + isDisabled + '>';
+            taskSelectionHtml += '<input type="checkbox" class="task-checkbox" value="' + task.id + '" data-status="' + task.status + '" data-user-id="' + approvalId + '" ' + isDisabled + '>';
             taskSelectionHtml += '<strong>' + (task.project_name || 'Projeto') + '</strong>';
             if (task.task_name) {
                 taskSelectionHtml += '<br><small class="text-muted">' + task.task_name + '</small>';
@@ -571,6 +673,9 @@ $(document).ready(function() {
         taskSelectionHtml += '</div></div>';
         
         $previewContainer.prepend(taskSelectionHtml);
+        
+        // Após inserir os checkboxes, atualizar os controles
+        updateUserBatchControls();
     }
     
 });

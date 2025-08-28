@@ -161,7 +161,40 @@
                                 
                                 <!-- Timesheet Preview -->
                                 <div class="panel-body">
-                                    <div class="timesheet-preview" id="preview-<?php echo $approval->id; ?>">
+                                    <!-- Controles de Seleção por Usuário -->
+                                <div class="user-batch-controls" style="margin-bottom: 15px; padding: 10px; background-color: #f0f8ff; border: 1px solid #d1ecf1; border-radius: 5px;">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" class="select-user-tasks" data-user-id="<?php echo $approval->id; ?>" />
+                                                    <strong>Selecionar Todas as Tarefas deste Usuário</strong>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 text-right">
+                                            <span class="user-selection-counter" data-user-id="<?php echo $approval->id; ?>">
+                                                <strong>0</strong> tarefas selecionadas
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="margin-top: 10px;">
+                                        <div class="col-md-12 text-right">
+                                            <div class="btn-group user-batch-actions">
+                                                <button type="button" class="btn btn-success btn-sm user-batch-approve-btn" 
+                                                        data-user-id="<?php echo $approval->id; ?>" disabled>
+                                                    <i class="fa fa-check"></i> Aprovar Selecionadas
+                                                </button>
+                                                <button type="button" class="btn btn-danger btn-sm user-batch-reject-btn" 
+                                                        data-user-id="<?php echo $approval->id; ?>" disabled>
+                                                    <i class="fa fa-times"></i> Rejeitar Selecionadas
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="timesheet-preview" id="preview-<?php echo $approval->id; ?>">
                                         <div class="text-center text-muted">
                                             <i class="fa fa-spinner fa-spin"></i> Carregando preview do timesheet...
                                         </div>
@@ -300,6 +333,28 @@ var manage_weekly_data = {
 
 .batch-actions .btn:disabled {
     opacity: 0.6;
+}
+
+/* Estilos para controles por usuário */
+.user-batch-controls {
+    border-left: 4px solid #17a2b8;
+}
+
+.user-selection-counter {
+    font-size: 14px;
+    color: #138496;
+}
+
+.user-batch-actions .btn {
+    margin-left: 5px;
+}
+
+.user-batch-actions .btn:disabled {
+    opacity: 0.6;
+}
+
+.select-user-tasks {
+    margin-right: 8px;
 }
 
 /* Indicadores visuais para tarefas selecionadas */
