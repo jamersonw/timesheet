@@ -196,7 +196,7 @@ class Timesheet extends AdminController
         log_activity('[Weekly Debug] Semana selecionada: ' . $week_start . ' até ' . $data['week_end']);
         
         try {
-            $weekly_approvals = $this->timesheet_model->get_weekly_all_approvals($staff_id, $week_start);
+            $weekly_approvals = $this->timesheet_model->get_weekly_all_approvals($week_start);
             log_activity('[Weekly Debug] Aprovações encontradas: ' . count($weekly_approvals));
             
             foreach ($weekly_approvals as $index => $approval) {

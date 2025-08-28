@@ -688,8 +688,8 @@ class Timesheet_model extends App_Model
     }
 
     /**
-     * Get ALL approvals for a specific week (pending + approved, rejected hidden)
-     * VERSÃO 2.0: Agrupa por funcionário mas mantém detalhes das tarefas
+     * Get ALL approvals for a specific week (pending + approved)
+     * Retorna aprovações agrupadas por funcionário, mostrando pending e approved
      */
     public function get_weekly_all_approvals($week_start_date = null) {
         try {
@@ -699,41 +699,80 @@ class Timesheet_model extends App_Model
 
             log_activity('[Weekly Model Debug] Iniciando busca de aprovações semanais para semana: ' . $week_start_date);
 
-            // Primeiro, buscar todos os funcionários
-            $this->db->select('staffid as staff_id, firstname, lastname, email');
-            $this->db->from(db_prefix() . 'staff');
-            $this->db->where('active', 1);
-            $this->db->order_by('firstname, lastname');
-            $staff_list = $this->db->get()->result();
+            // Buscar diretamente os funcionários que têm aprovações para a semana específica
+            $this->db->select('DISTINCT ta.staff_id, s.firstname, s.lastname, s.email, ta.week_start_date');
+            $this->db->from(db_prefix() . 'timesheet_approvals ta');
+            $this->db->join(db_prefix() . 'staff s', 's.staffid = ta.staff_id');
+            $this->db->where('ta.week_start_date', $week_start_date);
+            $this->db->where_in('ta.status', ['pending', 'approved']); // Mostrar pending e approved
+            $this->db->order_by('s.firstname, s.lastname');
+            $staff_with_approvals = $this->db->get()->result();
 
             log_activity('[Weekly Model Debug] Query funcionários: ' . $this->db->last_query());
-            log_activity('[Weekly Model Debug] Funcionários encontrados: ' . count($staff_list));
+            log_activity('[Weekly Model Debug] Funcionários com aprovações encontrados: ' . count($staff_with_approvals));
 
             $result = [];
 
-            foreach ($staff_list as $staff) {
-                // Buscar aprovações desta semana para este funcionário
+            foreach ($staff_with_approvals as $staff) {
+                // Buscar aprovações desta semana para este funcionário (pending e approved)
                 $this->db->select('ta.*, t.name as task_name, p.name as project_name');
                 $this->db->from(db_prefix() . 'timesheet_approvals ta');
                 $this->db->join(db_prefix() . 'tasks t', 'ta.task_id = t.id', 'left');
                 $this->db->join(db_prefix() . 'projects p', 't.rel_id = p.id AND t.rel_type = "project"', 'left');
                 $this->db->where('ta.staff_id', $staff->staff_id);
                 $this->db->where('ta.week_start_date', $week_start_date);
-                $this->db->order_by('ta.created_at', 'DESC');
-                $approvals = $this->db->get()->result();
+                $this->db->where_in('ta.status', ['pending', 'approved']);
+                $this->db->order_by('ta.status ASC, ta.submitted_at DESC'); // Pending primeiro
+                $task_approvals = $this->db->get()->result();
 
                 log_activity('[Weekly Model Debug] Query aprovações: ' . $this->db->last_query());
-                log_activity('[Weekly Model Debug] Aprovações para ' . $staff->firstname . ' ' . $staff->lastname . ': ' . count($approvals));
+                log_activity('[Weekly Model Debug] Aprovações para ' . $staff->firstname . ' ' . $staff->lastname . ': ' . count($task_approvals));
 
-                if (!empty($approvals)) {
-                    $result[] = [
-                        'staff' => $staff,
-                        'approvals' => $approvals
+                if (!empty($task_approvals)) {
+                    // Calcular estatísticas consolidadas
+                    $pending_count = 0;
+                    $approved_count = 0;
+                    $latest_submission = null;
+
+                    foreach ($task_approvals as $approval) {
+                        if ($approval->status == 'pending') $pending_count++;
+                        if ($approval->status == 'approved') $approved_count++;
+                        
+                        if (!$latest_submission || $approval->submitted_at > $latest_submission) {
+                            $latest_submission = $approval->submitted_at;
+                        }
+                    }
+
+                    // Determinar status consolidado
+                    $consolidated_status = $pending_count > 0 ? 'pending' : 'approved';
+
+                    // Criar objeto único representando o funcionário (formato compatível com a view)
+                    $staff_approval = (object) [
+                        'id' => $task_approvals[0]->id, // ID da primeira aprovação
+                        'staff_id' => $staff->staff_id,
+                        'firstname' => $staff->firstname,
+                        'lastname' => $staff->lastname,
+                        'email' => $staff->email,
+                        'week_start_date' => $week_start_date,
+                        'status' => $consolidated_status,
+                        'submitted_at' => $latest_submission,
+                        'total_tasks' => count($task_approvals),
+                        'pending_tasks' => $pending_count,
+                        'approved_tasks' => $approved_count,
+                        'task_details' => $task_approvals // Para debug/detalhamento
                     ];
+
+                    $result[] = $staff_approval;
+
+                    log_activity('[Weekly Model Debug] Staff processado: ' . $staff->firstname . ' ' . $staff->lastname . 
+                                ' - Status: ' . $consolidated_status . 
+                                ' - Total: ' . count($task_approvals) . 
+                                ' - Pending: ' . $pending_count . 
+                                ' - Approved: ' . $approved_count);
                 }
             }
 
-            log_activity('[Weekly Model Debug] Total de funcionários com aprovações: ' . count($result));
+            log_activity('[Weekly Model Debug] Total de aprovações semanais retornadas: ' . count($result));
             return $result;
 
         } catch (Exception $e) {
