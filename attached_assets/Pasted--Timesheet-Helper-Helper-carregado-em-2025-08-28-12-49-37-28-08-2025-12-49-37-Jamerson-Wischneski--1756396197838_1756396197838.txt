@@ -1,0 +1,25 @@
+[Timesheet Helper] Helper carregado em: 2025-08-28 12:49:37	28/08/2025 12:49:37	Jamerson Wischneski
+[Timesheet Helper] Helper carregado em: 2025-08-28 12:49:37	28/08/2025 12:49:37	Jamerson Wischneski
+[Timesheet Helper] Helper carregado em: 2025-08-28 12:49:35	28/08/2025 12:49:35	Jamerson Wischneski
+[Timesheet Controller] Construtor chamado em 2025-08-28 12:49:35	28/08/2025 12:49:35	Jamerson Wischneski
+[Timesheet Controller] Model e helper carregados	28/08/2025 12:49:35	Jamerson Wischneski
+[WEEKLY START] Função manage_weekly iniciada em 2025-08-28 12:49:35	28/08/2025 12:49:35	Jamerson Wischneski
+[WEEKLY START] Try block iniciado	28/08/2025 12:49:35	Jamerson Wischneski
+[WEEKLY START] Staff ID obtido: 1	28/08/2025 12:49:35	Jamerson Wischneski
+[Weekly Debug] =========================	28/08/2025 12:49:35	Jamerson Wischneski
+[Weekly Debug] INÍCIO - Acesso à tela semanal	28/08/2025 12:49:35	Jamerson Wischneski
+[Weekly Debug] Staff ID logado: 1	28/08/2025 12:49:35	Jamerson Wischneski
+[Weekly Debug] User Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0	28/08/2025 12:49:35	Jamerson Wischneski
+[Weekly Debug] URL solicitada: https://perfex.neurodeep.com.br/admin/timesheet/manage_weekly	28/08/2025 12:49:35	Jamerson Wischneski
+[Weekly Debug] =========================	28/08/2025 12:49:35	Jamerson Wischneski
+[Weekly Debug] Helper functions OK	28/08/2025 12:49:35	Jamerson Wischneski
+[Weekly Debug] Verificando permissões:	28/08/2025 12:49:35	Jamerson Wischneski
+[Weekly Debug] - has_permission(approve): SIM	28/08/2025 12:49:35	Jamerson Wischneski
+[Weekly Debug] - is_admin(): SIM	28/08/2025 12:49:35	Jamerson Wischneski
+[Weekly Debug] - can_manage_projects: SIM	28/08/2025 12:49:35	Jamerson Wischneski
+[Weekly Debug] ✅ Permissões OK - Prosseguindo	28/08/2025 12:49:35	Jamerson Wischneski
+[Weekly Debug] Semana calculada: 2025-08-25	28/08/2025 12:49:35	Jamerson Wischneski
+[Weekly Debug] Dados da semana:	28/08/2025 12:49:35	Jamerson Wischneski
+[Weekly Debug] - week_start: 2025-08-25	28/08/2025 12:49:35	Jamerson Wischneski
+[Weekly Debug] - week_end: 2025-08-31	28/08/2025 12:49:35	Jamerson Wischneski
+[Weekly Debug] - week_dates count: 7	28/08/2025 12:49:35	Jamerson Wischneski
