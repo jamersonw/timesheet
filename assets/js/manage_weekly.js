@@ -484,7 +484,7 @@ $(document).ready(function () {
     $(document).on("change", ".select-user-tasks-header", function () {
         var isChecked = $(this).is(":checked");
         var userId = $(this).data("user-id");
-        $('.task-checkbox[data-user-id="' + userId + '"]:enabled')
+        $('.approval-panel[data-approval-id="' + userId + '"] .task-checkbox:enabled')
             .prop("checked", isChecked)
             .trigger("change");
     });
@@ -539,7 +539,7 @@ $(document).ready(function () {
         $(".user-batch-approve-btn").each(function() {
             var userId = $(this).data("user-id");
             var userSelectedTasks = $(
-                '.task-checkbox[data-user-id="' + userId + '"]:checked'
+                '.approval-panel[data-approval-id="' + userId + '"] .task-checkbox:checked'
             );
             var selectedCount = userSelectedTasks.length;
 
@@ -608,8 +608,8 @@ $(document).ready(function () {
         // Debug: verificar qual userId estamos usando
         console.log("[User Batch] Aprovação - User ID:", userId);
 
-        // Buscar checkboxes selecionados dentro do preview específico deste usuário
-        $('#preview-' + userId + ' .task-checkbox:checked').each(function () {
+        // Buscar checkboxes selecionados dentro da approval panel específica deste usuário
+        $('.approval-panel[data-approval-id="' + userId + '"] .task-checkbox:checked').each(function () {
             userSelectedTasks.push($(this).val());
         });
 
@@ -645,8 +645,8 @@ $(document).ready(function () {
         // Debug: verificar qual userId estamos usando
         console.log("[User Batch] Rejeição - User ID:", userId);
 
-        // Buscar checkboxes selecionados dentro do preview específico deste usuário
-        $('#preview-' + userId + ' .task-checkbox:checked').each(function () {
+        // Buscar checkboxes selecionados dentro da approval panel específica deste usuário
+        $('.approval-panel[data-approval-id="' + userId + '"] .task-checkbox:checked').each(function () {
             userSelectedTasks.push($(this).val());
         });
 
