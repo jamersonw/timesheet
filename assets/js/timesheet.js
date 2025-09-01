@@ -10,7 +10,7 @@ $(document).ready(function() {
     function parseHours(value) {
         if (value === null || value === undefined || value === '') return 0;
         var numericValue = parseFloat(value.toString().replace(',', '.'));
-        return isNaN(numericValue) ? 0 : numericureturn;
+        return isNaN(numericValue) ? 0 : numericValue;
     }
 
     var $saveIndicator = $('#save-indicator');
