@@ -91,7 +91,7 @@
                                     <?php if (empty($entries)): ?>
                                         <tr>
                                             <td colspan="9" class="text-center text-muted">
-                                                <?php echo _l('timesheet_no_entries_found_week'); ?>
+                                                No timesheet entries found for this week.
                                             </td>
                                         </tr>
                                     <?php else: ?>

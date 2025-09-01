@@ -43,32 +43,6 @@ class Timesheet extends AdminController
         $approval_status = $this->timesheet_model->get_week_approval_status(get_staff_user_id(), $week_start);
         $data['approval_status'] = $approval_status;
         $data['can_edit'] = !$approval_status || in_array($approval_status->status, ['rejected', 'draft']);
-
-        // Determinar se há tarefas editáveis (para mostrar o botão de submissão)
-        $has_editable_tasks = false;
-
-        // Se há entradas na semana atual, verificar se alguma é editável
-        if (!empty($entries)) {
-            foreach ($entries as $entry) {
-                if ($this->timesheet_model->can_edit_task($staff_id, $week_start, $entry->task_id)) {
-                    $has_editable_tasks = true;
-                    break;
-                }
-            }
-        } else {
-            // Se não há entradas mas é uma semana editável (não futura), mostrar o botão
-            // para permitir que o usuário adicione projetos e submeta
-            $current_week_start = date('Y-m-d', strtotime('monday this week'));
-            $selected_week_start = date('Y-m-d', strtotime($week_start));
-
-            // Permitir submissão se for semana atual ou passada
-            if ($selected_week_start <= $current_week_start) {
-                $has_editable_tasks = true;
-            }
-        }
-
-        $data['can_submit_week'] = $data['can_edit'] && $has_editable_tasks;
-
         $data['title'] = _l('timesheet_my_timesheet');
         $this->load->view('timesheet/my_timesheet', $data);
     }
@@ -79,7 +53,7 @@ class Timesheet extends AdminController
     public function get_project_tasks($project_id)
     {
         if (!has_permission('timesheet', '', 'view')) {
-            echo json_encode(['success' => false, 'message' => _l('access_denied')]);
+            echo json_encode(['error' => 'Access denied']);
             return;
         }
         $tasks = timesheet_get_staff_project_tasks(get_staff_user_id(), $project_id);
@@ -87,12 +61,57 @@ class Timesheet extends AdminController
     }
 
     /**
+     * Save timesheet entry via AJAX
+     */
+    /*
+    public function save_entry()
+    {
+        if (!has_permission('timesheet', '', 'view')) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+        $staff_id = get_staff_user_id();
+        $project_id = $this->input->post('project_id');
+        $task_id = $this->input->post('task_id');
+        $week_start = $this->input->post('week_start');
+        $day_of_week = $this->input->post('day_of_week');
+        $hours = (float)$this->input->post('hours');
+
+        if (empty($task_id) || !is_numeric($task_id)) {
+            // Se não há tarefa selecionada, retornar sucesso sem salvar
+            echo json_encode(['success' => true, 'message' => 'Nenhuma tarefa selecionada para salvar']);
+            return;
+        }
+        if (!$this->timesheet_model->can_edit_week($staff_id, $week_start)) {
+            echo json_encode(['success' => false, 'message' => _l('timesheet_cannot_edit_approved')]);
+            return;
+        }
+
+        $data = [
+            'staff_id'        => $staff_id,
+            'project_id'      => $project_id,
+            'task_id'         => $task_id,
+            'week_start_date' => $week_start,
+            'day_of_week'     => $day_of_week,
+            'hours'           => $hours,
+            'status'          => 'draft'
+        ];
+
+        if ($this->timesheet_model->save_entry($data)) {
+            echo json_encode(['success' => true, 'message' => _l('timesheet_saved_successfully')]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Falha ao salvar a entrada.']);
+        }
+    }
+    */
+    
+/**
      * Save timesheet entry via AJAX (CORRIGIDO com verificação por tarefa)
      */
     public function save_entry()
     {
         if (!has_permission('timesheet', '', 'view')) {
-            echo json_encode(['success' => false, 'message' => _l('access_denied')]);
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
             return;
         }
         $staff_id = get_staff_user_id();
@@ -106,7 +125,7 @@ class Timesheet extends AdminController
             echo json_encode(['success' => true, 'message' => 'Nenhuma tarefa selecionada para salvar']);
             return;
         }
-
+        
         // ** A CORREÇÃO ESTÁ AQUI: Usando a nova verificação por tarefa **
         if (!$this->timesheet_model->can_edit_task($staff_id, $week_start, $task_id)) {
             echo json_encode(['success' => false, 'message' => 'Não é possível editar uma tarefa que está pendente ou já foi aprovada.']);
@@ -126,7 +145,7 @@ class Timesheet extends AdminController
         if ($this->timesheet_model->save_entry($data)) {
             echo json_encode(['success' => true, 'message' => _l('timesheet_saved_successfully')]);
         } else {
-            echo json_encode(['success' => false, 'message' => _l('timesheet_error_saving_entry')]);
+            echo json_encode(['success' => false, 'message' => 'Falha ao salvar a entrada.']);
         }
     }
 
@@ -137,7 +156,7 @@ class Timesheet extends AdminController
     public function submit_week()
     {
         if (!has_permission('timesheet', '', 'view')) {
-            echo json_encode(['success' => false, 'message' => _l('access_denied')]);
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
             return;
         }
 
@@ -156,7 +175,7 @@ class Timesheet extends AdminController
                 'message' => _l('timesheet_submitted_successfully')
             ]);
         } else {
-            echo json_encode(['success' => false, 'message' => _l('timesheet_error_submitting')]);
+            echo json_encode(['success' => false, 'message' => 'Error submitting timesheet']);
         }
     }
 
@@ -166,7 +185,7 @@ class Timesheet extends AdminController
     public function cancel_submission()
     {
         if (!is_staff_logged_in()) {
-            echo json_encode(['success' => false, 'message' => _l('access_denied')]);
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
             return;
         }
 
@@ -253,7 +272,7 @@ class Timesheet extends AdminController
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => false,
-                'message' => _l('timesheet_invalid_parameters')
+                'message' => 'Parâmetros obrigatórios não informados'
             ]);
             return;
         }
@@ -267,15 +286,16 @@ class Timesheet extends AdminController
         ]);
     }
 
+
+
     /**
      * Get week total hours via AJAX for manager view
      */
     public function get_week_total()
     {
-        $manager_id = get_staff_user_id(); // Identifica o gerente logado
-        if (!has_permission('timesheet', '', 'approve') && !is_admin($manager_id) && !timesheet_can_manage_any_project($manager_id)) {
+        if (!has_permission('timesheet', '', 'view') && !has_permission('timesheet', '', 'approve') && !is_admin()) {
             log_activity('[Weekly AJAX ERROR] Acesso negado ao get_week_total');
-            echo json_encode(['success' => false, 'message' => _l('access_denied')]);
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
             return;
         }
 
@@ -285,8 +305,7 @@ class Timesheet extends AdminController
         log_activity('[Weekly AJAX Debug] get_week_total - Staff ID: ' . $staff_id . ', Week: ' . $week_start_date);
 
         try {
-            // Passa o ID do gerente para o Model para filtrar o cálculo
-            $total_hours = $this->timesheet_model->get_week_total_hours($staff_id, $week_start_date, $manager_id);
+            $total_hours = $this->timesheet_model->get_week_total_hours($staff_id, $week_start_date);
             log_activity('[Weekly AJAX Debug] Total de horas calculado: ' . $total_hours);
             echo json_encode(['success' => true, 'total_hours' => $total_hours]);
         } catch (Exception $e) {
@@ -321,7 +340,7 @@ class Timesheet extends AdminController
     {
         $manager_id = get_staff_user_id();
         if (!has_permission('timesheet', '', 'approve') && !is_admin($manager_id) && !timesheet_can_manage_any_project($manager_id)) {
-            echo json_encode(['success' => false, 'message' => _l('access_denied')]);
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
             return;
         }
 
@@ -339,7 +358,7 @@ class Timesheet extends AdminController
             $daily_totals = $this->timesheet_model->get_week_daily_totals($staff_id, $week_start_date, $manager_id);
             $week_total = $this->timesheet_model->get_week_total_hours($staff_id, $week_start_date, $manager_id);
             $task_approvals = $this->timesheet_model->get_week_task_approvals($staff_id, $week_start_date);
-
+            
             $approvals_map = [];
             foreach ($task_approvals as $approval) {
                 $key = $approval->project_id . '_' . $approval->task_id;
@@ -363,7 +382,7 @@ class Timesheet extends AdminController
                 $html .= '<tr>';
                 $approval_key = $entry['project_id'] . '_' . $entry['task_id'];
                 $task_approval = isset($approvals_map[$approval_key]) ? $approvals_map[$approval_key] : null;
-
+                
                 // Lógica do Checkbox
                 if ($task_approval && $task_approval->status == 'pending') {
                     $checkbox = '<input type="checkbox" class="task-checkbox" value="' . $task_approval->id . '" data-status="pending" data-user-id="' . $staff_id . '">';
@@ -417,7 +436,7 @@ class Timesheet extends AdminController
     public function approve_reject()
     {
         if (!has_permission('timesheet', '', 'approve') && !is_admin() && !timesheet_can_manage_any_project(get_staff_user_id())) {
-            echo json_encode(['success' => false, 'message' => _l('access_denied')]);
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
             return;
         }
 
@@ -426,12 +445,12 @@ class Timesheet extends AdminController
         $reason = $this->input->post('reason');
 
         if (empty($approval_id) || empty($action) || !in_array($action, ['approved', 'rejected'])) {
-            echo json_encode(['success' => false, 'message' => _l('timesheet_invalid_parameters')]);
+            echo json_encode(['success' => false, 'message' => 'Invalid parameters']);
             return;
         }
 
         if ($action === 'rejected' && empty($reason)) {
-            echo json_encode(['success' => false, 'message' => _l('timesheet_rejection_reason_required')]);
+            echo json_encode(['success' => false, 'message' => 'Rejection reason is required']);
             return;
         }
 
@@ -441,7 +460,7 @@ class Timesheet extends AdminController
             $message = $action == 'approved' ? _l('timesheet_approved_successfully') : _l('timesheet_rejected_successfully');
             echo json_encode(['success' => true, 'message' => $message]);
         } else {
-            echo json_encode(['success' => false, 'message' => _l('timesheet_error_processing_approval')]);
+            echo json_encode(['success' => false, 'message' => 'Error processing approval']);
         }
     }
 
@@ -451,14 +470,14 @@ class Timesheet extends AdminController
     public function cancel_approval()
     {
         if (!has_permission('timesheet', '', 'approve') && !is_admin() && !timesheet_can_manage_any_project(get_staff_user_id())) {
-            echo json_encode(['success' => false, 'message' => _l('access_denied')]);
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
             return;
         }
 
         $approval_id = $this->input->post('approval_id');
 
         if (empty($approval_id)) {
-            echo json_encode(['success' => false, 'message' => _l('timesheet_invalid_parameters')]);
+            echo json_encode(['success' => false, 'message' => 'Invalid parameters']);
             return;
         }
 
@@ -477,7 +496,7 @@ class Timesheet extends AdminController
     public function batch_approve_reject()
     {
         if (!has_permission('timesheet', '', 'approve') && !is_admin() && !timesheet_can_manage_any_project(get_staff_user_id())) {
-            echo json_encode(['success' => false, 'message' => _l('access_denied')]);
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
             return;
         }
 
@@ -486,12 +505,12 @@ class Timesheet extends AdminController
         $reason = $this->input->post('reason'); // Obrigatório para rejeição
 
         if (empty($task_ids) || !is_array($task_ids) || empty($action) || !in_array($action, ['approved', 'rejected'])) {
-            echo json_encode(['success' => false, 'message' => _l('timesheet_invalid_parameters')]);
+            echo json_encode(['success' => false, 'message' => 'Parâmetros inválidos']);
             return;
         }
 
         if ($action === 'rejected' && empty($reason)) {
-            echo json_encode(['success' => false, 'message' => _l('timesheet_rejection_reason_required')]);
+            echo json_encode(['success' => false, 'message' => 'Motivo da rejeição é obrigatório']);
             return;
         }
 
@@ -620,13 +639,13 @@ class Timesheet extends AdminController
     {
         $manager_id = get_staff_user_id();
         if (!has_permission('timesheet', '', 'approve') && !is_admin($manager_id)) {
-            echo json_encode(['success' => false, 'message' => _l('access_denied')]);
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
             return;
         }
 
         $approval_id = $this->input->post('approval_id');
         if (empty($approval_id)) {
-            echo json_encode(['success' => false, 'message' => _l('timesheet_invalid_parameters')]);
+            echo json_encode(['success' => false, 'message' => 'Invalid parameters']);
             return;
         }
 

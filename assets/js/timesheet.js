@@ -44,7 +44,7 @@ $(document).ready(function() {
 
         saveEntry($input).then(function(response) {
             pendingChanges.delete(inputId);
-
+            
             // Se há mais itens na fila, continuar processando
             if (saveQueue.length > 0) {
                 setTimeout(function() {
@@ -63,7 +63,7 @@ $(document).ready(function() {
             isProcessingQueue = false;
             $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro ao salvar');
             setTimeout(function() { $saveIndicator.html(''); }, 3000);
-
+            
             // Continuar com próximo item mesmo se este falhou
             if (saveQueue.length > 0) {
                 setTimeout(function() {
@@ -75,33 +75,18 @@ $(document).ready(function() {
 
     // Adicionar à fila de salvamento
     function addToSaveQueue($input) {
-        var $row = $input.closest('tr');
-        var taskId = $row.data('task-id');
-        var projectId = $row.data('project-id');
-
-        // VALIDAÇÃO: Só adicionar à fila se tiver atributos válidos
-        if (!taskId || !projectId) {
-            console.warn('⚠️ [QUEUE-ADD] Item rejeitado da fila - sem atributos válidos:', {
-                'task-id': taskId, 
-                'project-id': projectId,
-                'input-day': $input.data('day')
-            });
-            return;
-        }
-
-        var inputId = $input.data('input-id') || ($input.data('day') + '_' + taskId);
-
+        var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
+        
         // Remover duplicatas da fila (manter apenas a última alteração)
         saveQueue = saveQueue.filter(function(item) {
-            var itemTaskId = item.closest('tr').data('task-id');
-            var itemId = item.data('input-id') || (item.data('day') + '_' + itemTaskId);
+            var itemId = item.data('input-id') || (item.data('day') + '_' + item.closest('tr').data('task-id'));
             return itemId !== inputId;
         });
 
         // Adicionar à fila
         saveQueue.push($input);
         pendingChanges.add(inputId);
-
+        
         // Iniciar processamento se não estiver em andamento
         processQueue();
     }
@@ -110,22 +95,8 @@ $(document).ready(function() {
     function saveAllPendingChanges() {
         $('.hours-input').each(function() {
             var $input = $(this);
-            var $row = $input.closest('tr');
-            var taskId = $row.data('task-id');
-            var projectId = $row.data('project-id');
-
-            // VALIDAÇÃO: Só processar se tiver task-id e project-id válidos
-            if (!taskId || !projectId) {
-                console.warn('⚠️ [BACKUP-SAVE] Pulando campo sem atributos válidos:', {
-                    'task-id': taskId, 
-                    'project-id': projectId,
-                    'input-day': $input.data('day')
-                });
-                return; // Continue para o próximo
-            }
-
-            var inputId = $input.data('input-id') || ($input.data('day') + '_' + taskId);
-
+            var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
+            
             if (pendingChanges.has(inputId)) {
                 addToSaveQueue($input.clone());
             }
@@ -135,27 +106,14 @@ $(document).ready(function() {
     // Auto-save melhorado com debounce de 1.5 segundos
     $(document).on('blur', '.hours-input', function() {
         var $input = $(this);
-        var $row = $input.closest('tr');
-        var taskId = $row.data('task-id');
-        var projectId = $row.data('project-id');
         var value = $input.val().trim();
 
         // Sempre formatar o valor, incluindo 0
         var formattedValue = formatHours(value);
         $input.val(formattedValue);
 
-        // VALIDAÇÃO: Só marcar como pendente se tiver atributos válidos
-        if (!taskId || !projectId) {
-            console.warn('⚠️ [AUTO-SAVE] Campo blur ignorado - sem atributos válidos:', {
-                'task-id': taskId, 
-                'project-id': projectId,
-                'input-day': $input.data('day')
-            });
-            return;
-        }
-
         // Marcar como alteração pendente
-        var inputId = $input.data('input-id') || ($input.data('day') + '_' + taskId);
+        var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
         pendingChanges.add(inputId);
 
         // Limpar timeout anterior e definir novo com 1.5 segundos
@@ -251,7 +209,7 @@ $(document).ready(function() {
     function saveAllEntries() {
         return new Promise(function(resolve, reject) {
             $saveIndicator.html('<i class="fa fa-spinner fa-spin text-warning"></i> Salvamento forçado em andamento...');
-
+            
             // Limpar fila atual e timeout
             clearTimeout(saveTimeout);
             saveQueue = [];
@@ -269,10 +227,10 @@ $(document).ready(function() {
                 var promise = saveEntry($input).then(function(response) {
                     pendingChanges.delete(inputId);
                     processedInputs++;
-
+                    
                     // Atualizar progresso
                     $saveIndicator.html('<i class="fa fa-spinner fa-spin text-warning"></i> Salvando ' + processedInputs + '/' + totalInputs + '...');
-
+                    
                     return response;
                 }).catch(function(error) {
                     processedInputs++;
@@ -310,13 +268,13 @@ $(document).ready(function() {
 
     $('#submit-timesheet').on('click', function() {
         var $btn = $(this);
-
+        
         // Validar se existe pelo menos uma linha de projeto/tarefa
         if ($('#timesheet-entries tr').length === 0) {
-            TimesheetModals.warning(timesheet_lang.no_activities_warning, timesheet_lang.no_activities_title);
+            TimesheetModals.warning('Você deve adicionar pelo menos um projeto/tarefa antes de enviar o timesheet.', 'Nenhuma Atividade Selecionada');
             return;
         }
-
+        
         $btn.prop('disabled', true); 
 
         // Executar salvamento forçado antes da submissão
@@ -331,20 +289,20 @@ $(document).ready(function() {
                 $('.hours-input').each(function() {
                     totalHours += parseHours($(this).val());
                 });
-
-                var confirmMessage = timesheet_data.confirm_submit || timesheet_lang.confirm_submit_default;
-
+                
+                var confirmMessage = timesheet_data.confirm_submit || 'Tem certeza que deseja enviar este timesheet para aprovação? Esta ação não pode ser desfeita.';
+                
                 if (totalHours === 0) {
-                    confirmMessage += '<br><br><strong class="text-warning"><i class="fa fa-exclamation-triangle"></i> ' + timesheet_lang.attention + ':</strong> ' + timesheet_lang.submitting_zero_hours + '.';
+                    confirmMessage += '<br><br><strong class="text-warning"><i class="fa fa-exclamation-triangle"></i> Atenção:</strong> Você está enviando um timesheet sem nenhuma hora lançada (todos os dias estão zerados).';
                 }
 
                 // Usar modal elegante ao invés de confirm()
                 TimesheetModals.confirm({
-                    title: timesheet_lang.submit_for_approval,
+                    title: 'Enviar para Aprovação',
                     message: confirmMessage,
                     icon: 'fa-paper-plane',
-                    confirmText: timesheet_lang.submit,
-                    cancelText: timesheet_lang.cancel,
+                    confirmText: 'Enviar',
+                    cancelText: 'Cancelar',
                     confirmClass: 'timesheet-modal-btn-success'
                 }).then(function(confirmed) {
                     if (confirmed) {
@@ -398,11 +356,11 @@ $(document).ready(function() {
 
     $('#cancel-submission').on('click', function() {
         TimesheetModals.confirm({
-            title: timesheet_lang.cancel_submission,
-            message: timesheet_data.confirm_cancel_submission || timesheet_lang.confirm_cancel_submission_default,
+            title: 'Cancelar Submissão',
+            message: timesheet_data.confirm_cancel_submission || 'Tem certeza que deseja cancelar a submissão deste timesheet? Ele voltará ao status de rascunho.',
             icon: 'fa-undo',
-            confirmText: timesheet_lang.cancel_submission,
-            cancelText: timesheet_lang.keep_as_is,
+            confirmText: 'Cancelar Submissão',
+            cancelText: 'Manter Como Está',
             confirmClass: 'timesheet-modal-btn-warning'
         }).then(function(confirmed) {
             if (confirmed) {
@@ -452,49 +410,43 @@ $(document).ready(function() {
         var taskName = $('#task-select').find('option:selected').text();
 
         if(!projectId || !taskId) {
-            TimesheetModals.warning(timesheet_lang.select_project_task_required, timesheet_lang.required_selection);
+            TimesheetModals.warning('Por favor, selecione um projeto E uma tarefa.', 'Seleção Obrigatória');
             return;
         }
 
         if ($('tr[data-project-id="'+projectId+'"][data-task-id="'+taskId+'"]').length > 0) {
-            TimesheetModals.warning(timesheet_lang.project_already_added, timesheet_lang.duplicate_project);
+            TimesheetModals.warning('Este projeto/tarefa já foi adicionado à sua planilha.', 'Projeto Duplicado');
             return;
         }
 
-        var $newRow = $('<tr>').attr({
-            'data-project-id': projectId,
-            'data-task-id': taskId
-        });
-
-        var row_html = '<td><strong>'+projectName+'</strong><br><small class="text-muted">'+taskName+'</small></td>';
+        var row_html = '<tr data-project-id="'+projectId+'" data-task-id="'+taskId+'">' +
+            '<td><strong>'+projectName+'</strong><br><small class="text-muted">'+taskName+'</small></td>';
         for (var i = 1; i <= 7; i++) {
             row_html += '<td class="text-center"><input type="text" class="form-control hours-input text-center" data-day="'+i+'" placeholder="0,00"></td>';
         }
         row_html += '<td class="text-center total-hours"><strong>0,00</strong></td>' + 
-                    '<td class="text-center"><button type="button" class="btn btn-danger btn-xs remove-row"><i class="fa fa-trash"></i></button></td>';
+                    '<td class="text-center"><button type="button" class="btn btn-danger btn-xs remove-row"><i class="fa fa-trash"></i></button></td>' +
+                    '</tr>';
 
-        $newRow.html(row_html);
-        $('#timesheet-entries').append($newRow);
+        $('#timesheet-entries').append(row_html);
         $('#project-modal').modal('hide');
 
         $('#project-select').val('').trigger('change');
-        updateSubmitButtonVisibility(); // Atualiza a visibilidade do botão após adicionar uma linha
     });
 
     $(document).on('click', '.remove-row', function(){
         var $row = $(this).closest('tr');
         TimesheetModals.confirm({
-            title: timesheet_lang.remove_row,
-            message: timesheet_lang.confirm_remove_row,
+            title: 'Remover Linha',
+            message: 'Tem certeza que deseja remover esta linha? Todas as horas lançadas nela serão perdidas.',
             icon: 'fa-trash',
-            confirmText: timesheet_lang.remove,
-            cancelText: timesheet_lang.cancel,
+            confirmText: 'Remover',
+            cancelText: 'Cancelar',
             confirmClass: 'timesheet-modal-btn-danger'
         }).then(function(confirmed) {
             if (confirmed) {
                 $row.remove();
                 updateTotals();
-                updateSubmitButtonVisibility(); // Atualiza a visibilidade do botão após remover uma linha
             }
         });
     });
@@ -521,64 +473,29 @@ $(document).ready(function() {
         $('.week-total').text(formatHours(weekTotal));
     }
 
-    // ================== FUNÇÃO PARA ATUALIZAR VISIBILIDADE DO BOTÃO DE SUBMISSÃO ==================
-    function updateSubmitButtonVisibility() {
-        // VALIDAÇÃO: Não criar botão de submissão em telas administrativas
-        var isManagementPage = window.location.href.indexOf('/manage') !== -1 || 
-                              window.location.href.indexOf('/approve') !== -1 ||
-                              $('body').hasClass('manage-timesheet-page') ||
-                              $('.approval-panel').length > 0; // Detecta presença de painéis de aprovação
-
-        if (isManagementPage) {
-            console.log('🚫 [SUBMIT-BTN] Botão de submissão desabilitado - tela administrativa detectada');
-            $('#submit-timesheet').remove(); // Remove qualquer botão existente
-            return;
-        }
-
-        var hasRows = $('#timesheet-entries tr').length > 0;
-        var $submitBtn = $('#submit-timesheet');
-
-        // Se há linhas de projeto/tarefa e o botão não existe, criar
-        if (hasRows && $submitBtn.length === 0) {
-            var submitBtnHtml = '<button type="button" class="btn btn-success" id="submit-timesheet">' +
-                               '<i class="fa fa-paper-plane"></i> Submeter para Aprovação' +
-                               '</button>';
-            // Encontrar o local correto para inserir o botão, geralmente alinhado à direita
-            // Assumindo que há um contêiner como .text-right ou similar
-            $('.text-right').append(submitBtnHtml); 
-        } 
-        // Se não há linhas e o botão existe, remover
-        else if (!hasRows && $submitBtn.length > 0) {
-            $submitBtn.remove();
-        }
-    }
-
     updateTotals();
-
+    
     // Inicializar sistema de backup automático
     initBackupSave();
-
-    // Atualizar visibilidade do botão de submissão ao carregar a página
-    updateSubmitButtonVisibility();
-
+    
     // Limpeza quando a página for fechada
     $(window).on('beforeunload', function() {
         clearInterval(backupSaveInterval);
-
+        
         // Se há alterações pendentes, avisar o usuário
         if (pendingChanges.size > 0) {
             return 'Você tem alterações não salvas. Tem certeza que deseja sair?';
         }
     });
-
+    
     // Salvamento forçado ao navegar para outra página
     $(document).on('click', 'a[href], button[type="submit"]', function(e) {
         if (pendingChanges.size > 0 && !$(this).hasClass('hours-input') && !$(this).hasClass('remove-row')) {
             e.preventDefault();
             var originalTarget = this;
-
+            
             $saveIndicator.html('<i class="fa fa-spinner fa-spin text-info"></i> Salvando antes de navegar...');
-
+            
             saveAllEntries().then(function() {
                 // Continuar com a navegação
                 if (originalTarget.href) {

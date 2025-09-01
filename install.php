@@ -155,7 +155,7 @@ function check_table_creation_permissions($CI, $db_prefix) {
 }
 
 try {
-    safe_log_activity('=== INICIANDO INSTALAÇÃO DO MÓDULO TIMESHEET v1.4.9 ===', 'INFO');
+    safe_log_activity('=== INICIANDO INSTALAÇÃO DO MÓDULO TIMESHEET v1.4.5 ===', 'INFO');
     safe_log_activity('PHP Version: ' . PHP_VERSION, 'DEBUG');
     safe_log_activity('Memory Limit: ' . ini_get('memory_limit'), 'DEBUG');
     safe_log_activity('Max Execution Time: ' . ini_get('max_execution_time'), 'DEBUG');
@@ -477,7 +477,7 @@ try {
 
     safe_log_activity('--- CONFIGURANDO VERSÃO DO MÓDULO ---', 'INFO');
 
-    $version = '1.4.9';
+    $version = '1.4.5';
     try {
         if (!safe_get_option('timesheet_module_version')) {
             if (safe_add_option('timesheet_module_version', $version, 1)) {

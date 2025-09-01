@@ -216,27 +216,6 @@ var timesheet_data = {
     confirm_cancel_submission: "<?php echo _l('timesheet_confirm_cancel_submission'); ?>",
     confirm_submit: "<?php echo _l('timesheet_confirm_submit'); ?>"
 };
-
-var timesheet_lang = {
-    no_activities_warning: "<?php echo _l('timesheet_no_activities_warning'); ?>",
-    no_activities_title: "<?php echo _l('timesheet_no_activities_title'); ?>",
-    confirm_submit_default: "<?php echo _l('timesheet_confirm_submit_default'); ?>",
-    attention: "<?php echo _l('timesheet_attention'); ?>",
-    submitting_zero_hours: "<?php echo _l('timesheet_submitting_zero_hours'); ?>",
-    submit_for_approval: "<?php echo _l('timesheet_submit_for_approval'); ?>",
-    submit: "<?php echo _l('timesheet_submit'); ?>",
-    cancel: "<?php echo _l('cancel'); ?>",
-    cancel_submission: "<?php echo _l('timesheet_cancel_submission'); ?>",
-    confirm_cancel_submission_default: "<?php echo _l('timesheet_confirm_cancel_submission_default'); ?>",
-    keep_as_is: "<?php echo _l('timesheet_keep_as_is'); ?>",
-    select_project_task_required: "<?php echo _l('timesheet_select_project_task_required'); ?>",
-    required_selection: "<?php echo _l('timesheet_required_selection'); ?>",
-    project_already_added: "<?php echo _l('timesheet_project_already_added'); ?>",
-    duplicate_project: "<?php echo _l('timesheet_duplicate_project'); ?>",
-    remove_row: "<?php echo _l('timesheet_remove_row'); ?>",
-    confirm_remove_row: "<?php echo _l('timesheet_confirm_remove_row'); ?>",
-    remove: "<?php echo _l('remove'); ?>"
-};
 </script>
 
 <?php init_tail(); ?>
