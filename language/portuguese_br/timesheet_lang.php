@@ -90,6 +90,11 @@ $lang['timesheet_cancel_approval_error'] = 'Erro ao cancelar aprovação';
 $lang['timesheet_permission_view'] = 'Visualizar Timesheet (criar próprios lançamentos)';
 $lang['timesheet_permission_approve'] = 'Aprovar Timesheet (acessar telas de aprovação)';
 
+// Timer blocking messages
+$lang['timesheet_timer_disabled_message'] = 'Cronômetro desabilitado para sua função. Use: Timesheet → Meu Timesheet';
+$lang['timesheet_board_disabled_message'] = 'Quadro de tempo desabilitado. Use: Timesheet → Aprovações Semanais';
+$lang['timesheet_feature_restricted'] = 'Esta funcionalidade foi restrita pelo módulo Timesheet';
+
 // Weekly Timesheet Specific Translations
 $lang['timesheet_weekly_total'] = 'Total da Semana';
 $lang['timesheet_week_total_hours'] = 'Total de Horas da Semana';

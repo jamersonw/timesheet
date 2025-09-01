@@ -201,9 +201,151 @@ function timesheet_load_admin_assets()
 // NOVO HOOK: Adiciona CSS customizado para esconder elementos
 hooks()->add_action('app_admin_head', 'timesheet_hide_native_log_time_elements');
 
+// HOOK ADICIONAL: Bloquear timer globalmente para não-admins
+hooks()->add_action('app_admin_footer', 'timesheet_disable_timer_globally');
+
 /**
  * NOVA FUNÇÃO: Injeta CSS para esconder o botão e o formulário de apontamento manual de horas do projeto.
- * Esta é a abordagem mais segura, pois não modifica os arquivos do núcleo do Perfex.
+ * Também esconde botões de cronômetro e quadro de tempo para não-administradores.
+ */
+function timesheet_hide_native_log_time_elements()
+{
+    $CI = &get_instance();
+    $current_staff_id = get_staff_user_id();
+    
+    // Verificar se está em uma página de tarefa/projeto
+    $is_task_page = (strpos($CI->uri->uri_string(), 'tasks/view/') !== false || 
+                     strpos($CI->uri->uri_string(), 'projects/view/') !== false);
+    
+    // Se for administrador, não aplicar restrições
+    if (is_admin($current_staff_id)) {
+        return;
+    }
+    
+    // CSS para esconder elementos do timesheet nativo + cronômetro
+    echo '<style type="text/css">
+        /* Esconder formulário de log manual de horas */
+        #log_time_wrapper,
+        .project-overview-task-timer,
+        .task-timer-wrapper,
+        .task-single-log-time-form,
+        
+        /* Esconder botões de cronômetro */
+        a[onclick*="timer_action"],
+        .btn[onclick*="timer_action"],
+        
+        /* Esconder botão de quadro de tempo */
+        .btn[onclick*="slideToggle(\'#task_single_timesheets\')"],
+        a[onclick*="slideToggle(\'#task_single_timesheets\')"],
+        
+        /* Esconder seção de timesheets da tarefa */
+        #task_single_timesheets,
+        
+        /* Esconder outros elementos relacionados a timer */
+        .task-timer-buttons,
+        .timer-controls {
+            display: none !important;
+        }
+        
+        /* Esconder texto do cronômetro se existir */
+        .fa-clock:not(.timesheet-icon),
+        .fa-regular.fa-clock {
+            display: none !important;
+        }
+    </style>';
+    
+    // JavaScript para desabilitar funcionalidades de timer
+    if ($is_task_page) {
+        echo '<script type="text/javascript">
+            document.addEventListener("DOMContentLoaded", function() {
+                // Remover eventos de timer
+                var timerButtons = document.querySelectorAll("[onclick*=\"timer_action\"]");
+                timerButtons.forEach(function(btn) {
+                    btn.style.display = "none";
+                    btn.onclick = function(e) { 
+                        e.preventDefault(); 
+                        alert("Função de cronômetro desabilitada. Use o módulo Timesheet para apontamento de horas.");
+                        return false; 
+                    };
+                });
+                
+                // Remover botões de quadro de tempo
+                var timesheetButtons = document.querySelectorAll("[onclick*=\"slideToggle\"]");
+                timesheetButtons.forEach(function(btn) {
+                    if (btn.onclick && btn.onclick.toString().includes("task_single_timesheets")) {
+                        btn.style.display = "none";
+                        btn.onclick = function(e) { 
+                            e.preventDefault(); 
+                            alert("Quadro de tempo desabilitado. Use o módulo Timesheet para gerenciar horas.");
+                            return false; 
+                        };
+                    }
+                });
+                
+                // Esconder seção de timesheets se existir
+                var timesheetSection = document.getElementById("task_single_timesheets");
+                if (timesheetSection) {
+                    timesheetSection.style.display = "none";
+                }
+                
+                console.log("Timesheet Module: Cronômetro e quadro de tempo desabilitados para usuário não-admin");
+            });
+        </script>';
+    }
+}
+
+/**
+ * Função adicional para desabilitar timer globalmente em todas as páginas
+ */
+function timesheet_disable_timer_globally()
+{
+    $current_staff_id = get_staff_user_id();
+    
+    // Se for administrador, não aplicar restrições
+    if (is_admin($current_staff_id)) {
+        return;
+    }
+    
+    echo '<script type="text/javascript">
+        // Função global para interceptar todas as chamadas de timer_action
+        if (typeof window.original_timer_action === "undefined") {
+            // Salvar função original se existir
+            if (typeof timer_action !== "undefined") {
+                window.original_timer_action = timer_action;
+            }
+            
+            // Sobrescrever função timer_action
+            window.timer_action = function(element, taskId) {
+                alert("⚠️ Função de cronômetro desabilitada.\\n\\nPara apontamento de horas, acesse:\\nTimesheet → Meu Timesheet");
+                return false;
+            };
+            
+            // Interceptar cliques em botões de timer via event delegation
+            document.addEventListener("click", function(e) {
+                var target = e.target;
+                var button = target.closest("a[onclick*=\"timer_action\"], button[onclick*=\"timer_action\"]");
+                
+                if (button) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    alert("⚠️ Cronômetro desabilitado para sua função.\\n\\nUse: Timesheet → Meu Timesheet");
+                    return false;
+                }
+                
+                // Também interceptar botões de quadro de tempo
+                var timesheetBtn = target.closest("a[onclick*=\"task_single_timesheets\"], button[onclick*=\"task_single_timesheets\"]");
+                if (timesheetBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    alert("⚠️ Quadro de tempo desabilitado.\\n\\nUse: Timesheet → Aprovações Semanais");
+                    return false;
+                }
+            }, true);
+            
+            console.log("Timesheet Module: Timer globalmente desabilitado para usuário não-admin ID " + ' . $current_staff_id . ');
+        }
+    </script>';
+} segura, pois não modifica os arquivos do núcleo do Perfex.
  */
 function timesheet_hide_native_log_time_elements()
 {

@@ -90,6 +90,11 @@ $lang['timesheet_cancel_approval_error'] = 'Error cancelling approval';
 $lang['timesheet_permission_view'] = 'View Timesheet (create own entries)';
 $lang['timesheet_permission_approve'] = 'Approve Timesheet (access approval screens)';
 
+// Timer blocking messages
+$lang['timesheet_timer_disabled_message'] = 'Timer disabled for your role. Use: Timesheet → My Timesheet';
+$lang['timesheet_board_disabled_message'] = 'Time board disabled. Use: Timesheet → Weekly Approvals';
+$lang['timesheet_feature_restricted'] = 'This feature has been restricted by the Timesheet module';
+
 // Weekly Timesheet Specific Translations
 $lang['timesheet_weekly_total'] = 'Weekly Total';
 $lang['timesheet_week_total_hours'] = 'Week Total Hours';
