@@ -583,63 +583,61 @@ $(document).ready(function() {
     // Inicializar sistema de backup automático
     initBackupSave();
 
-    // Função para verificar se deve mostrar o botão de submissão
+    // Função otimizada para verificar se deve mostrar o botão de submissão
     function checkSubmitButtonVisibility() {
-        var hasEntries = $('#timesheet-entries tr').length > 0;
         var $submitBtn = $('#submit-timesheet');
+        var $timesheetEntries = $('#timesheet-entries tr');
+        var hasEntries = $timesheetEntries.length > 0;
 
-        if (hasEntries) {
-            // Verificar se há tarefas editáveis (não aprovadas/pendentes)
-            var hasEditableEntries = false;
-            $('#timesheet-entries tr').each(function() {
-                var $inputs = $(this).find('.hours-input:not(:disabled)');
-                if ($inputs.length > 0) {
-                    hasEditableEntries = true;
-                    return false; // break do loop
-                }
-            });
+        if (!hasEntries) {
+            $submitBtn.hide();
+            return;
+        }
 
-            if (hasEditableEntries) {
-                // Remover qualquer estilo inline conflitante e forçar exibição
-                $submitBtn.removeAttr('style').css({
-                    'display': 'inline-block',
-                    'visibility': 'visible',
-                    'opacity': '1'
-                }).show();
-            } else {
-                $submitBtn.css('display', 'none').hide();
-            }
+        // Verificar se há tarefas editáveis (não aprovadas/pendentes) de forma mais eficiente
+        var hasEditableEntries = $timesheetEntries.find('.hours-input:not(:disabled)').length > 0;
+
+        if (hasEditableEntries) {
+            // Mostrar botão imediatamente sem animações desnecessárias
+            $submitBtn.removeClass('d-none').css({
+                'display': 'inline-block',
+                'visibility': 'visible',
+                'opacity': '1'
+            }).show();
         } else {
-            $submitBtn.css('display', 'none').hide();
+            $submitBtn.hide();
         }
     }
 
-    // Verificar visibilidade inicial do botão
-    checkSubmitButtonVisibility();
-
-    // Verificar novamente após o carregamento completo da página (múltiplas tentativas)
-    setTimeout(function() {
-        checkSubmitButtonVisibility();
-    }, 100);
-
-    setTimeout(function() {
-        checkSubmitButtonVisibility();
-    }, 500);
-
-    setTimeout(function() {
-        checkSubmitButtonVisibility();
-    }, 1000);
-
-    // Verificação final mais agressiva se o botão ainda não estiver visível
-    setTimeout(function() {
-        var $submitBtn = $('#submit-timesheet');
-        var hasEntries = $('#timesheet-entries tr').length > 0;
-
-        if (hasEntries && (!$submitBtn.is(':visible') || $submitBtn.css('display') === 'none')) {
-            $submitBtn.attr('style', 'display: inline-block !important;');
-            $submitBtn.show();
+    // Observer para detectar mudanças no DOM mais eficientemente
+    var submitButtonObserver = new MutationObserver(function(mutations) {
+        var shouldCheck = false;
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList' || mutation.type === 'attributes') {
+                shouldCheck = true;
+            }
+        });
+        if (shouldCheck) {
+            checkSubmitButtonVisibility();
         }
-    }, 1500);
+    });
+
+    // Observar mudanças no container das entradas
+    var timesheetContainer = document.getElementById('timesheet-entries');
+    if (timesheetContainer) {
+        submitButtonObserver.observe(timesheetContainer, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['disabled', 'class', 'style']
+        });
+    }
+
+    // Verificação inicial mais rápida
+    checkSubmitButtonVisibility();
+    
+    // Apenas uma verificação de backup após 200ms (reduzido significativamente)
+    setTimeout(checkSubmitButtonVisibility, 200);
 
     // Limpeza quando a página for fechada
     $(window).on('beforeunload', function() {

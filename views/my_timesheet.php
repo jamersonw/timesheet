@@ -162,7 +162,8 @@
                                     </button>
                                 <?php endif; ?>
                                 
-                                <button type="button" class="btn btn-success" id="submit-timesheet" style="display: none;">
+                                <button type="button" class="btn btn-success" id="submit-timesheet" 
+                                        style="<?php echo ($has_editable_tasks ? 'display: inline-block;' : 'display: none;'); ?>">
                                     <i class="fa fa-paper-plane"></i> Submeter para Aprovação
                                 </button>
                             </div>
