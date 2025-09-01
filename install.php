@@ -477,7 +477,7 @@ try {
 
     safe_log_activity('--- CONFIGURANDO VERSÃO DO MÓDULO ---', 'INFO');
 
-    $version = '1.5.0';
+    $version = '1.5.1';
     try {
         if (!safe_get_option('timesheet_module_version')) {
             if (safe_add_option('timesheet_module_version', $version, 1)) {

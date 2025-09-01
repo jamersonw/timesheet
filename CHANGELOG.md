@@ -2,6 +2,41 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.5.1] - 2025-09-01
+
+### 🚨 **CORREÇÕES CRÍTICAS - SUBMISSÃO E TRADUÇÃO**
+
+### ✅ **PROBLEMAS RESOLVIDOS**
+- **Mensagem não traduzida**: Corrigida tradução faltante `timesheet_cannot_submit_approved`
+- **Lógica de submissão**: Corrigida validação para permitir submissão de tarefas não submetidas
+- **Resubmissão inteligente**: Sistema agora permite submeter apenas tarefas que não estão pendentes/aprovadas
+
+### 🔧 **IMPLEMENTAÇÕES TÉCNICAS**
+- **Arquivo de idioma**: Adicionada tradução `timesheet_cannot_submit_approved` em português e inglês
+- **Model can_submit_week()**: Reescrito para verificar tarefas disponíveis para submissão
+- **Lógica de filtro**: Sistema exclui apenas tarefas já pendentes/aprovadas, não todas da semana
+
+### 🎯 **FLUXO CORRIGIDO**
+1. ✅ **Validação inteligente**: Verifica se há tarefas que ainda não foram submetidas
+2. ✅ **Submissão seletiva**: Permite enviar apenas tarefas não processadas
+3. ✅ **Mensagem traduzida**: Feedback claro em português quando submissão não é possível
+4. ✅ **Log detalhado**: Rastreamento de quantas tarefas podem ser submetidas
+
+### 🛡️ **VALIDAÇÕES MELHORADAS**
+- **Consulta SQL otimizada**: Identifica tarefas disponíveis para submissão
+- **Prevenção de duplicatas**: Não permite reenvio de tarefas já processadas
+- **Feedback claro**: Mensagens traduzidas informam o status corretamente
+- **Logs informativos**: Debug mostra quantas tarefas podem ser submetidas
+
+### 📋 **CENÁRIO DE USO CORRIGIDO**
+- **Semana com tarefas mistas**: Pode ter algumas aprovadas e outras não submetidas
+- **Submissão parcial**: Sistema permite enviar apenas as não processadas
+- **Interface consistente**: Botão aparece quando há tarefas disponíveis
+- **Experiência fluida**: Usuário não é bloqueado desnecessariamente
+
+### 🎉 **RESULTADO FINAL**
+Sistema de submissão com **lógica inteligente** que permite reenvio de tarefas não processadas e **traduções completas** em português, proporcionando experiência de usuário mais flexível e profissional.
+
 ## [1.5.0] - 2025-09-01
 
 ### 🚨 **CORREÇÕES CRÍTICAS - BOTÃO SUBMETER E SALVAMENTO AUTOMÁTICO**
