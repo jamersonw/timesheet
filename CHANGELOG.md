@@ -2,9 +2,43 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.5.0] - 2025-09-01
 
+### 🚨 **CORREÇÕES CRÍTICAS - BOTÃO SUBMETER E SALVAMENTO AUTOMÁTICO**
 
+### ✅ **PROBLEMAS RESOLVIDOS**
+- **Botão "Submeter Atividade" não aparecia**: Corrigida lógica de exibição baseada em `$has_editable_tasks`
+- **Salvamento automático falhava**: Linhas adicionadas dinamicamente não tinham atributos `data-task-id` e `data-project-id`
+- **Visibilidade dinâmica**: Botão de submissão aparece/desaparece conforme linhas são adicionadas/removidas
 
+### 🔧 **IMPLEMENTAÇÕES TÉCNICAS**
+- **Controller Timesheet.php**: Adicionada variável `$has_editable_tasks` para controlar exibição do botão
+- **JavaScript timesheet.js**: 
+  - Corrigida adição de linhas com atributos corretos (`data-task-id`, `data-project-id`)
+  - Função `checkSubmitButtonVisibility()` para controlar visibilidade do botão
+  - Melhorados logs do salvamento automático com mais detalhes de debug
+  - Atributos `data-input-id` únicos para cada campo de hora
+
+### 🎯 **FLUXO CORRIGIDO**
+1. ✅ **Adicionar projeto/tarefa**: Linha criada com todos os atributos necessários
+2. ✅ **Botão aparece**: Automaticamente visível quando há pelo menos uma linha
+3. ✅ **Salvamento automático**: Funciona imediatamente após adicionar linha
+4. ✅ **Remover linha**: Botão desaparece se não há mais linhas
+
+### 🛡️ **VALIDAÇÕES MELHORADAS**
+- **Logs detalhados**: Incluem HTML da linha para debugging
+- **Prevenção de erros**: Validação robusta antes de tentar salvar
+- **Feedback visual**: Indicadores claros de estado de salvamento
+- **Proteção de dados**: Sistema híbrido previne perda de informações
+
+### 📋 **BENEFÍCIOS DA VERSÃO**
+- **UX perfeita**: Botão aparece quando necessário, salvamento transparente
+- **Confiabilidade total**: Dados nunca mais são perdidos por problemas de atributos
+- **Debug aprimorado**: Logs permitem identificar problemas rapidamente
+- **Interface intuitiva**: Comportamento natural e esperado pelo usuário
+
+### 🎉 **RESULTADO FINAL**
+Sistema de timesheet com **salvamento automático 100% funcional** e **botão de submissão com lógica inteligente**, proporcionando experiência de usuário fluida e confiável.
 
 ## [1.4.9] - 2025-09-01
 
