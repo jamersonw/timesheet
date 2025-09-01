@@ -1041,17 +1041,27 @@ class Timesheet_model extends App_Model
 
     /**
      * Check if a staff member can submit a specific week
-     * CORRIGIDO: Não permite reenvio de tarefas já pendentes
+     * CORRIGIDO: Permite submissão se há tarefas que ainda não foram submetidas
      */
     public function can_submit_week($staff_id, $week_start_date)
     {
-        $approval = $this->get_week_approval_status($staff_id, $week_start_date);
+        // Verifica se há tarefas com horas que ainda não foram submetidas
+        $this->db->select('COUNT(DISTINCT(task_id)) as submittable_tasks');
+        $this->db->from(db_prefix() . 'timesheet_entries');
+        $this->db->where('staff_id', $staff_id);
+        $this->db->where('week_start_date', $week_start_date);
+        $this->db->where('hours >', 0);
+        $this->db->where('task_id IS NOT NULL');
+        // Tarefas que NÃO estão pendentes ou aprovadas
+        $this->db->where("task_id NOT IN (SELECT task_id FROM " . db_prefix() . "timesheet_approvals WHERE staff_id = $staff_id AND week_start_date = '$week_start_date' AND status IN ('pending', 'approved'))");
+        $result = $this->db->get()->row();
 
-        // Pode submeter apenas se não há aprovação ou se todas as tarefas foram rejeitadas
-        // NÃO pode submeter se há tarefas pendentes ou aprovadas
-        return !$approval || 
-               $approval->status == 'rejected' || 
-               ($approval->status == 'draft' && $approval->pending_tasks == 0);
+        $submittable_tasks = $result ? (int)$result->submittable_tasks : 0;
+        
+        log_activity('[Timesheet Submit Check] Staff ' . $staff_id . ' pode submeter ' . $submittable_tasks . ' tarefas na semana ' . $week_start_date);
+        
+        // Pode submeter se há pelo menos uma tarefa que ainda não foi submetida
+        return $submittable_tasks > 0;
     }
 
     /**

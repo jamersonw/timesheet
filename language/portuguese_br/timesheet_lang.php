@@ -54,6 +54,7 @@ $lang['timesheet_project_required'] = 'Projeto é obrigatório';
 $lang['timesheet_task_required'] = 'Tarefa é obrigatória. Por favor, selecione uma tarefa.';
 $lang['timesheet_already_submitted'] = 'Esta semana já foi enviada';
 $lang['timesheet_cannot_edit_approved'] = 'Não é possível editar timesheets aprovados. Cancele a aprovação primeiro.';
+$lang['timesheet_cannot_submit_approved'] = 'Não é possível submeter. Algumas tarefas já estão pendentes ou aprovadas.';
 
 // Interface messages
 $lang['timesheet_project_and_task_required'] = 'Por favor, selecione um projeto E uma tarefa.';

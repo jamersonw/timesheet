@@ -54,6 +54,7 @@ $lang['timesheet_project_required'] = 'Project is required';
 $lang['timesheet_task_required'] = 'Task is required. Please select a task.';
 $lang['timesheet_already_submitted'] = 'This week has already been submitted';
 $lang['timesheet_cannot_edit_approved'] = 'Cannot edit approved timesheets. Cancel approval first.';
+$lang['timesheet_cannot_submit_approved'] = 'Cannot submit. Some tasks are already pending or approved.';
 
 // Interface messages
 $lang['timesheet_project_and_task_required'] = 'Please select a project AND a task.';
