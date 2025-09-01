@@ -160,14 +160,7 @@
                             <?php endforeach; ?>
                         <?php endif; ?>
 
-                        <!-- Back to Quick Approvals -->
-                        <div class="row mt-3">
-                            <div class="col-md-12">
-                                <a href="<?php echo admin_url('timesheet/manage'); ?>" class="btn btn-default">
-                                    <i class="fa fa-list"></i> <?php echo _l('timesheet_quick_approvals'); ?>
-                                </a>
-                            </div>
-                        </div>
+                        
 
                     </div>
                 </div>
