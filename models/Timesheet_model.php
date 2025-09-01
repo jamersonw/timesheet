@@ -181,6 +181,48 @@ class Timesheet_model extends App_Model
     }
 
     /**
+     * Remove all entries for a specific task in a week
+     */
+    public function remove_task_entries($staff_id, $project_id, $task_id, $week_start_date)
+    {
+        try {
+            // Log da operação
+            log_activity('[Timesheet Remove] Removendo entradas - Staff: ' . $staff_id . ', Task: ' . $task_id . ', Week: ' . $week_start_date);
+
+            // Buscar entradas existentes para log
+            $this->db->where('staff_id', $staff_id);
+            $this->db->where('project_id', $project_id);
+            $this->db->where('task_id', $task_id);
+            $this->db->where('week_start_date', $week_start_date);
+            $existing_entries = $this->db->get(db_prefix() . 'timesheet_entries')->result();
+
+            if (empty($existing_entries)) {
+                log_activity('[Timesheet Remove] Nenhuma entrada encontrada para remover');
+                return true; // Não há nada para remover, considerar sucesso
+            }
+
+            // Remover todas as entradas da tarefa na semana
+            $this->db->where('staff_id', $staff_id);
+            $this->db->where('project_id', $project_id);
+            $this->db->where('task_id', $task_id);
+            $this->db->where('week_start_date', $week_start_date);
+            
+            if ($this->db->delete(db_prefix() . 'timesheet_entries')) {
+                log_activity('[Timesheet Remove] Removidas ' . count($existing_entries) . ' entradas da tarefa ' . $task_id);
+                return true;
+            } else {
+                $db_error = $this->db->error();
+                log_activity('[Timesheet Remove ERROR] Falha ao remover entradas: ' . $db_error['message']);
+                return false;
+            }
+
+        } catch (Exception $e) {
+            log_activity('[Timesheet Remove ERROR] Erro fatal ao remover entradas: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Save or update a single timesheet entry.
      */
     public function save_entry($data)

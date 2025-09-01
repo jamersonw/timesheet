@@ -514,6 +514,9 @@ $(document).ready(function() {
 
     $(document).on('click', '.remove-row', function(){
         var $row = $(this).closest('tr');
+        var projectId = $row.data('project-id');
+        var taskId = $row.data('task-id');
+        
         TimesheetModals.confirm({
             title: 'Remover Linha',
             message: 'Tem certeza que deseja remover esta linha? Todas as horas lançadas nela serão perdidas.',
@@ -523,9 +526,54 @@ $(document).ready(function() {
             confirmClass: 'timesheet-modal-btn-danger'
         }).then(function(confirmed) {
             if (confirmed) {
-                $row.remove();
-                updateTotals();
-                checkSubmitButtonVisibility();
+                // Se tem IDs válidos, fazer chamada AJAX para deletar do banco
+                if (projectId && taskId) {
+                    $saveIndicator.html('<i class="fa fa-spinner fa-spin text-warning"></i> Removendo...');
+                    
+                    var data = {
+                        project_id: projectId,
+                        task_id: taskId,
+                        week_start: timesheet_data.week_start
+                    };
+                    data[csrfData.token_name] = csrfData.hash;
+                    
+                    $.post(timesheet_data.admin_url + 'timesheet/remove_task_entries', data)
+                    .done(function(response) {
+                        try {
+                            response = typeof response === 'string' ? JSON.parse(response) : response;
+                        } catch (e) {
+                            console.error("❌ Erro ao parsear resposta:", response);
+                            TimesheetModals.notify('danger', 'Erro de comunicação com o servidor');
+                            $saveIndicator.html('');
+                            return;
+                        }
+                        
+                        if (response.success) {
+                            $saveIndicator.html('<i class="fa fa-check text-success"></i> Removido do banco');
+                            $row.remove();
+                            updateTotals();
+                            checkSubmitButtonVisibility();
+                            setTimeout(function() { $saveIndicator.html(''); }, 2000);
+                            console.log('✅ [REMOVE-TASK] Tarefa removida do banco:', taskId);
+                        } else {
+                            $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro ao remover');
+                            TimesheetModals.notify('danger', response.message || 'Erro ao remover tarefa');
+                            setTimeout(function() { $saveIndicator.html(''); }, 3000);
+                        }
+                    })
+                    .fail(function(jqXHR) {
+                        console.error("❌ Falha na requisição de remoção:", jqXHR.responseText);
+                        $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro de conexão');
+                        TimesheetModals.notify('danger', 'Erro de conexão ao remover tarefa');
+                        setTimeout(function() { $saveIndicator.html(''); }, 3000);
+                    });
+                } else {
+                    // Se não tem IDs (linha nova que ainda não foi salva), apenas remove da tela
+                    $row.remove();
+                    updateTotals();
+                    checkSubmitButtonVisibility();
+                    console.log('🗑️ [REMOVE-TASK] Linha removida apenas da tela (não estava no banco)');
+                }
             }
         });
     });

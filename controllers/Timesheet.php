@@ -190,6 +190,39 @@ class Timesheet extends AdminController
     }
 
     /**
+     * Remove all entries for a specific task in a week
+     */
+    public function remove_task_entries()
+    {
+        if (!has_permission('timesheet', '', 'view')) {
+            echo json_encode(['success' => false, 'message' => _l('access_denied')]);
+            return;
+        }
+
+        $staff_id = get_staff_user_id();
+        $project_id = $this->input->post('project_id');
+        $task_id = $this->input->post('task_id');
+        $week_start = $this->input->post('week_start');
+
+        if (empty($project_id) || empty($task_id) || empty($week_start)) {
+            echo json_encode(['success' => false, 'message' => 'Parâmetros obrigatórios não informados']);
+            return;
+        }
+
+        // Verificar se pode editar esta tarefa
+        if (!$this->timesheet_model->can_edit_task($staff_id, $week_start, $task_id)) {
+            echo json_encode(['success' => false, 'message' => 'Não é possível remover uma tarefa que está pendente ou já foi aprovada.']);
+            return;
+        }
+
+        if ($this->timesheet_model->remove_task_entries($staff_id, $project_id, $task_id, $week_start)) {
+            echo json_encode(['success' => true, 'message' => 'Tarefa removida com sucesso']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Erro ao remover tarefa']);
+        }
+    }
+
+    /**
      * Cancel week submission
      */
     public function cancel_submission()
