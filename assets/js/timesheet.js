@@ -137,15 +137,23 @@ $(document).ready(function() {
     // ================== FUNÇÃO SAVEENTRY COM LOGS DETALHADOS ==================
     function saveEntry($input) {
         var $row = $input.closest('tr');
+        
+        // Validar se encontrou a linha da tabela
+        if (!$row.length) {
+            console.error("❌ [SAVE-ENTRY] Elemento TR não encontrado para o input:", $input[0]);
+            return Promise.resolve({ success: true, message: 'Elemento da tabela não encontrado' });
+        }
+        
         var taskId = $row.data('task-id');
         var projectId = $row.data('project-id');
 
         // VALIDAÇÃO FRONT-END: Previne chamadas AJAX desnecessárias se a tarefa não estiver definida.
         if (!taskId || !projectId) {
+            var rowInfo = $row.length > 0 && $row[0] ? $row[0].outerHTML.substring(0, 200) + '...' : 'Linha não encontrada';
             console.warn("⚠️ [SAVE-ENTRY] Salvamento abortado: task-id ou project-id não encontrado na linha da tabela (TR).", { 
                 'task-id': taskId, 
                 'project-id': projectId,
-                'row-html': $row[0].outerHTML.substring(0, 200) + '...'
+                'row-html': rowInfo
             });
             return Promise.resolve({ success: true, message: 'Nenhuma tarefa selecionada para salvar' });
         }
