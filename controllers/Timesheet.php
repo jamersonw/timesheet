@@ -173,7 +173,13 @@ class Timesheet extends AdminController
             return;
         }
 
-        if ($this->timesheet_model->submit_week($staff_id, $week_start)) {
+        $result = $this->timesheet_model->submit_week($staff_id, $week_start);
+        
+        if (is_array($result)) {
+            // Novo formato de retorno com detalhes
+            echo json_encode($result);
+        } else if ($result === true) {
+            // Compatibilidade com retorno booleano antigo
             echo json_encode([
                 'success' => true,
                 'message' => _l('timesheet_submitted_successfully')

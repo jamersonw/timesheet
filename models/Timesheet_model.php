@@ -208,7 +208,7 @@ class Timesheet_model extends App_Model
 
 /**
      * Submit a week's timesheet for approval.
-     * ATUALIZADO: Submete apenas tarefas em rascunho ou rejeitadas.
+     * CORRIGIDO: Verifica se há tarefas submetíveis e retorna erro se não houver
      */
     public function submit_week($staff_id, $week_start_date)
     {
@@ -225,7 +225,7 @@ class Timesheet_model extends App_Model
 
         if (empty($tasks_to_submit)) {
             log_activity('[Timesheet Submit] Nenhuma tarefa nova ou corrigida para submeter.');
-            return true; // Retorna sucesso pois não há nada a fazer
+            return ['success' => false, 'message' => 'Não há tarefas novas para submeter. Todas as tarefas já estão pendentes ou aprovadas.'];
         }
 
         $task_ids_to_submit = array_column($tasks_to_submit, 'task_id');
@@ -254,7 +254,7 @@ class Timesheet_model extends App_Model
         }
 
         log_activity('[Timesheet Submit] ' . $approvals_processed . ' aprovações criadas/atualizadas para staff ' . $staff_id);
-        return true;
+        return ['success' => true, 'message' => $approvals_processed . ' tarefas submetidas com sucesso para aprovação.', 'tasks_submitted' => $approvals_processed];
     }
 
     /**
@@ -1041,14 +1041,17 @@ class Timesheet_model extends App_Model
 
     /**
      * Check if a staff member can submit a specific week
-     * Versão mais permissiva para submissão
+     * CORRIGIDO: Não permite reenvio de tarefas já pendentes
      */
     public function can_submit_week($staff_id, $week_start_date)
     {
         $approval = $this->get_week_approval_status($staff_id, $week_start_date);
 
-        // Pode submeter se não há aprovação, se foi rejeitado, ou se está em draft
-        return !$approval || in_array($approval->status, ['rejected', 'draft']);
+        // Pode submeter apenas se não há aprovação ou se todas as tarefas foram rejeitadas
+        // NÃO pode submeter se há tarefas pendentes ou aprovadas
+        return !$approval || 
+               $approval->status == 'rejected' || 
+               ($approval->status == 'draft' && $approval->pending_tasks == 0);
     }
 
     /**

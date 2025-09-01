@@ -303,6 +303,21 @@ $(document).ready(function() {
             return;
         }
 
+        // Verificar se há pelo menos uma tarefa editável (não pendente/aprovada)
+        var hasEditableEntries = false;
+        $('#timesheet-entries tr').each(function() {
+            var $inputs = $(this).find('.hours-input:not(:disabled)');
+            if ($inputs.length > 0) {
+                hasEditableEntries = true;
+                return false; // break do loop
+            }
+        });
+
+        if (!hasEditableEntries) {
+            TimesheetModals.warning('Todas as tarefas já foram submetidas e estão pendentes ou aprovadas. Não há nada novo para submeter.', 'Nenhuma Tarefa Submetível');
+            return;
+        }
+
         $btn.prop('disabled', true); 
 
         // Executar salvamento forçado antes da submissão
@@ -354,10 +369,20 @@ $(document).ready(function() {
                             if (response.success) {
                                 $saveIndicator.html('<i class="fa fa-check text-success"></i> Enviado com sucesso!');
                                 TimesheetModals.notify('success', response.message);
-                                setTimeout(function(){ location.reload(); }, 1500);
+                                
+                                // Se há tarefas submetidas, recarregar a página
+                                if (response.tasks_submitted && response.tasks_submitted > 0) {
+                                    setTimeout(function(){ location.reload(); }, 1500);
+                                } else {
+                                    // Se não há tarefas novas, apenas esconder o indicador
+                                    setTimeout(function() { 
+                                        $saveIndicator.html(''); 
+                                        $btn.prop('disabled', false);
+                                    }, 2000);
+                                }
                             } else {
-                                $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro na submissão');
-                                TimesheetModals.notify('danger', response.message);
+                                $saveIndicator.html('<i class="fa fa-exclamation-triangle text-warning"></i> ' + (response.message.length > 50 ? 'Aviso' : response.message));
+                                TimesheetModals.warning(response.message, 'Submissão não realizada');
                                 $btn.prop('disabled', false);
                                 setTimeout(function() { $saveIndicator.html(''); }, 3000);
                             }
@@ -540,16 +565,31 @@ $(document).ready(function() {
         console.log('🔍 [SUBMIT-BTN] Verificando visibilidade. Linhas encontradas:', hasEntries, 'Total:', $('#timesheet-entries tr').length);
         
         if (hasEntries) {
-            // Remover qualquer estilo inline conflitante e forçar exibição
-            $submitBtn.removeAttr('style').css({
-                'display': 'inline-block',
-                'visibility': 'visible',
-                'opacity': '1'
-            }).show();
-            console.log('✅ [SUBMIT-BTN] Botão de submissão EXIBIDO (forçado com CSS)');
+            // Verificar se há tarefas editáveis (não aprovadas/pendentes)
+            var hasEditableEntries = false;
+            $('#timesheet-entries tr').each(function() {
+                var $inputs = $(this).find('.hours-input:not(:disabled)');
+                if ($inputs.length > 0) {
+                    hasEditableEntries = true;
+                    return false; // break do loop
+                }
+            });
+
+            if (hasEditableEntries) {
+                // Remover qualquer estilo inline conflitante e forçar exibição
+                $submitBtn.removeAttr('style').css({
+                    'display': 'inline-block',
+                    'visibility': 'visible',
+                    'opacity': '1'
+                }).show();
+                console.log('✅ [SUBMIT-BTN] Botão de submissão EXIBIDO (há tarefas editáveis)');
+            } else {
+                $submitBtn.css('display', 'none').hide();
+                console.log('❌ [SUBMIT-BTN] Botão de submissão OCULTO (sem tarefas editáveis)');
+            }
         } else {
             $submitBtn.css('display', 'none').hide();
-            console.log('❌ [SUBMIT-BTN] Botão de submissão OCULTO');
+            console.log('❌ [SUBMIT-BTN] Botão de submissão OCULTO (sem entradas)');
         }
     }
 
