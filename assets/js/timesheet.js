@@ -75,11 +75,26 @@ $(document).ready(function() {
 
     // Adicionar à fila de salvamento
     function addToSaveQueue($input) {
-        var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
+        var $row = $input.closest('tr');
+        var taskId = $row.data('task-id');
+        var projectId = $row.data('project-id');
+
+        // VALIDAÇÃO: Só adicionar à fila se tiver atributos válidos
+        if (!taskId || !projectId) {
+            console.warn('⚠️ [QUEUE-ADD] Item rejeitado da fila - sem atributos válidos:', {
+                'task-id': taskId, 
+                'project-id': projectId,
+                'input-day': $input.data('day')
+            });
+            return;
+        }
+
+        var inputId = $input.data('input-id') || ($input.data('day') + '_' + taskId);
 
         // Remover duplicatas da fila (manter apenas a última alteração)
         saveQueue = saveQueue.filter(function(item) {
-            var itemId = item.data('input-id') || (item.data('day') + '_' + item.closest('tr').data('task-id'));
+            var itemTaskId = item.closest('tr').data('task-id');
+            var itemId = item.data('input-id') || (item.data('day') + '_' + itemTaskId);
             return itemId !== inputId;
         });
 
@@ -95,7 +110,21 @@ $(document).ready(function() {
     function saveAllPendingChanges() {
         $('.hours-input').each(function() {
             var $input = $(this);
-            var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
+            var $row = $input.closest('tr');
+            var taskId = $row.data('task-id');
+            var projectId = $row.data('project-id');
+
+            // VALIDAÇÃO: Só processar se tiver task-id e project-id válidos
+            if (!taskId || !projectId) {
+                console.warn('⚠️ [BACKUP-SAVE] Pulando campo sem atributos válidos:', {
+                    'task-id': taskId, 
+                    'project-id': projectId,
+                    'input-day': $input.data('day')
+                });
+                return; // Continue para o próximo
+            }
+
+            var inputId = $input.data('input-id') || ($input.data('day') + '_' + taskId);
 
             if (pendingChanges.has(inputId)) {
                 addToSaveQueue($input.clone());
@@ -106,14 +135,27 @@ $(document).ready(function() {
     // Auto-save melhorado com debounce de 1.5 segundos
     $(document).on('blur', '.hours-input', function() {
         var $input = $(this);
+        var $row = $input.closest('tr');
+        var taskId = $row.data('task-id');
+        var projectId = $row.data('project-id');
         var value = $input.val().trim();
 
         // Sempre formatar o valor, incluindo 0
         var formattedValue = formatHours(value);
         $input.val(formattedValue);
 
+        // VALIDAÇÃO: Só marcar como pendente se tiver atributos válidos
+        if (!taskId || !projectId) {
+            console.warn('⚠️ [AUTO-SAVE] Campo blur ignorado - sem atributos válidos:', {
+                'task-id': taskId, 
+                'project-id': projectId,
+                'input-day': $input.data('day')
+            });
+            return;
+        }
+
         // Marcar como alteração pendente
-        var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
+        var inputId = $input.data('input-id') || ($input.data('day') + '_' + taskId);
         pendingChanges.add(inputId);
 
         // Limpar timeout anterior e definir novo com 1.5 segundos
