@@ -56,7 +56,7 @@
                                 $banner_icon = 'fa-clock-o';
                                 $banner_message = '<strong>Em Aprovação:</strong> Suas tarefas pendentes estão aguardando avaliação.';
                             }
-                            
+
                             // Verifica se existem tarefas em rascunho (não aprovadas e não pendentes)
                             if ($status_info->total_tasks > ($status_info->approved_tasks + $status_info->pending_tasks)) {
                                 $has_editable_tasks = true;
@@ -121,8 +121,8 @@
                                         </td>
                                         <?php for ($day = 1; $day <= 7; $day++): ?>
                                         <td class="text-center">
-                                            <input type="text" 
-                                                   class="form-control hours-input text-center" 
+                                            <input type="text"
+                                                   class="form-control hours-input text-center"
                                                    data-day="<?php echo $day; ?>"
                                                    value="<?php echo ($entry['days'][$day]['hours'] > 0) ? str_replace('.', ',', $entry['days'][$day]['hours']) : ''; ?>"
                                                    placeholder="0,00"
@@ -155,13 +155,13 @@
                         <div class="row m-t-20">
                             <div class="col-md-12 text-right">
                                 <span id="save-indicator" class="text-muted" style="margin-right: 15px; font-style: italic;"></span>
-                                
+
                                 <?php if ($status_info && $status_info->pending_tasks > 0) : ?>
                                     <button type="button" class="btn btn-warning" id="cancel-submission">
                                         <i class="fa fa-undo"></i> Retirar Tarefas Pendentes
                                     </button>
                                 <?php endif; ?>
-                                
+
                                 <?php if ($has_editable_tasks) : ?>
                                     <button type="button" class="btn btn-success" id="submit-timesheet">
                                         <i class="fa fa-paper-plane"></i> Submeter para Aprovação
@@ -244,6 +244,3 @@ var timesheet_lang = {
 <script src="<?php echo module_dir_url('timesheet', 'assets/js/timesheet_modals.js'); ?>"></script>
 </body>
 </html>
-```
-
-Com essas duas correções, o fluxo de aprovação parcial ficará completo e robusto. O usuário poderá editar e reenviar as tarefas que voltaram para rascunho sem ser bloqueado pelas tarefas já aprovad
