@@ -32,11 +32,6 @@
                                             <?php echo _l('timesheet_next_week'); ?> <i class="fa fa-chevron-right"></i>
                                         </a>
                                     </div>
-                                    <div class="mt-2">
-                                        <a href="<?php echo admin_url('timesheet/manage_weekly'); ?>" class="btn btn-sm btn-success">
-                                            <i class="fa fa-calendar"></i> <?php echo _l('timesheet_current_week'); ?>
-                                        </a>
-                                    </div>
                                 </div>
                             </div>
                         </div>

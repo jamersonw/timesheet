@@ -38,18 +38,29 @@ class Timesheet_model extends App_Model
 
     /**
      * Get timesheet entries for a staff member and week, grouped by project/task.
-     * (CORRIGIDO COM FILTRO DE GERENTE)
+     * ATUALIZADO: Agora inclui o status individual de cada tarefa (aprovado, pendente, rejeitado).
      */
     public function get_week_entries_grouped($staff_id, $week_start_date, $manager_id = null)
     {
-        $this->db->select('te.*, p.name as project_name, t.name as task_name');
+        $this->db->select('
+            te.*, 
+            p.name as project_name, 
+            t.name as task_name,
+            ta.status as approval_status,
+            ta.rejection_reason
+        ');
         $this->db->from(db_prefix() . 'timesheet_entries te');
         $this->db->join(db_prefix() . 'projects p', 'p.id = te.project_id', 'left');
         $this->db->join(db_prefix() . 'tasks t', 't.id = te.task_id', 'left');
+        
+        // Faz o JOIN com a tabela de aprovações para buscar o status de cada tarefa
+        $this->db->join(db_prefix() . 'timesheet_approvals ta', 
+            'ta.staff_id = te.staff_id AND ta.week_start_date = te.week_start_date AND ta.task_id = te.task_id', 
+            'left');
+
         $this->db->where('te.staff_id', $staff_id);
         $this->db->where('te.week_start_date', $week_start_date);
 
-        // LÓGICA DE FILTRO ADICIONADA
         if ($manager_id && !is_admin($manager_id)) {
             $this->db->join(db_prefix() . 'project_members pm', 'pm.project_id = te.project_id');
             $this->db->where('pm.staff_id', $manager_id);
@@ -66,6 +77,8 @@ class Timesheet_model extends App_Model
                     'project_name' => $entry->project_name,
                     'task_id'      => $entry->task_id,
                     'task_name'    => $entry->task_name,
+                    'status'       => $entry->approval_status ?: 'draft', // Se não houver aprovação, é rascunho
+                    'rejection_reason' => $entry->rejection_reason,
                     'days'         => array_fill(1, 7, ['hours' => 0]),
                     'total_hours'  => 0,
                 ];
@@ -75,7 +88,26 @@ class Timesheet_model extends App_Model
         }
         return array_values($grouped);
     }
+    
+/**
+     * Checks if a specific task can be edited for a given week and staff.
+     * @param  int $staff_id
+     * @param  string $week_start_date
+     * @param  int $task_id
+     * @return bool
+     */
+    public function can_edit_task($staff_id, $week_start_date, $task_id)
+    {
+        $this->db->where('staff_id', $staff_id);
+        $this->db->where('week_start_date', $week_start_date);
+        $this->db->where('task_id', $task_id);
+        $this->db->where_in('status', ['pending', 'approved']);
+        $approval = $this->db->get(db_prefix() . 'timesheet_approvals')->row();
 
+        // Se encontrar um registro de aprovação 'pendente' ou 'aprovado', não pode editar.
+        return !$approval;
+    }
+    
     /**
      * Função de debug para listar todos os timers do Perfex
      */
@@ -132,110 +164,93 @@ class Timesheet_model extends App_Model
         return true;
     }
 
-    /**
+/**
      * Submit a week's timesheet for approval.
-     * VERSÃO 2.0: Cria uma aprovação separada para cada tarefa
+     * ATUALIZADO: Submete apenas tarefas em rascunho ou rejeitadas.
      */
     public function submit_week($staff_id, $week_start_date)
     {
-        try {
-            // Atualizar status das entradas para 'submitted'
-            $this->db->where('staff_id', $staff_id);
-            $this->db->where('week_start_date', $week_start_date);
-            $this->db->update(db_prefix() . 'timesheet_entries', ['status' => 'submitted']);
+        // 1. Encontra todas as tarefas que estão em um estado "submetível"
+        $this->db->select('DISTINCT(task_id) as task_id, project_id');
+        $this->db->from(db_prefix() . 'timesheet_entries');
+        $this->db->where('staff_id', $staff_id);
+        $this->db->where('week_start_date', $week_start_date);
+        $this->db->where('hours >', 0);
+        $this->db->where('task_id IS NOT NULL');
+        // Apenas tarefas sem um status de aprovação ou que foram rejeitadas
+        $this->db->where("task_id NOT IN (SELECT task_id FROM " . db_prefix() . "timesheet_approvals WHERE staff_id = $staff_id AND week_start_date = '$week_start_date' AND status IN ('pending', 'approved'))");
+        $tasks_to_submit = $this->db->get()->result();
 
-            // Buscar todas as tarefas únicas da semana com horas > 0
-            $this->db->select('project_id, task_id');
-            $this->db->distinct();
-            $this->db->where('staff_id', $staff_id);
-            $this->db->where('week_start_date', $week_start_date);
-            $this->db->where('hours >', 0);
-            $this->db->where('task_id IS NOT NULL');
-            $tasks = $this->db->get(db_prefix() . 'timesheet_entries')->result();
-
-            if (empty($tasks)) {
-                log_activity('[Timesheet Submit] Nenhuma tarefa com horas encontrada para staff ' . $staff_id . ' na semana ' . $week_start_date);
-                return false;
-            }
-
-            $approvals_created = 0;
-            $submitted_at = date('Y-m-d H:i:s');
-
-            foreach ($tasks as $task) {
-                $approval_data = [
-                    'staff_id'        => $staff_id,
-                    'project_id'      => $task->project_id,
-                    'task_id'         => $task->task_id,
-                    'week_start_date' => $week_start_date,
-                    'status'          => 'pending',
-                    'submitted_at'    => $submitted_at,
-                ];
-
-                // Usar INSERT ... ON DUPLICATE KEY UPDATE para lidar com constraint única
-                $query = "INSERT INTO `" . db_prefix() . "timesheet_approvals` 
-                         (`staff_id`, `project_id`, `task_id`, `week_start_date`, `status`, `submitted_at`) 
-                         VALUES (?, ?, ?, ?, ?, ?) 
-                         ON DUPLICATE KEY UPDATE 
-                         `status` = VALUES(`status`), 
-                         `submitted_at` = VALUES(`submitted_at`)";
-
-                try {
-                    if ($this->db->query($query, [
-                        $staff_id,
-                        $task->project_id,
-                        $task->task_id,
-                        $week_start_date,
-                        'pending',
-                        $submitted_at
-                    ])) {
-                        $approvals_created++;
-                        log_activity('[Timesheet Submit] Aprovação processada - Task ID: ' . $task->task_id . ', Staff: ' . $staff_id);
-                    }
-                } catch (Exception $e) {
-                    log_activity('[Timesheet Submit ERROR] Erro ao processar tarefa ' . $task->task_id . ': ' . $e->getMessage());
-                    continue;
-                }
-            }
-
-            log_activity('[Timesheet Submit] ' . $approvals_created . ' aprovações criadas/atualizadas para staff ' . $staff_id . ' na semana ' . $week_start_date);
-            return $approvals_created > 0;
-
-        } catch (Exception $e) {
-            log_activity('[Timesheet Submit ERROR] Erro ao submeter semana: ' . $e->getMessage());
-            return false;
+        if (empty($tasks_to_submit)) {
+            log_activity('[Timesheet Submit] Nenhuma tarefa nova ou corrigida para submeter.');
+            return true; // Retorna sucesso pois não há nada a fazer
         }
-    }
 
+        $task_ids_to_submit = array_column($tasks_to_submit, 'task_id');
+
+        // 2. Atualiza o status APENAS das entradas submetíveis para 'submitted'
+        $this->db->where('staff_id', $staff_id);
+        $this->db->where('week_start_date', $week_start_date);
+        $this->db->where_in('task_id', $task_ids_to_submit);
+        $this->db->update(db_prefix() . 'timesheet_entries', ['status' => 'submitted']);
+
+        // 3. Cria ou atualiza os registros de aprovação para 'pending'
+        $submitted_at = date('Y-m-d H:i:s');
+        $approvals_processed = 0;
+        foreach ($tasks_to_submit as $task) {
+            $query = "INSERT INTO `" . db_prefix() . "timesheet_approvals` 
+                     (`staff_id`, `project_id`, `task_id`, `week_start_date`, `status`, `submitted_at`) 
+                     VALUES (?, ?, ?, ?, ?, ?) 
+                     ON DUPLICATE KEY UPDATE 
+                     `status` = VALUES(`status`), 
+                     `submitted_at` = VALUES(`submitted_at`),
+                     `rejection_reason` = NULL"; // Limpa a razão da rejeição ao resubmeter
+
+            if ($this->db->query($query, [$staff_id, $task->project_id, $task->task_id, $week_start_date, 'pending', $submitted_at])) {
+                $approvals_processed++;
+            }
+        }
+
+        log_activity('[Timesheet Submit] ' . $approvals_processed . ' aprovações criadas/atualizadas para staff ' . $staff_id);
+        return true;
+    }
+    
     /**
      * Cancel a week's submission, returning it to draft status.
-     * VERSÃO 2.0: Cancela TODAS as aprovações da semana
+     * ATUALIZADO: Cancela APENAS as aprovações PENDENTES da semana.
      */
     public function cancel_week_submission($staff_id, $week_start_date)
     {
         try {
-            // Buscar todas as aprovações pendentes da semana
+            // Buscar todas as aprovações PENDENTES da semana
             $this->db->where('staff_id', $staff_id);
             $this->db->where('week_start_date', $week_start_date);
             $this->db->where('status', 'pending');
-            $approvals = $this->db->get(db_prefix() . 'timesheet_approvals')->result();
+            $approvals_to_cancel = $this->db->get(db_prefix() . 'timesheet_approvals')->result();
 
-            if (empty($approvals)) {
-                log_activity('[Timesheet Cancel] Nenhuma aprovação pendente encontrada para cancelar - Staff: ' . $staff_id . ', Semana: ' . $week_start_date);
+            if (empty($approvals_to_cancel)) {
+                log_activity('[Timesheet Cancel] Nenhuma aprovação pendente encontrada para cancelar.');
                 return false;
             }
 
-            // Atualizar status das entradas para 'draft'
+            $task_ids_to_revert = [];
+            $approval_ids_to_delete = [];
+            foreach($approvals_to_cancel as $approval){
+                $task_ids_to_revert[] = $approval->task_id;
+                $approval_ids_to_delete[] = $approval->id;
+            }
+
+            // Atualizar status das entradas APENAS das tarefas que estavam pendentes para 'draft'
             $this->db->where('staff_id', $staff_id);
             $this->db->where('week_start_date', $week_start_date);
+            $this->db->where_in('task_id', $task_ids_to_revert);
             $this->db->update(db_prefix() . 'timesheet_entries', ['status' => 'draft']);
 
-            // Deletar todas as aprovações pendentes da semana
-            $this->db->where('staff_id', $staff_id);
-            $this->db->where('week_start_date', $week_start_date);
-            $this->db->where('status', 'pending');
+            // Deletar os registros de aprovação que estavam pendentes
+            $this->db->where_in('id', $approval_ids_to_delete);
             $this->db->delete(db_prefix() . 'timesheet_approvals');
 
-            log_activity('[Timesheet Cancel] Canceladas ' . count($approvals) . ' aprovações para staff ' . $staff_id . ' na semana ' . $week_start_date);
+            log_activity('[Timesheet Cancel] Canceladas ' . count($approval_ids_to_delete) . ' aprovações pendentes para staff ' . $staff_id);
             return true;
 
         } catch (Exception $e) {
@@ -246,20 +261,27 @@ class Timesheet_model extends App_Model
 
     /**
      * Get the approval status for a specific week and staff member.
-     * VERSÃO 2.0: Retorna status consolidado de todas as tarefas da semana
+     * ATUALIZADO: Calcula o total de tarefas a partir das entradas para lidar com status misto.
      */
     public function get_week_approval_status($staff_id, $week_start_date)
     {
-        // Buscar todas as aprovações da semana
+        // Primeiro, contamos o total de tarefas únicas que tiveram horas apontadas na semana
+        $this->db->select('COUNT(DISTINCT(task_id)) as total_tasks');
+        $this->db->where('staff_id', $staff_id);
+        $this->db->where('week_start_date', $week_start_date);
+        $this->db->where('hours >', 0);
+        $entries_summary = $this->db->get(db_prefix() . 'timesheet_entries')->row();
+        $total_tasks_from_entries = ($entries_summary) ? (int)$entries_summary->total_tasks : 0;
+
+        // Agora, buscamos os status da tabela de aprovações
         $this->db->where('staff_id', $staff_id);
         $this->db->where('week_start_date', $week_start_date);
         $approvals = $this->db->get(db_prefix() . 'timesheet_approvals')->result();
 
-        if (empty($approvals)) {
-            return null; // Nenhuma aprovação encontrada
+        if ($total_tasks_from_entries == 0 && empty($approvals)) {
+            return null; // Nenhuma atividade na semana
         }
 
-        // Contar status diferentes
         $pending_count = 0;
         $approved_count = 0;
         $rejected_count = 0;
@@ -268,12 +290,8 @@ class Timesheet_model extends App_Model
 
         foreach ($approvals as $approval) {
             switch ($approval->status) {
-                case 'pending':
-                    $pending_count++;
-                    break;
-                case 'approved':
-                    $approved_count++;
-                    break;
+                case 'pending': $pending_count++; break;
+                case 'approved': $approved_count++; break;
                 case 'rejected':
                     $rejected_count++;
                     if (!empty($approval->rejection_reason)) {
@@ -281,37 +299,27 @@ class Timesheet_model extends App_Model
                     }
                     break;
             }
-
-            // Manter o timestamp da submissão mais recente
-            if (!$latest_submission || $approval->submitted_at > $latest_submission) {
+            if (!$latest_submission || (isset($approval->submitted_at) && $approval->submitted_at > $latest_submission)) {
                 $latest_submission = $approval->submitted_at;
             }
         }
 
-        // Determinar status consolidado
-        $consolidated_status = 'pending'; // Default
-
+        $consolidated_status = 'draft'; // Default status
         if ($rejected_count > 0) {
-            // Se qualquer tarefa foi rejeitada, status geral é rejeitado
             $consolidated_status = 'rejected';
+        } elseif ($pending_count > 0 && $approved_count > 0) {
+            $consolidated_status = 'mixed'; // Status misto
         } elseif ($pending_count > 0) {
-            // Se há tarefas pendentes, status geral é pendente
             $consolidated_status = 'pending';
-        } elseif ($approved_count > 0 && $pending_count == 0 && $rejected_count == 0) {
-            // Se todas estão aprovadas, status geral é aprovado
+        } elseif ($approved_count > 0 && $approved_count == $total_tasks_from_entries) {
             $consolidated_status = 'approved';
         }
 
-        // Retornar objeto simulando a estrutura antiga
         return (object) [
-            'id' => $approvals[0]->id, // ID da primeira aprovação (compatibilidade)
-            'staff_id' => $staff_id,
-            'week_start_date' => $week_start_date,
             'status' => $consolidated_status,
             'submitted_at' => $latest_submission,
             'rejection_reason' => implode('; ', array_unique($rejection_reasons)),
-            // Novos campos para informações detalhadas
-            'total_tasks' => count($approvals),
+            'total_tasks' => $total_tasks_from_entries,
             'pending_tasks' => $pending_count,
             'approved_tasks' => $approved_count,
             'rejected_tasks' => $rejected_count

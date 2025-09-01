@@ -219,7 +219,7 @@ $(document).ready(function() {
             var totalInputs = 0;
             var processedInputs = 0;
 
-            $('.hours-input').each(function() {
+            $('.hours-input:not(:disabled)').each(function() {
                 var $input = $(this);
                 var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
                 totalInputs++;

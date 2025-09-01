@@ -59,9 +59,9 @@ class Timesheet extends AdminController
         $tasks = timesheet_get_staff_project_tasks(get_staff_user_id(), $project_id);
         echo json_encode($tasks);
     }
-
+    
     /**
-     * Save timesheet entry via AJAX
+     * Save timesheet entry via AJAX (CORRIGIDO com verificação por tarefa)
      */
     public function save_entry()
     {
@@ -77,12 +77,13 @@ class Timesheet extends AdminController
         $hours = (float)$this->input->post('hours');
 
         if (empty($task_id) || !is_numeric($task_id)) {
-            // Se não há tarefa selecionada, retornar sucesso sem salvar
             echo json_encode(['success' => true, 'message' => 'Nenhuma tarefa selecionada para salvar']);
             return;
         }
-        if (!$this->timesheet_model->can_edit_week($staff_id, $week_start)) {
-            echo json_encode(['success' => false, 'message' => _l('timesheet_cannot_edit_approved')]);
+        
+        // ** A CORREÇÃO ESTÁ AQUI: Usando a nova verificação por tarefa **
+        if (!$this->timesheet_model->can_edit_task($staff_id, $week_start, $task_id)) {
+            echo json_encode(['success' => false, 'message' => 'Não é possível editar uma tarefa que está pendente ou já foi aprovada.']);
             return;
         }
 
@@ -104,7 +105,7 @@ class Timesheet extends AdminController
     }
 
 
-  /**
+    /**
      * Submit week for approval
      */
     public function submit_week()
@@ -240,14 +241,13 @@ class Timesheet extends AdminController
         ]);
     }
 
-
-
     /**
      * Get week total hours via AJAX for manager view
      */
     public function get_week_total()
     {
-        if (!has_permission('timesheet', '', 'view') && !has_permission('timesheet', '', 'approve') && !is_admin()) {
+        $manager_id = get_staff_user_id(); // Identifica o gerente logado
+        if (!has_permission('timesheet', '', 'approve') && !is_admin($manager_id) && !timesheet_can_manage_any_project($manager_id)) {
             log_activity('[Weekly AJAX ERROR] Acesso negado ao get_week_total');
             echo json_encode(['success' => false, 'message' => 'Access denied']);
             return;
@@ -259,7 +259,8 @@ class Timesheet extends AdminController
         log_activity('[Weekly AJAX Debug] get_week_total - Staff ID: ' . $staff_id . ', Week: ' . $week_start_date);
 
         try {
-            $total_hours = $this->timesheet_model->get_week_total_hours($staff_id, $week_start_date);
+            // Passa o ID do gerente para o Model para filtrar o cálculo
+            $total_hours = $this->timesheet_model->get_week_total_hours($staff_id, $week_start_date, $manager_id);
             log_activity('[Weekly AJAX Debug] Total de horas calculado: ' . $total_hours);
             echo json_encode(['success' => true, 'total_hours' => $total_hours]);
         } catch (Exception $e) {
