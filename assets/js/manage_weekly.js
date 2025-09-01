@@ -1,10 +1,7 @@
 $(document).ready(function () {
     var selectedTasks = []; // Array para armazenar IDs das tarefas selecionadas
 
-    // Debug inicial
-    console.log("[Weekly JS Debug] Manage Weekly carregado e pronto.");
     if (typeof manage_weekly_data === "undefined" || !manage_weekly_data.weekly_approvals) {
-        console.error("[Weekly JS Debug] ERRO: Dados da página (manage_weekly_data) não foram carregados corretamente.");
         alert("ERRO: Dados da página não foram carregados. Verifique os logs do servidor.");
         return;
     }
@@ -83,7 +80,6 @@ $(document).ready(function () {
         $(".task-checkbox:checked").each(function () {
             selectedTasks.push($(this).val());
         });
-        console.log("[Batch Selection] Tarefas selecionadas:", selectedTasks);
 
         var totalSelectedCount = selectedTasks.length;
         var totalCheckboxesAvailable = $('.task-checkbox:enabled').length;

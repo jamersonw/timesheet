@@ -207,40 +207,12 @@
 </div>
 
 <script>
-console.log('[Weekly View] ===== CARREGANDO TELA SEMANAL =====');
-console.log('[Weekly View] PHP - Week start:', '<?php echo $week_start; ?>');
-console.log('[Weekly View] PHP - Week end:', '<?php echo $week_end; ?>');
-console.log('[Weekly View] PHP - Title:', '<?php echo $title; ?>');
-console.log('[Weekly View] PHP - Weekly approvals count:', <?php echo count($weekly_approvals); ?>);
-
-<?php if (!empty($weekly_approvals)): ?>
-console.log('[Weekly View] PHP - Primeira aprovação:', <?php echo json_encode($weekly_approvals[0]); ?>);
-<?php endif; ?>
-
-try {
-    var manage_weekly_data = {
-        admin_url: '<?php echo admin_url(); ?>',
-        weekly_approvals: <?php echo json_encode($weekly_approvals); ?>,
-        week_start: '<?php echo $week_start; ?>',
-        week_dates: <?php echo json_encode($week_dates); ?>
-    };
-
-    console.log('[Weekly View] ✅ manage_weekly_data criado com sucesso:');
-    console.log('[Weekly View] - admin_url:', manage_weekly_data.admin_url);
-    console.log('[Weekly View] - weekly_approvals count:', manage_weekly_data.weekly_approvals.length);
-    console.log('[Weekly View] - week_start:', manage_weekly_data.week_start);
-    console.log('[Weekly View] - week_dates:', manage_weekly_data.week_dates);
-
-    if (manage_weekly_data.weekly_approvals.length > 0) {
-        console.log('[Weekly View] Primeira aprovação no JS:', manage_weekly_data.weekly_approvals[0]);
-    }
-
-} catch (error) {
-    console.error('[Weekly View ERROR] Erro ao criar manage_weekly_data:', error);
-    console.error('[Weekly View ERROR] Stack trace:', error.stack);
-}
-
-console.log('[Weekly View] ===== FIM DO CARREGAMENTO =====');
+var manage_weekly_data = {
+    admin_url: '<?php echo admin_url(); ?>',
+    weekly_approvals: <?php echo json_encode($weekly_approvals); ?>,
+    week_start: '<?php echo $week_start; ?>',
+    week_dates: <?php echo json_encode($week_dates); ?>
+};
 
 // Correção para a mensagem de erro ao rejeitar tarefas
 document.addEventListener('DOMContentLoaded', function() {

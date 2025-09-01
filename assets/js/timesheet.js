@@ -24,7 +24,6 @@ $(document).ready(function() {
     function initBackupSave() {
         backupSaveInterval = setInterval(function() {
             if (pendingChanges.size > 0) {
-                console.log('🔄 [BACKUP-SAVE] Executando salvamento de backup para', pendingChanges.size, 'campos pendentes');
                 saveAllPendingChanges();
             }
         }, 30000); // 30 segundos
@@ -54,8 +53,8 @@ $(document).ready(function() {
             } else {
                 isProcessingQueue = false;
                 $saveIndicator.html('<i class="fa fa-check text-success"></i> Tudo salvo');
-                setTimeout(function() { 
-                    if (saveQueue.length === 0) $saveIndicator.html(''); 
+                setTimeout(function() {
+                    if (saveQueue.length === 0) $saveIndicator.html('');
                 }, 2500);
             }
         }).catch(function(error) {
@@ -117,7 +116,6 @@ $(document).ready(function() {
         var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
         pendingChanges.add(inputId);
 
-        // Salvar IMEDIATAMENTE quando o campo perde o foco
         console.log('🎯 [BLUR-SAVE] Salvamento imediato no blur do campo dia:', $input.data('day'));
         addToSaveQueue($input);
     });
@@ -143,13 +141,13 @@ $(document).ready(function() {
     // ================== FUNÇÃO SAVEENTRY COM LOGS DETALHADOS ==================
     function saveEntry($input) {
         var $row = $input.closest('tr');
-        
+
         // Validar se encontrou a linha da tabela
         if (!$row.length) {
             console.error("❌ [SAVE-ENTRY] Elemento TR não encontrado para o input:", $input[0]);
             return Promise.resolve({ success: true, message: 'Elemento da tabela não encontrado' });
         }
-        
+
         var taskId = $row.data('task-id');
         var projectId = $row.data('project-id');
 
@@ -163,9 +161,9 @@ $(document).ready(function() {
             } catch (e) {
                 rowInfo = 'Erro ao acessar HTML da linha: ' + e.message;
             }
-            
-            console.warn("⚠️ [SAVE-ENTRY] Salvamento abortado: task-id ou project-id não encontrado na linha da tabela (TR).", { 
-                'task-id': taskId, 
+
+            console.warn("⚠️ [SAVE-ENTRY] Salvamento abortado: task-id ou project-id não encontrado na linha da tabela (TR).", {
+                'task-id': taskId,
                 'project-id': projectId,
                 'row-html': rowInfo,
                 'input-day': $input.data('day'),
@@ -318,7 +316,7 @@ $(document).ready(function() {
             return;
         }
 
-        $btn.prop('disabled', true); 
+        $btn.prop('disabled', true);
 
         // Executar salvamento forçado antes da submissão
         console.log('🚀 [SUBMIT] Iniciando salvamento forçado antes da submissão');
@@ -369,14 +367,14 @@ $(document).ready(function() {
                             if (response.success) {
                                 $saveIndicator.html('<i class="fa fa-check text-success"></i> Enviado com sucesso!');
                                 TimesheetModals.notify('success', response.message);
-                                
+
                                 // Se há tarefas submetidas, recarregar a página
                                 if (response.tasks_submitted && response.tasks_submitted > 0) {
                                     setTimeout(function(){ location.reload(); }, 1500);
                                 } else {
                                     // Se não há tarefas novas, apenas esconder o indicador
-                                    setTimeout(function() { 
-                                        $saveIndicator.html(''); 
+                                    setTimeout(function() {
+                                        $saveIndicator.html('');
                                         $btn.prop('disabled', false);
                                     }, 2000);
                                 }
@@ -477,7 +475,7 @@ $(document).ready(function() {
         for (var i = 1; i <= 7; i++) {
             row_html += '<td class="text-center"><input type="text" class="form-control hours-input text-center" data-day="'+i+'" data-input-id="'+taskId+'_'+i+'" placeholder="0,00"></td>';
         }
-        row_html += '<td class="text-center total-hours"><strong>0,00</strong></td>' + 
+        row_html += '<td class="text-center total-hours"><strong>0,00</strong></td>' +
                     '<td class="text-center"><button type="button" class="btn btn-danger btn-xs remove-row"><i class="fa fa-trash"></i></button></td>' +
                     '</tr>';
 
@@ -495,16 +493,16 @@ $(document).ready(function() {
 
         // Verificar se deve mostrar o botão de submissão IMEDIATAMENTE
         checkSubmitButtonVisibility();
-        
+
         // Forçar múltiplas verificações para garantir que o botão apareça
         setTimeout(function() {
             checkSubmitButtonVisibility();
         }, 50);
-        
+
         setTimeout(function() {
             checkSubmitButtonVisibility();
         }, 200);
-        
+
         setTimeout(function() {
             checkSubmitButtonVisibility();
         }, 500);
@@ -516,7 +514,7 @@ $(document).ready(function() {
         var $row = $(this).closest('tr');
         var projectId = $row.data('project-id');
         var taskId = $row.data('task-id');
-        
+
         TimesheetModals.confirm({
             title: 'Remover Linha',
             message: 'Tem certeza que deseja remover esta linha? Todas as horas lançadas nela serão perdidas.',
@@ -529,14 +527,14 @@ $(document).ready(function() {
                 // Se tem IDs válidos, fazer chamada AJAX para deletar do banco
                 if (projectId && taskId) {
                     $saveIndicator.html('<i class="fa fa-spinner fa-spin text-warning"></i> Removendo...');
-                    
+
                     var data = {
                         project_id: projectId,
                         task_id: taskId,
                         week_start: timesheet_data.week_start
                     };
                     data[csrfData.token_name] = csrfData.hash;
-                    
+
                     $.post(timesheet_data.admin_url + 'timesheet/remove_task_entries', data)
                     .done(function(response) {
                         try {
@@ -547,7 +545,7 @@ $(document).ready(function() {
                             $saveIndicator.html('');
                             return;
                         }
-                        
+
                         if (response.success) {
                             $saveIndicator.html('<i class="fa fa-check text-success"></i> Removido do banco');
                             $row.remove();
@@ -609,9 +607,9 @@ $(document).ready(function() {
     function checkSubmitButtonVisibility() {
         var hasEntries = $('#timesheet-entries tr').length > 0;
         var $submitBtn = $('#submit-timesheet');
-        
+
         console.log('🔍 [SUBMIT-BTN] Verificando visibilidade. Linhas encontradas:', hasEntries, 'Total:', $('#timesheet-entries tr').length);
-        
+
         if (hasEntries) {
             // Verificar se há tarefas editáveis (não aprovadas/pendentes)
             var hasEditableEntries = false;
@@ -643,28 +641,28 @@ $(document).ready(function() {
 
     // Verificar visibilidade inicial do botão
     checkSubmitButtonVisibility();
-    
+
     // Verificar novamente após o carregamento completo da página (múltiplas tentativas)
     setTimeout(function() {
         console.log('🔄 [SUBMIT-BTN] Verificação adicional após carregamento (1ª)');
         checkSubmitButtonVisibility();
     }, 100);
-    
+
     setTimeout(function() {
         console.log('🔄 [SUBMIT-BTN] Verificação adicional após carregamento (2ª)');
         checkSubmitButtonVisibility();
     }, 500);
-    
+
     setTimeout(function() {
         console.log('🔄 [SUBMIT-BTN] Verificação adicional após carregamento (3ª)');
         checkSubmitButtonVisibility();
     }, 1000);
-    
+
     // Verificação final mais agressiva se o botão ainda não estiver visível
     setTimeout(function() {
         var $submitBtn = $('#submit-timesheet');
         var hasEntries = $('#timesheet-entries tr').length > 0;
-        
+
         if (hasEntries && (!$submitBtn.is(':visible') || $submitBtn.css('display') === 'none')) {
             console.log('🚨 [SUBMIT-BTN] Botão não visível mesmo com linhas - FORÇANDO exibição');
             $submitBtn.attr('style', 'display: inline-block !important;');
