@@ -1,4 +1,3 @@
-
 <?php
 
 # Version 1.0.7
@@ -54,7 +53,7 @@ $lang['timesheet_invalid_hours'] = 'Invalid hours format';
 $lang['timesheet_project_required'] = 'Project is required';
 $lang['timesheet_task_required'] = 'Task is required. Please select a task.';
 $lang['timesheet_already_submitted'] = 'This week has already been submitted';
-$lang['timesheet_cannot_edit_approved'] = 'Cannot edit approved timesheet';
+$lang['timesheet_cannot_edit_approved'] = 'Cannot edit approved timesheets. Cancel approval first.';
 
 // Permissions
 $lang['timesheet_permission_view'] = 'View Timesheet (create own entries)';
@@ -124,8 +123,41 @@ $lang['task'] = 'Task';
 
 // Additional missing translations
 $lang['timesheet_week_navigation'] = 'Week Navigation';
-$lang['timesheet_loading'] = 'Loading';
-$lang['timesheet_error'] = 'Error';
-$lang['timesheet_success'] = 'Success';
-$lang['timesheet_warning'] = 'Warning';
-$lang['timesheet_info'] = 'Information';
+$lang['timesheet_previous_week'] = 'Previous Week';
+$lang['timesheet_next_week'] = 'Next Week';
+$lang['timesheet_current_week'] = 'Current Week';
+$lang['timesheet_weekly_approvals'] = 'Weekly Approvals';
+$lang['timesheet_quick_approvals'] = 'Quick Approvals';
+$lang['timesheet_select_all'] = 'Select All';
+$lang['timesheet_deselect_all'] = 'Deselect All';
+$lang['timesheet_selected_tasks'] = 'selected tasks';
+$lang['timesheet_approve_selected'] = 'Approve Selected';
+$lang['timesheet_reject_selected'] = 'Reject Selected';
+$lang['timesheet_no_tasks_selected'] = 'No tasks selected';
+$lang['timesheet_confirm_bulk_approval'] = 'Confirm bulk approval';
+$lang['timesheet_confirm_bulk_rejection'] = 'Confirm bulk rejection';
+$lang['timesheet_bulk_approval_success'] = 'Tasks approved successfully';
+$lang['timesheet_bulk_rejection_success'] = 'Tasks rejected successfully';
+$lang['timesheet_processing'] = 'Processing...';
+$lang['timesheet_saving'] = 'Saving...';
+$lang['timesheet_saved'] = 'Saved';
+$lang['timesheet_save_error'] = 'Save error';
+$lang['timesheet_auto_save'] = 'Auto save';
+$lang['timesheet_force_save'] = 'Force save';
+$lang['timesheet_backup_save'] = 'Backup save';
+$lang['timesheet_unsaved_changes'] = 'There are unsaved changes. Do you want to continue?';
+$lang['timesheet_pending_operations'] = 'There are pending operations. Please wait...';
+$lang['timesheet_debug_mode'] = 'Debug Mode';
+$lang['timesheet_test_connection'] = 'Connection Test';
+$lang['timesheet_database_ok'] = 'Database OK';
+$lang['timesheet_permissions_ok'] = 'Permissions OK';
+$lang['timesheet_module_status'] = 'Module Status';
+$lang['timesheet_version_check'] = 'Version Check';
+$lang['timesheet_table_exists'] = 'Table exists';
+$lang['timesheet_table_missing'] = 'Table not found';
+$lang['timesheet_installation_log'] = 'Installation Log';
+$lang['timesheet_activation_debug'] = 'Activation Debug';
+$lang['timesheet_sync_bidirectional'] = 'Bidirectional Sync';
+$lang['timesheet_timer_reference'] = 'Timer Reference';
+$lang['timesheet_unidirectional_mode'] = 'Unidirectional Mode';
+$lang['timesheet_readonly_board'] = 'Read-only Board';

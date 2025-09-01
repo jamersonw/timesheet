@@ -1,4 +1,3 @@
-
 <?php
 
 # Version 1.0.7
@@ -54,7 +53,7 @@ $lang['timesheet_invalid_hours'] = 'Formato de horas inválido';
 $lang['timesheet_project_required'] = 'Projeto é obrigatório';
 $lang['timesheet_task_required'] = 'Tarefa é obrigatória. Por favor, selecione uma tarefa.';
 $lang['timesheet_already_submitted'] = 'Esta semana já foi enviada';
-$lang['timesheet_cannot_edit_approved'] = 'Não é possível editar um timesheet já aprovado.';
+$lang['timesheet_cannot_edit_approved'] = 'Não é possível editar timesheets aprovados. Cancele a aprovação primeiro.';
 
 // Permissions
 $lang['timesheet_permission_view'] = 'Visualizar Timesheet (criar próprios lançamentos)';
@@ -131,9 +130,42 @@ $lang['timesheet_status_rejected_message'] = 'Este timesheet foi rejeitado e pod
 $lang['timesheet_rejection_reason'] = 'Motivo da rejeição';
 
 // Additional missing translations
-$lang['timesheet_week_navigation'] = 'Navegação da Semana';
-$lang['timesheet_loading'] = 'Carregando';
-$lang['timesheet_error'] = 'Erro';
-$lang['timesheet_success'] = 'Sucesso';
-$lang['timesheet_warning'] = 'Aviso';
-$lang['timesheet_info'] = 'Informação';
+$lang['timesheet_week_navigation'] = 'Navegação Semanal';
+$lang['timesheet_previous_week'] = 'Semana Anterior';
+$lang['timesheet_next_week'] = 'Próxima Semana';
+$lang['timesheet_current_week'] = 'Semana Atual';
+$lang['timesheet_weekly_approvals'] = 'Aprovações Semanais';
+$lang['timesheet_quick_approvals'] = 'Aprovações Rápidas';
+$lang['timesheet_select_all'] = 'Selecionar Todas';
+$lang['timesheet_deselect_all'] = 'Desmarcar Todas';
+$lang['timesheet_selected_tasks'] = 'tarefas selecionadas';
+$lang['timesheet_approve_selected'] = 'Aprovar Selecionadas';
+$lang['timesheet_reject_selected'] = 'Rejeitar Selecionadas';
+$lang['timesheet_no_tasks_selected'] = 'Nenhuma tarefa selecionada';
+$lang['timesheet_confirm_bulk_approval'] = 'Confirmar aprovação em lote';
+$lang['timesheet_confirm_bulk_rejection'] = 'Confirmar rejeição em lote';
+$lang['timesheet_bulk_approval_success'] = 'Tarefas aprovadas com sucesso';
+$lang['timesheet_bulk_rejection_success'] = 'Tarefas rejeitadas com sucesso';
+$lang['timesheet_processing'] = 'Processando...';
+$lang['timesheet_saving'] = 'Salvando...';
+$lang['timesheet_saved'] = 'Salvo';
+$lang['timesheet_save_error'] = 'Erro ao salvar';
+$lang['timesheet_auto_save'] = 'Salvamento automático';
+$lang['timesheet_force_save'] = 'Salvamento forçado';
+$lang['timesheet_backup_save'] = 'Salvamento de backup';
+$lang['timesheet_unsaved_changes'] = 'Há alterações não salvas. Deseja continuar?';
+$lang['timesheet_pending_operations'] = 'Há operações pendentes. Aguarde...';
+$lang['timesheet_debug_mode'] = 'Modo Debug';
+$lang['timesheet_test_connection'] = 'Teste de Conexão';
+$lang['timesheet_database_ok'] = 'Banco de dados OK';
+$lang['timesheet_permissions_ok'] = 'Permissões OK';
+$lang['timesheet_module_status'] = 'Status do Módulo';
+$lang['timesheet_version_check'] = 'Verificação de Versão';
+$lang['timesheet_table_exists'] = 'Tabela existe';
+$lang['timesheet_table_missing'] = 'Tabela não encontrada';
+$lang['timesheet_installation_log'] = 'Log de Instalação';
+$lang['timesheet_activation_debug'] = 'Debug de Ativação';
+$lang['timesheet_sync_bidirectional'] = 'Sincronização Bidirecional';
+$lang['timesheet_timer_reference'] = 'Referência de Timer';
+$lang['timesheet_unidirectional_mode'] = 'Modo Unidirecional';
+$lang['timesheet_readonly_board'] = 'Quadro Somente Leitura';
