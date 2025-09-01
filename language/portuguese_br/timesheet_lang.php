@@ -200,3 +200,9 @@ $lang['timesheet_sync_bidirectional'] = 'Sincronização Bidirecional';
 $lang['timesheet_timer_reference'] = 'Referência de Timer';
 $lang['timesheet_unidirectional_mode'] = 'Modo Unidirecional';
 $lang['timesheet_readonly_board'] = 'Quadro Somente Leitura';
+
+// Additional UI translations
+$lang['timesheet_pending_approval_count'] = 'aprovações pendentes';
+$lang['timesheet_submitted_on'] = 'Enviado em';
+$lang['timesheet_total_hours'] = 'Total de Horas';
+$lang['timesheet_to'] = 'até';
