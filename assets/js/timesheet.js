@@ -116,7 +116,6 @@ $(document).ready(function() {
         var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
         pendingChanges.add(inputId);
 
-        console.log('🎯 [BLUR-SAVE] Salvamento imediato no blur do campo dia:', $input.data('day'));
         addToSaveQueue($input);
     });
 
@@ -185,23 +184,17 @@ $(document).ready(function() {
             };
             data[csrfData.token_name] = csrfData.hash;
 
-            console.groupCollapsed("🔵 [SAVE-ENTRY] Tentando salvar para o dia: " + $input.data('day'));
-            console.log("➡️ Dados enviados via POST:", data);
-            console.log("➡️ URL:", timesheet_data.admin_url + 'timesheet/save_entry');
+            
 
             $.post(timesheet_data.admin_url + 'timesheet/save_entry', data)
             .done(function(response) {
                 try {
                     response = typeof response === 'string' ? JSON.parse(response) : response;
                 } catch (e) {
-                    console.error("❌ Falha ao parsear a resposta do servidor. Resposta bruta:", response);
                     $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro de Servidor!');
                     reject({ responseText: response });
-                    console.groupEnd();
                     return;
                 }
-
-                console.log("⬅️ Resposta do servidor recebida:", response);
 
                 if (response.success) {
                     $saveIndicator.html('<i class="fa fa-check text-success"></i> Salvo');
@@ -213,20 +206,12 @@ $(document).ready(function() {
                 }
                 setTimeout(function() { $saveIndicator.html(''); }, 2500);
                 updateTotals();
-                console.groupEnd();
             }).fail(function(jqXHR, textStatus, errorThrown) {
-                console.error("❌ Falha na requisição AJAX:");
-                console.error("Status Code:", jqXHR.status);
-                console.error("Status Text:", textStatus);
-                console.error("Error Thrown:", errorThrown);
-                console.error("Resposta Completa do Servidor:", jqXHR.responseText);
-
                 $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro de conexão');
                 setTimeout(function() { $saveIndicator.html(''); }, 2500);
 
                 TimesheetModals.notify('danger', 'Erro de conexão ou erro interno no servidor. Verifique o console.');
                 reject(jqXHR);
-                console.groupEnd();
             });
         });
     }
@@ -260,7 +245,6 @@ $(document).ready(function() {
                     return response;
                 }).catch(function(error) {
                     processedInputs++;
-                    console.error('❌ [FORCE-SAVE] Erro ao salvar entrada:', error);
                     return error;
                 });
 
@@ -319,7 +303,6 @@ $(document).ready(function() {
         $btn.prop('disabled', true);
 
         // Executar salvamento forçado antes da submissão
-        console.log('🚀 [SUBMIT] Iniciando salvamento forçado antes da submissão');
         saveAllEntries().then(function() {
             // Aguardar um momento para garantir que o servidor processou todas as alterações
             setTimeout(function() {
@@ -489,7 +472,6 @@ $(document).ready(function() {
             'visibility': 'visible !important',
             'opacity': '1 !important'
         }).show();
-        console.log('🚀 [ADD-PROJECT] Botão FORÇADO a aparecer após adicionar projeto');
 
         // Verificar se deve mostrar o botão de submissão IMEDIATAMENTE
         checkSubmitButtonVisibility();
@@ -552,7 +534,6 @@ $(document).ready(function() {
                             updateTotals();
                             checkSubmitButtonVisibility();
                             setTimeout(function() { $saveIndicator.html(''); }, 2000);
-                            console.log('✅ [REMOVE-TASK] Tarefa removida do banco:', taskId);
                         } else {
                             $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro ao remover');
                             TimesheetModals.notify('danger', response.message || 'Erro ao remover tarefa');
@@ -570,7 +551,6 @@ $(document).ready(function() {
                     $row.remove();
                     updateTotals();
                     checkSubmitButtonVisibility();
-                    console.log('🗑️ [REMOVE-TASK] Linha removida apenas da tela (não estava no banco)');
                 }
             }
         });
@@ -608,8 +588,6 @@ $(document).ready(function() {
         var hasEntries = $('#timesheet-entries tr').length > 0;
         var $submitBtn = $('#submit-timesheet');
 
-        console.log('🔍 [SUBMIT-BTN] Verificando visibilidade. Linhas encontradas:', hasEntries, 'Total:', $('#timesheet-entries tr').length);
-
         if (hasEntries) {
             // Verificar se há tarefas editáveis (não aprovadas/pendentes)
             var hasEditableEntries = false;
@@ -628,14 +606,11 @@ $(document).ready(function() {
                     'visibility': 'visible',
                     'opacity': '1'
                 }).show();
-                console.log('✅ [SUBMIT-BTN] Botão de submissão EXIBIDO (há tarefas editáveis)');
             } else {
                 $submitBtn.css('display', 'none').hide();
-                console.log('❌ [SUBMIT-BTN] Botão de submissão OCULTO (sem tarefas editáveis)');
             }
         } else {
             $submitBtn.css('display', 'none').hide();
-            console.log('❌ [SUBMIT-BTN] Botão de submissão OCULTO (sem entradas)');
         }
     }
 
@@ -644,17 +619,14 @@ $(document).ready(function() {
 
     // Verificar novamente após o carregamento completo da página (múltiplas tentativas)
     setTimeout(function() {
-        console.log('🔄 [SUBMIT-BTN] Verificação adicional após carregamento (1ª)');
         checkSubmitButtonVisibility();
     }, 100);
 
     setTimeout(function() {
-        console.log('🔄 [SUBMIT-BTN] Verificação adicional após carregamento (2ª)');
         checkSubmitButtonVisibility();
     }, 500);
 
     setTimeout(function() {
-        console.log('🔄 [SUBMIT-BTN] Verificação adicional após carregamento (3ª)');
         checkSubmitButtonVisibility();
     }, 1000);
 
@@ -664,7 +636,6 @@ $(document).ready(function() {
         var hasEntries = $('#timesheet-entries tr').length > 0;
 
         if (hasEntries && (!$submitBtn.is(':visible') || $submitBtn.css('display') === 'none')) {
-            console.log('🚨 [SUBMIT-BTN] Botão não visível mesmo com linhas - FORÇANDO exibição');
             $submitBtn.attr('style', 'display: inline-block !important;');
             $submitBtn.show();
         }
