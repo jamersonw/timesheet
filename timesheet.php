@@ -1,3 +1,4 @@
+
 <?php
 /**
  * Ensures that the module init file can't be accessed directly, only within the application.
@@ -13,7 +14,7 @@ Author: Perfex CRM Module Developer
 */
 
 define('TIMESHEET_MODULE_NAME', 'timesheet');
-define('TIMESHEET_MODULE_VERSION', '1.5.1');
+define('TIMESHEET_MODULE_VERSION', '1.5.2');
 
 /**
  * Register activation hook
@@ -24,7 +25,7 @@ function timesheet_activation_hook()
 {
     try {
         if (function_exists('log_activity')) {
-            log_activity('[Timesheet Activation] Iniciando hook de ativação do módulo v1.4.4');
+            log_activity('[Timesheet Activation] Iniciando hook de ativação do módulo v1.5.2');
         }
 
         $CI = &get_instance();
@@ -153,9 +154,6 @@ function timesheet_init_menu_and_permissions()
             'href'     => admin_url('timesheet/manage_weekly'),
             'position' => 3,
         ]);
-
-        // Aprovação Rápida – apenas para quem tem permissão "approve"
-        // Menu item 'Aprovações Rápidas' removido temporariamente
     }
 
     // 3) PERMISSÕES - Registrar apenas as duas permissões necessárias
@@ -198,14 +196,14 @@ function timesheet_load_admin_assets()
     }
 }
 
-// NOVO HOOK: Adiciona CSS customizado para esconder elementos
+/**
+ * Hook para esconder elementos nativos do timesheet e desabilitar timer para não-admins
+ */
 hooks()->add_action('app_admin_head', 'timesheet_hide_native_log_time_elements');
-
-// HOOK ADICIONAL: Bloquear timer globalmente para não-admins
 hooks()->add_action('app_admin_footer', 'timesheet_disable_timer_globally');
 
 /**
- * NOVA FUNÇÃO: Injeta CSS para esconder o botão e o formulário de apontamento manual de horas do projeto.
+ * Injeta CSS para esconder o botão e o formulário de apontamento manual de horas do projeto.
  * Também esconde botões de cronômetro e quadro de tempo para não-administradores.
  */
 function timesheet_hide_native_log_time_elements()
@@ -213,14 +211,14 @@ function timesheet_hide_native_log_time_elements()
     $CI = &get_instance();
     $current_staff_id = get_staff_user_id();
     
-    // Verificar se está em uma página de tarefa/projeto
-    $is_task_page = (strpos($CI->uri->uri_string(), 'tasks/view/') !== false || 
-                     strpos($CI->uri->uri_string(), 'projects/view/') !== false);
-    
     // Se for administrador, não aplicar restrições
     if (is_admin($current_staff_id)) {
         return;
     }
+    
+    // Verificar se está em uma página de tarefa/projeto
+    $is_task_page = (strpos($CI->uri->uri_string(), 'tasks/view/') !== false || 
+                     strpos($CI->uri->uri_string(), 'projects/view/') !== false);
     
     // CSS para esconder elementos do timesheet nativo + cronômetro
     echo '<style type="text/css">
@@ -229,6 +227,8 @@ function timesheet_hide_native_log_time_elements()
         .project-overview-task-timer,
         .task-timer-wrapper,
         .task-single-log-time-form,
+        #timesheet-entry,
+        a[onclick="new_timesheet();return false;"],
         
         /* Esconder botões de cronômetro */
         a[onclick*="timer_action"],
@@ -347,71 +347,8 @@ function timesheet_disable_timer_globally()
     </script>';
 }
 
-function timesheet_hide_native_log_time_elements()
-{
-    // A verificação esconde os elementos apenas se o usuário NÃO for admin.
-    if (!is_admin()) {
-        $CI = &get_instance();
-        // Verifica se estamos na página de um projeto específico para aplicar o CSS
-        if ($CI->uri->segment(1) == 'admin' && $CI->uri->segment(2) == 'projects' && $CI->uri->segment(3) == 'view') {
-            echo '<style>
-                /* * ALTERAÇÃO: O seletor foi atualizado para ser mais específico,
-                 * usando o atributo onclick, conforme confirmado na inspeção.
-                 */
-                a[onclick="new_timesheet();return false;"] {
-                    display: none !important;
-                }
-
-                /* Esconde a seção inteira de entrada manual de tempo para garantir */
-                #timesheet-entry {
-                    display: none !important;
-                }
-            </style>';
-        }
-    }
-}
-
 /**
  * Carrega o helper do módulo.
  */
 $CI = &get_instance();
 $CI->load->helper(TIMESHEET_MODULE_NAME . '/timesheet');
-
-/**
- * Remove mensagens de log desnecessárias das telas /timesheet e /manage_weekly.
- */
-function strip_timesheet_logs() {
-    $CI = &get_instance();
-    $uri_string = $CI->uri->uri_string();
-
-    // Remover logs da tela /timesheet (página principal do módulo)
-    if (strpos($uri_string, 'timesheet') !== false && strpos($uri_string, 'manage_weekly') === false) {
-        // Código para remover logs da tela /timesheet
-        // Exemplo: Se houvesse uma função que logasse, você a interceptaria aqui.
-        // Como não há logs diretos no controller que podemos interceptar facilmente aqui,
-        // vamos assumir que a intenção é remover qualquer saída de log que possa ter sido adicionada
-        // de forma inline ou em helpers/libraries que não são diretamente acessíveis nesta função.
-        // Se houver funções de log específicas em controllers que precisam ser modificadas,
-        // a lógica teria que ser mais granular. Por enquanto, esta é uma abordagem genérica.
-    }
-
-    // Remover logs da tela /manage_weekly
-    if (strpos($uri_string, 'manage_weekly') !== false) {
-        // Código para remover logs da tela /manage_weekly
-        // Similar à observação acima, a remoção de logs inline ou de helpers/libraries
-        // exigiria uma abordagem mais específica dependendo de onde os logs são gerados.
-    }
-}
-
-// Executa a função para remover logs, mas precisamos de um hook apropriado.
-// Um hook para 'app_admin_head' ou 'after_controller_method' pode ser mais adequado.
-// Para simplificar e atender à solicitação, vamos adicionar um hook genérico que pode ser ajustado.
-// Se os logs estão diretamente nos controllers, a modificação precisaria ser feita nos controllers.
-// Assumindo que os logs estão em um lugar onde um hook pode interceptar ou modificar a saída.
-// Hook para rodar após a inicialização do admin, mas antes da renderização principal.
-hooks()->add_action('app_admin_controller_after_construct', 'strip_timesheet_logs');
-
-// Nota: A remoção de `console.log` em PHP geralmente se refere a logs gerados no lado do servidor
-// que podem ser enviados ao navegador via `echo` ou funções de log do CodeIgniter.
-// Se a intenção era remover `console.log` do JavaScript, a modificação seria no código JS, não no PHP.
-// Assumindo que a intenção é remover logs do lado do servidor que possam estar sendo impressos.
