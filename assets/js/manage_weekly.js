@@ -89,7 +89,7 @@ $(document).ready(function () {
         var totalCheckboxesAvailable = $('.task-checkbox:enabled').length;
 
         // --- LÓGICA GLOBAL ---
-        $(".selection-counter").html("<strong>" + totalSelectedCount + "</strong> tarefas selecionadas");
+        $(".selection-counter").html("<strong>" + totalSelectedCount + "</strong> " + (manage_weekly_data.lang_tasks_selected || 'tarefas selecionadas'));
         $(".batch-approve-btn, .batch-reject-btn").prop("disabled", totalSelectedCount === 0);
 
         var globalCheckbox = $("#select-all-tasks");
@@ -142,9 +142,9 @@ $(document).ready(function () {
         var approvalId = $(this).data("approval-id");
         
         TimesheetModals.confirm({
-            title: "Cancelar Aprovação da Tarefa",
-            message: "Tem certeza que deseja cancelar a aprovação desta tarefa específica? As horas serão removidas do quadro de horas e a tarefa voltará para o status pendente.",
-            confirmText: "Sim, Cancelar",
+            title: manage_weekly_data.lang_cancel_task_approval || "Cancelar Aprovação da Tarefa",
+            message: manage_weekly_data.lang_confirm_cancel_task || "Tem certeza que deseja cancelar a aprovação desta tarefa específica? As horas serão removidas do quadro de horas e a tarefa voltará para o status pendente.",
+            confirmText: manage_weekly_data.lang_yes_cancel || "Sim, Cancelar",
             confirmClass: "timesheet-modal-btn-danger"
         }).then(function (confirmed) {
             if (confirmed) {

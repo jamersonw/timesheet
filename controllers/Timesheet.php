@@ -350,7 +350,7 @@ class Timesheet extends AdminController
         try {
             $entries = $this->timesheet_model->get_week_entries_grouped($staff_id, $week_start_date, $manager_id);
             if (empty($entries)) {
-                echo json_encode(['success' => true, 'html' => '<div class="text-center text-muted">Nenhuma entrada encontrada para os projetos que você gerencia.</div>']);
+                echo json_encode(['success' => true, 'html' => '<div class="text-center text-muted">' . _l('timesheet_no_entries_found') . '</div>']);
                 return;
             }
 
@@ -395,7 +395,7 @@ class Timesheet extends AdminController
                 // Lógica da Coluna de Ações
                 $actions_cell = '';
                 if ($task_approval && $task_approval->status == 'approved') {
-                    $actions_cell = '<button class="btn btn-danger btn-xs cancel-task-btn" data-approval-id="' . $task_approval->id . '" title="Cancelar Aprovação da Tarefa"><i class="fa fa-times"></i></button>';
+                    $actions_cell = '<button class="btn btn-danger btn-xs cancel-task-btn" data-approval-id="' . $task_approval->id . '" title="' . _l('timesheet_cancel_task_approval') . '"><i class="fa fa-times"></i></button>';
                 }
 
                 $html .= '<td class="text-center">' . $checkbox . '</td>';
@@ -652,9 +652,9 @@ class Timesheet extends AdminController
         $result = $this->timesheet_model->cancel_individual_task_approval($approval_id, $manager_id);
 
         if ($result) {
-            echo json_encode(['success' => true, 'message' => 'Aprovação da tarefa cancelada com sucesso.']);
+            echo json_encode(['success' => true, 'message' => _l('timesheet_task_approval_cancelled')]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'Erro ao cancelar a aprovação da tarefa.']);
+            echo json_encode(['success' => false, 'message' => _l('timesheet_error_cancel_task')]);
         }
     }
 }
