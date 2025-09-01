@@ -5,6 +5,13 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 
 
+
+## [1.4.9] - 2025-09-01
+
+### 🔧 ALTERAÇÕES
+- Correção de traduções - adicionadas traduções faltantes e padronização do sistema _l()
+
+
 ## [1.4.8] - 2025-08-28
 
 ### 🔧 ALTERAÇÕES
