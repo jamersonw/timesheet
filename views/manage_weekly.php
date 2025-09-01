@@ -109,11 +109,6 @@
                                             <div class="approval-actions">
                                                 <!-- Primeira linha: Ver + Aprovar/Rejeitar -->
                                                 <div class="btn-group" style="margin-bottom: 5px;">
-                                                    <a href="<?php echo admin_url('timesheet/view_approval/' . $approval->id); ?>"
-                                                       class="btn btn-sm btn-info" title="<?php echo _l('timesheet_view_details'); ?>">
-                                                        <i class="fa fa-eye"></i> <?php echo _l('timesheet_view'); ?>
-                                                    </a>
-
                                                     <?php if ($approval->status == 'pending'): ?>
                                                         <button type="button" class="btn btn-sm btn-success user-batch-approve-btn"
                                                                 data-user-id="<?php echo $approval->id; ?>"
