@@ -23,10 +23,10 @@
                                            class="btn btn-default">
                                             <i class="fa fa-chevron-left"></i> <?php echo _l('timesheet_previous_week'); ?>
                                         </a>
-                                        <span class="btn btn-info">
+                                        <a href="<?php echo admin_url('timesheet/manage_weekly'); ?>" class="btn btn-info">
                                             <i class="fa fa-calendar"></i>
                                             <?php echo _d($week_start) . ' - ' . _d($week_end); ?>
-                                        </span>
+                                        </a>
                                         <a href="<?php echo admin_url('timesheet/manage_weekly?week=' . date('Y-m-d', strtotime($week_start . ' +7 days'))); ?>"
                                            class="btn btn-default">
                                             <?php echo _l('timesheet_next_week'); ?> <i class="fa fa-chevron-right"></i>
