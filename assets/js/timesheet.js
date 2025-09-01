@@ -409,11 +409,11 @@ $(document).ready(function() {
 
     $('#cancel-submission').on('click', function() {
         TimesheetModals.confirm({
-            title: _l('timesheet_cancel_submission'),
-            message: timesheet_data.confirm_cancel_submission || _l('timesheet_confirm_cancel_submission'),
+            title: 'Cancelar Submissão',
+            message: timesheet_data.confirm_cancel_submission || 'Tem certeza que deseja cancelar o envio? O timesheet voltará ao status de rascunho.',
             icon: 'fa-undo',
-            confirmText: _l('cancel_submission'),
-            cancelText: _l('keep_as_is'),
+            confirmText: 'Cancelar Submissão',
+            cancelText: 'Manter Como Está',
             confirmClass: 'timesheet-modal-btn-warning'
         }).then(function(confirmed) {
             if (confirmed) {
@@ -515,11 +515,11 @@ $(document).ready(function() {
     $(document).on('click', '.remove-row', function(){
         var $row = $(this).closest('tr');
         TimesheetModals.confirm({
-            title: _l('timesheet_remove_row'),
-            message: _l('timesheet_confirm_remove_row'),
+            title: 'Remover Linha',
+            message: 'Tem certeza que deseja remover esta linha? Todas as horas lançadas nela serão perdidas.',
             icon: 'fa-trash',
-            confirmText: _l('remove'),
-            cancelText: _l('cancel'),
+            confirmText: 'Remover',
+            cancelText: 'Cancelar',
             confirmClass: 'timesheet-modal-btn-danger'
         }).then(function(confirmed) {
             if (confirmed) {
