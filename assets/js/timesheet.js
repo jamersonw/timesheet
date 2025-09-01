@@ -462,10 +462,18 @@ $(document).ready(function() {
         // Verificar se deve mostrar o botão de submissão IMEDIATAMENTE
         checkSubmitButtonVisibility();
         
-        // Forçar uma segunda verificação após um pequeno delay
+        // Forçar múltiplas verificações para garantir que o botão apareça
         setTimeout(function() {
             checkSubmitButtonVisibility();
-        }, 100);
+        }, 50);
+        
+        setTimeout(function() {
+            checkSubmitButtonVisibility();
+        }, 200);
+        
+        setTimeout(function() {
+            checkSubmitButtonVisibility();
+        }, 500);
 
         $('#project-select').val('').trigger('change');
     });
@@ -523,8 +531,9 @@ $(document).ready(function() {
         console.log('🔍 [SUBMIT-BTN] Verificando visibilidade. Linhas encontradas:', hasEntries, 'Total:', $('#timesheet-entries tr').length);
         
         if (hasEntries) {
-            $submitBtn.show();
-            console.log('✅ [SUBMIT-BTN] Botão de submissão EXIBIDO');
+            // Forçar exibição com CSS inline para garantir que apareça
+            $submitBtn.css('display', 'inline-block').show();
+            console.log('✅ [SUBMIT-BTN] Botão de submissão EXIBIDO (forçado)');
         } else {
             $submitBtn.hide();
             console.log('❌ [SUBMIT-BTN] Botão de submissão OCULTO');
@@ -534,11 +543,33 @@ $(document).ready(function() {
     // Verificar visibilidade inicial do botão
     checkSubmitButtonVisibility();
     
-    // Verificar novamente após o carregamento completo da página
+    // Verificar novamente após o carregamento completo da página (múltiplas tentativas)
     setTimeout(function() {
-        console.log('🔄 [SUBMIT-BTN] Verificação adicional após carregamento');
+        console.log('🔄 [SUBMIT-BTN] Verificação adicional após carregamento (1ª)');
+        checkSubmitButtonVisibility();
+    }, 100);
+    
+    setTimeout(function() {
+        console.log('🔄 [SUBMIT-BTN] Verificação adicional após carregamento (2ª)');
         checkSubmitButtonVisibility();
     }, 500);
+    
+    setTimeout(function() {
+        console.log('🔄 [SUBMIT-BTN] Verificação adicional após carregamento (3ª)');
+        checkSubmitButtonVisibility();
+    }, 1000);
+    
+    // Verificação final mais agressiva se o botão ainda não estiver visível
+    setTimeout(function() {
+        var $submitBtn = $('#submit-timesheet');
+        var hasEntries = $('#timesheet-entries tr').length > 0;
+        
+        if (hasEntries && (!$submitBtn.is(':visible') || $submitBtn.css('display') === 'none')) {
+            console.log('🚨 [SUBMIT-BTN] Botão não visível mesmo com linhas - FORÇANDO exibição');
+            $submitBtn.attr('style', 'display: inline-block !important;');
+            $submitBtn.show();
+        }
+    }, 1500);
 
     // Limpeza quando a página for fechada
     $(window).on('beforeunload', function() {
