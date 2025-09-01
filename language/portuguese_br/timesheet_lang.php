@@ -55,6 +55,36 @@ $lang['timesheet_task_required'] = 'Tarefa é obrigatória. Por favor, selecione
 $lang['timesheet_already_submitted'] = 'Esta semana já foi enviada';
 $lang['timesheet_cannot_edit_approved'] = 'Não é possível editar timesheets aprovados. Cancele a aprovação primeiro.';
 
+// Interface messages
+$lang['timesheet_project_and_task_required'] = 'Por favor, selecione um projeto E uma tarefa.';
+$lang['timesheet_selection_required'] = 'Seleção Obrigatória';
+$lang['timesheet_project_already_added'] = 'Este projeto/tarefa já foi adicionado à sua planilha.';
+$lang['timesheet_duplicate_project'] = 'Projeto Duplicado';
+$lang['timesheet_add_activity_required'] = 'Você deve adicionar pelo menos um projeto/tarefa antes de enviar o timesheet.';
+$lang['timesheet_no_activity_selected'] = 'Nenhuma Atividade Selecionada';
+$lang['timesheet_remove_row'] = 'Remover Linha';
+$lang['timesheet_confirm_remove_row'] = 'Tem certeza que deseja remover esta linha? Todas as horas lançadas nela serão perdidas.';
+$lang['timesheet_submit_for_approval'] = 'Enviar para Aprovação';
+$lang['timesheet_server_communication_error'] = 'Erro de comunicação com o servidor';
+$lang['timesheet_connection_error_submit'] = 'Erro de conexão ao enviar para aprovação';
+$lang['timesheet_save_before_submit_error'] = 'Falha ao salvar as horas antes do envio. Tente novamente.';
+$lang['timesheet_cancel_submission'] = 'Cancelar Submissão';
+$lang['timesheet_keep_as_is'] = 'Manter Como Está';
+$lang['timesheet_unsaved_changes_warning'] = 'Algumas alterações podem não ter sido salvas. Deseja continuar mesmo assim?';
+$lang['timesheet_pending_changes'] = 'Alterações Pendentes';
+$lang['timesheet_unsaved_changes_exit_warning'] = 'Você tem alterações não salvas. Tem certeza que deseja sair?';
+
+// Controller messages
+$lang['timesheet_no_task_selected_save'] = 'Nenhuma tarefa selecionada para salvar';
+$lang['timesheet_cannot_edit_pending_approved'] = 'Não é possível editar uma tarefa que está pendente ou já foi aprovada.';
+$lang['timesheet_save_entry_failed'] = 'Falha ao salvar a entrada.';
+$lang['timesheet_submit_error'] = 'Erro ao enviar timesheet';
+$lang['timesheet_invalid_parameters'] = 'Parâmetros inválidos';
+$lang['timesheet_rejection_reason_required'] = 'Motivo da rejeição é obrigatório';
+$lang['timesheet_approval_processing_error'] = 'Erro ao processar aprovação';
+$lang['timesheet_approval_cancelled_success'] = 'Aprovação cancelada com sucesso. Timesheet voltou para rascunho.';
+$lang['timesheet_cancel_approval_error'] = 'Erro ao cancelar aprovação';
+
 // Permissions
 $lang['timesheet_permission_view'] = 'Visualizar Timesheet (criar próprios lançamentos)';
 $lang['timesheet_permission_approve'] = 'Aprovar Timesheet (acessar telas de aprovação)';

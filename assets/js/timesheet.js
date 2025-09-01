@@ -10,7 +10,7 @@ $(document).ready(function() {
     function parseHours(value) {
         if (value === null || value === undefined || value === '') return 0;
         var numericValue = parseFloat(value.toString().replace(',', '.'));
-        return isNaN(numericValue) ? 0 : numericValue;
+        return isNaN(numericValue) ? 0 : numericureturn;
     }
 
     var $saveIndicator = $('#save-indicator');
@@ -44,7 +44,7 @@ $(document).ready(function() {
 
         saveEntry($input).then(function(response) {
             pendingChanges.delete(inputId);
-            
+
             // Se há mais itens na fila, continuar processando
             if (saveQueue.length > 0) {
                 setTimeout(function() {
@@ -63,7 +63,7 @@ $(document).ready(function() {
             isProcessingQueue = false;
             $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro ao salvar');
             setTimeout(function() { $saveIndicator.html(''); }, 3000);
-            
+
             // Continuar com próximo item mesmo se este falhou
             if (saveQueue.length > 0) {
                 setTimeout(function() {
@@ -76,7 +76,7 @@ $(document).ready(function() {
     // Adicionar à fila de salvamento
     function addToSaveQueue($input) {
         var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
-        
+
         // Remover duplicatas da fila (manter apenas a última alteração)
         saveQueue = saveQueue.filter(function(item) {
             var itemId = item.data('input-id') || (item.data('day') + '_' + item.closest('tr').data('task-id'));
@@ -86,7 +86,7 @@ $(document).ready(function() {
         // Adicionar à fila
         saveQueue.push($input);
         pendingChanges.add(inputId);
-        
+
         // Iniciar processamento se não estiver em andamento
         processQueue();
     }
@@ -96,7 +96,7 @@ $(document).ready(function() {
         $('.hours-input').each(function() {
             var $input = $(this);
             var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
-            
+
             if (pendingChanges.has(inputId)) {
                 addToSaveQueue($input.clone());
             }
@@ -209,7 +209,7 @@ $(document).ready(function() {
     function saveAllEntries() {
         return new Promise(function(resolve, reject) {
             $saveIndicator.html('<i class="fa fa-spinner fa-spin text-warning"></i> Salvamento forçado em andamento...');
-            
+
             // Limpar fila atual e timeout
             clearTimeout(saveTimeout);
             saveQueue = [];
@@ -227,10 +227,10 @@ $(document).ready(function() {
                 var promise = saveEntry($input).then(function(response) {
                     pendingChanges.delete(inputId);
                     processedInputs++;
-                    
+
                     // Atualizar progresso
                     $saveIndicator.html('<i class="fa fa-spinner fa-spin text-warning"></i> Salvando ' + processedInputs + '/' + totalInputs + '...');
-                    
+
                     return response;
                 }).catch(function(error) {
                     processedInputs++;
@@ -268,13 +268,13 @@ $(document).ready(function() {
 
     $('#submit-timesheet').on('click', function() {
         var $btn = $(this);
-        
+
         // Validar se existe pelo menos uma linha de projeto/tarefa
         if ($('#timesheet-entries tr').length === 0) {
             TimesheetModals.warning('Você deve adicionar pelo menos um projeto/tarefa antes de enviar o timesheet.', 'Nenhuma Atividade Selecionada');
             return;
         }
-        
+
         $btn.prop('disabled', true); 
 
         // Executar salvamento forçado antes da submissão
@@ -289,9 +289,9 @@ $(document).ready(function() {
                 $('.hours-input').each(function() {
                     totalHours += parseHours($(this).val());
                 });
-                
+
                 var confirmMessage = timesheet_data.confirm_submit || 'Tem certeza que deseja enviar este timesheet para aprovação? Esta ação não pode ser desfeita.';
-                
+
                 if (totalHours === 0) {
                     confirmMessage += '<br><br><strong class="text-warning"><i class="fa fa-exclamation-triangle"></i> Atenção:</strong> Você está enviando um timesheet sem nenhuma hora lançada (todos os dias estão zerados).';
                 }
@@ -356,11 +356,11 @@ $(document).ready(function() {
 
     $('#cancel-submission').on('click', function() {
         TimesheetModals.confirm({
-            title: 'Cancelar Submissão',
-            message: timesheet_data.confirm_cancel_submission || 'Tem certeza que deseja cancelar a submissão deste timesheet? Ele voltará ao status de rascunho.',
+            title: _l('timesheet_cancel_submission'),
+            message: timesheet_data.confirm_cancel_submission || _l('timesheet_confirm_cancel_submission'),
             icon: 'fa-undo',
-            confirmText: 'Cancelar Submissão',
-            cancelText: 'Manter Como Está',
+            confirmText: _l('cancel_submission'),
+            cancelText: _l('keep_as_is'),
             confirmClass: 'timesheet-modal-btn-warning'
         }).then(function(confirmed) {
             if (confirmed) {
@@ -437,11 +437,11 @@ $(document).ready(function() {
     $(document).on('click', '.remove-row', function(){
         var $row = $(this).closest('tr');
         TimesheetModals.confirm({
-            title: 'Remover Linha',
-            message: 'Tem certeza que deseja remover esta linha? Todas as horas lançadas nela serão perdidas.',
+            title: _l('timesheet_remove_row'),
+            message: _l('timesheet_confirm_remove_row'),
             icon: 'fa-trash',
-            confirmText: 'Remover',
-            cancelText: 'Cancelar',
+            confirmText: _l('remove'),
+            cancelText: _l('cancel'),
             confirmClass: 'timesheet-modal-btn-danger'
         }).then(function(confirmed) {
             if (confirmed) {
@@ -474,28 +474,28 @@ $(document).ready(function() {
     }
 
     updateTotals();
-    
+
     // Inicializar sistema de backup automático
     initBackupSave();
-    
+
     // Limpeza quando a página for fechada
     $(window).on('beforeunload', function() {
         clearInterval(backupSaveInterval);
-        
+
         // Se há alterações pendentes, avisar o usuário
         if (pendingChanges.size > 0) {
             return 'Você tem alterações não salvas. Tem certeza que deseja sair?';
         }
     });
-    
+
     // Salvamento forçado ao navegar para outra página
     $(document).on('click', 'a[href], button[type="submit"]', function(e) {
         if (pendingChanges.size > 0 && !$(this).hasClass('hours-input') && !$(this).hasClass('remove-row')) {
             e.preventDefault();
             var originalTarget = this;
-            
+
             $saveIndicator.html('<i class="fa fa-spinner fa-spin text-info"></i> Salvando antes de navegar...');
-            
+
             saveAllEntries().then(function() {
                 // Continuar com a navegação
                 if (originalTarget.href) {
