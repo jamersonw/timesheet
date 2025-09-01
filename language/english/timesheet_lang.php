@@ -192,3 +192,4 @@ $lang['timesheet_sync_bidirectional'] = 'Bidirectional Sync';
 $lang['timesheet_timer_reference'] = 'Timer Reference';
 $lang['timesheet_unidirectional_mode'] = 'Unidirectional Mode';
 $lang['timesheet_readonly_board'] = 'Read-only Board';
+$lang['timesheet_pending'] = 'Pending';
