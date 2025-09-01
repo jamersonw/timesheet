@@ -74,4 +74,26 @@ $lang['timesheet_quick_approvals'] = 'Aprovações Rápidas';
 // Permissions
 $lang['timesheet_permission_view'] = 'Visualizar Timesheet (criar próprios lançamentos)';
 $lang['timesheet_permission_approve'] = 'Aprovar Timesheet (acessar telas de aprovação)';
+
+$lang['options'] = 'Opções';
+
+// Mensagens JavaScript
+$lang['timesheet_no_activities_warning'] = 'Você deve adicionar pelo menos um projeto/tarefa antes de enviar o timesheet.';
+$lang['timesheet_no_activities_title'] = 'Nenhuma Atividade Selecionada';
+$lang['timesheet_confirm_submit_default'] = 'Tem certeza que deseja enviar este timesheet para aprovação? Esta ação não pode ser desfeita.';
+$lang['timesheet_attention'] = 'Atenção';
+$lang['timesheet_submitting_zero_hours'] = 'Você está enviando um timesheet sem nenhuma hora lançada (todos os dias estão zerados)';
+$lang['timesheet_submit_for_approval'] = 'Enviar para Aprovação';
+$lang['timesheet_confirm_cancel_submission_default'] = 'Tem certeza que deseja cancelar a submissão deste timesheet? Ele voltará ao status de rascunho.';
+$lang['timesheet_keep_as_is'] = 'Manter Como Está';
+$lang['timesheet_select_project_task_required'] = 'Por favor, selecione um projeto E uma tarefa.';
+$lang['timesheet_required_selection'] = 'Seleção Obrigatória';
+$lang['timesheet_project_already_added'] = 'Este projeto/tarefa já foi adicionado à sua planilha.';
+$lang['timesheet_duplicate_project'] = 'Projeto Duplicado';
+$lang['timesheet_remove_row'] = 'Remover Linha';
+$lang['timesheet_confirm_remove_row'] = 'Tem certeza que deseja remover esta linha? Todas as horas lançadas nela serão perdidas.';
+
+// Labels comuns
+$lang['remove'] = 'Remover';
+$lang['cancel'] = 'Cancelar';
 ?>

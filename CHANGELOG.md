@@ -1,9 +1,20 @@
-# Changelog
+# Changelog - Módulo Timesheet
 
-Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
+Todas as mudanças notáveis deste projeto serão documentadas neste arquivo.
 
+## [1.5.0] - 2025-01-27
 
+### 🌍 INTERNACIONALIZAÇÃO
+- Implementada internacionalização completa do módulo
+- Substituição de todos os textos hardcoded por chamadas `_l()`
+- Adicionadas traduções em inglês e português para todas as mensagens
+- Correção da exibição do botão "Submeter" após adicionar novos projetos
+- Melhoria na consistência das mensagens de erro e feedback
 
+### 🔧 MELHORIAS TÉCNICAS
+- Padronização das mensagens de erro nos controllers
+- Adição de variáveis JavaScript para suporte a internacionalização
+- Correção de textos em modais e interfaces de usuário
 
 ## [1.4.9] - 2025-01-28
 
@@ -272,7 +283,7 @@ TIMESHEET → APROVAÇÃO (Quick/Weekly) → QUADRO DE HORAS
 
 ### 📋 **ARQUITETURA FINAL v1.4.0**
 ```
-TIMESHEET (Editável) → APROVAÇÃO → QUADRO DE HORAS (Read-Only)
+TIMESHEET (Editável) → APROVAÇÃO →QUADRO DE HORAS (Read-Only)
                                         ↓
                                    APENAS VISUALIZAÇÃO
 ```
@@ -477,7 +488,7 @@ TIMESHEET (Editável) → APROVAÇÃO → QUADRO DE HORAS (Read-Only)
 - **Permissão `timesheet_approve`**: Nova permissão específica para aprovações
 - **Validações atualizadas**: Métodos `manage()`, `manage_weekly()`, `approve_reject()` e `cancel_approval()` agora verificam a nova permissão
 - **Migração automática**: Script de migração para atualizar permissões existentes
-- **Retrocompatibilidade**: Instalações existentes continuam funcionando normalmente
+- **Retrocompatibilidade**: Instalações existentes continuam funcionando normally
 
 ### 📋 COMO CONFIGURAR
 1. Acesse **Admin → Roles**

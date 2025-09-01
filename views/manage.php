@@ -17,7 +17,7 @@
                         <?php if (empty($pending_approvals)): ?>
                             <div class="alert alert-info">
                                 <i class="fa fa-info-circle"></i> 
-                                No pending timesheet approvals at this time.
+                                <?php echo _l('timesheet_no_pending_approvals'); ?>
                             </div>
                         <?php else: ?>
                             <div class="table-responsive">
@@ -57,17 +57,17 @@
                                                     <a href="<?php echo admin_url('timesheet/view_approval/' . $approval->id); ?>" 
                                                        class="btn btn-sm btn-info" 
                                                        title="<?php echo _l('view'); ?>">
-                                                        <i class="fa fa-eye"></i> Ver
+                                                        <i class="fa fa-eye"></i> <?php echo _l('view'); ?>
                                                     </a>
                                                     <button type="button" class="btn btn-sm btn-success approve-btn" 
                                                             data-approval-id="<?php echo $approval->id; ?>" 
                                                             title="<?php echo _l('timesheet_approve'); ?>">
-                                                        <i class="fa fa-check"></i> Aprovar
+                                                        <i class="fa fa-check"></i> <?php echo _l('timesheet_approve'); ?>
                                                     </button>
                                                     <button type="button" class="btn btn-sm btn-danger reject-btn" 
                                                             data-approval-id="<?php echo $approval->id; ?>" 
                                                             title="<?php echo _l('timesheet_reject'); ?>">
-                                                        <i class="fa fa-times"></i> Rejeitar
+                                                        <i class="fa fa-times"></i> <?php echo _l('timesheet_reject'); ?>
                                                     </button>
                                                 </div>
                                             </td>

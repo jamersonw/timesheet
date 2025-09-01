@@ -39,14 +39,14 @@
                         <?php if (empty($weekly_approvals)): ?>
                             <div class="alert alert-info text-center">
                                 <i class="fa fa-info-circle"></i> 
-                                <strong>Nenhuma aprovação pendente para a semana selecionada.</strong>
-                                <br><small>Semana de <?php echo _d($week_start) . ' a ' . _d($week_end); ?></small>
+                                <strong><?php echo _l('timesheet_no_pending_approvals_week'); ?></strong>
+                                <br><small><?php echo _l('timesheet_week_period', array(_d($week_start), _d($week_end))); ?></small>
                             </div>
                         <?php else: ?>
                             <div class="alert alert-warning text-center">
                                 <i class="fa fa-exclamation-triangle"></i> 
-                                <strong><?php echo count($weekly_approvals); ?> aprovação(ões) pendente(s) para a semana selecionada</strong>
-                                <br><small>Semana de <?php echo _d($week_start) . ' a ' . _d($week_end); ?></small>
+                                <strong><?php echo _l('timesheet_pending_approvals_count', count($weekly_approvals)); ?></strong>
+                                <br><small><?php echo _l('timesheet_week_period', array(_d($week_start), _d($week_end))); ?></small>
                             </div>
 
                             <!-- Controles de Seleção em Lote -->
@@ -60,7 +60,7 @@
                                         </div>
                                         <div class="col-md-6 text-right">
                                             <span class="selection-counter">
-                                                <strong>0</strong> tarefas selecionadas
+                                                <strong>0</strong> <?php echo _l('timesheet_tasks_selected'); ?>
                                             </span>
                                         </div>
                                     </div>
@@ -71,17 +71,17 @@
                                             <div class="checkbox">
                                                 <input type="checkbox" id="select-all-tasks" />
                                                 <label for="select-all-tasks">
-                                                    <strong>Selecionar Todas as Tarefas Pendentes</strong>
+                                                    <strong><?php echo _l('timesheet_select_all_pending_tasks'); ?></strong>
                                                 </label>
                                             </div>
                                         </div>
                                         <div class="col-md-6 text-right">
                                             <div class="btn-group batch-actions" style="margin-left: 10px;">
                                                 <button type="button" class="btn btn-success btn-sm batch-approve-btn" disabled>
-                                                    <i class="fa fa-check"></i> Aprovar Selecionadas
+                                                    <i class="fa fa-check"></i> <?php echo _l('timesheet_approve_selected'); ?>
                                                 </button>
                                                 <button type="button" class="btn btn-danger btn-sm batch-reject-btn" disabled>
-                                                    <i class="fa fa-times"></i> Rejeitar Selecionadas
+                                                    <i class="fa fa-times"></i> <?php echo _l('timesheet_reject_selected'); ?>
                                                 </button>
                                             </div>
                                         </div>
@@ -169,7 +169,7 @@
                         <div class="row mt-3">
                             <div class="col-md-12">
                                 <a href="<?php echo admin_url('timesheet/manage'); ?>" class="btn btn-default">
-                                    <i class="fa fa-list"></i> Ver Aprovações Rápidas
+                                    <i class="fa fa-list"></i> <?php echo _l('timesheet_view_quick_approvals'); ?>
                                 </a>
                             </div>
                         </div>

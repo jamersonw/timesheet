@@ -271,7 +271,7 @@ $(document).ready(function() {
 
         // Validar se existe pelo menos uma linha de projeto/tarefa
         if ($('#timesheet-entries tr').length === 0) {
-            TimesheetModals.warning('Você deve adicionar pelo menos um projeto/tarefa antes de enviar o timesheet.', 'Nenhuma Atividade Selecionada');
+            TimesheetModals.warning(timesheet_lang.no_activities_warning, timesheet_lang.no_activities_title);
             return;
         }
 
@@ -290,19 +290,19 @@ $(document).ready(function() {
                     totalHours += parseHours($(this).val());
                 });
 
-                var confirmMessage = timesheet_data.confirm_submit || 'Tem certeza que deseja enviar este timesheet para aprovação? Esta ação não pode ser desfeita.';
+                var confirmMessage = timesheet_data.confirm_submit || timesheet_lang.confirm_submit_default;
 
                 if (totalHours === 0) {
-                    confirmMessage += '<br><br><strong class="text-warning"><i class="fa fa-exclamation-triangle"></i> Atenção:</strong> Você está enviando um timesheet sem nenhuma hora lançada (todos os dias estão zerados).';
+                    confirmMessage += '<br><br><strong class="text-warning"><i class="fa fa-exclamation-triangle"></i> ' + timesheet_lang.attention + ':</strong> ' + timesheet_lang.submitting_zero_hours + '.';
                 }
 
                 // Usar modal elegante ao invés de confirm()
                 TimesheetModals.confirm({
-                    title: 'Enviar para Aprovação',
+                    title: timesheet_lang.submit_for_approval,
                     message: confirmMessage,
                     icon: 'fa-paper-plane',
-                    confirmText: 'Enviar',
-                    cancelText: 'Cancelar',
+                    confirmText: timesheet_lang.submit,
+                    cancelText: timesheet_lang.cancel,
                     confirmClass: 'timesheet-modal-btn-success'
                 }).then(function(confirmed) {
                     if (confirmed) {
@@ -356,11 +356,11 @@ $(document).ready(function() {
 
     $('#cancel-submission').on('click', function() {
         TimesheetModals.confirm({
-            title: 'Cancelar Submissão',
-            message: timesheet_data.confirm_cancel_submission || 'Tem certeza que deseja cancelar a submissão deste timesheet? Ele voltará ao status de rascunho.',
+            title: timesheet_lang.cancel_submission,
+            message: timesheet_data.confirm_cancel_submission || timesheet_lang.confirm_cancel_submission_default,
             icon: 'fa-undo',
-            confirmText: 'Cancelar Submissão',
-            cancelText: 'Manter Como Está',
+            confirmText: timesheet_lang.cancel_submission,
+            cancelText: timesheet_lang.keep_as_is,
             confirmClass: 'timesheet-modal-btn-warning'
         }).then(function(confirmed) {
             if (confirmed) {
@@ -410,12 +410,12 @@ $(document).ready(function() {
         var taskName = $('#task-select').find('option:selected').text();
 
         if(!projectId || !taskId) {
-            TimesheetModals.warning('Por favor, selecione um projeto E uma tarefa.', 'Seleção Obrigatória');
+            TimesheetModals.warning(timesheet_lang.select_project_task_required, timesheet_lang.required_selection);
             return;
         }
 
         if ($('tr[data-project-id="'+projectId+'"][data-task-id="'+taskId+'"]').length > 0) {
-            TimesheetModals.warning('Este projeto/tarefa já foi adicionado à sua planilha.', 'Projeto Duplicado');
+            TimesheetModals.warning(timesheet_lang.project_already_added, timesheet_lang.duplicate_project);
             return;
         }
 
@@ -438,11 +438,11 @@ $(document).ready(function() {
     $(document).on('click', '.remove-row', function(){
         var $row = $(this).closest('tr');
         TimesheetModals.confirm({
-            title: 'Remover Linha',
-            message: 'Tem certeza que deseja remover esta linha? Todas as horas lançadas nela serão perdidas.',
+            title: timesheet_lang.remove_row,
+            message: timesheet_lang.confirm_remove_row,
             icon: 'fa-trash',
-            confirmText: 'Remover',
-            cancelText: 'Cancelar',
+            confirmText: timesheet_lang.remove,
+            cancelText: timesheet_lang.cancel,
             confirmClass: 'timesheet-modal-btn-danger'
         }).then(function(confirmed) {
             if (confirmed) {
