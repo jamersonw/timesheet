@@ -1,3 +1,11 @@
+[
+  {
+    "line_number": 54,
+    "change": "Corrigir lógica de verificação de tarefas editáveis\nReplacing\n<old_str>\n// Determinar se há tarefas editáveis (para mostrar o botão de submissão)\n        $has_editable_tasks = false;\n        foreach ($entries as $entry) {\n            if ($this->timesheet_model->can_edit_task($staff_id, $week_start, $entry->task_id)) {\n                $has_editable_tasks = true;\n                break;\n            }\n        }\n</old_str>\nwith\n<new_str>\n// Determinar se há tarefas editáveis (para mostrar o botão de submissão)\n        $has_editable_tasks = false;\n\n        // Se há entradas na semana atual, verificar se alguma é editável\n        if (!empty($entries)) {\n            foreach ($entries as $entry) {\n                if ($this->timesheet_model->can_edit_task($staff_id, $week_start, $entry->task_id)) {\n                    $has_editable_tasks = true;\n                    break;\n                }\n            }\n        } else {\n            // Se não há entradas mas é uma semana editável (não futura), mostrar o botão\n            // para permitir que o usuário adicione projetos e submeta\n            $current_week_start = date('Y-m-d', strtotime('monday this week'));\n            $selected_week_start = date('Y-m-d', strtotime($week_start));\n\n            // Permitir submissão se for semana atual ou passada\n            if ($selected_week_start <= $current_week_start) {\n                $has_editable_tasks = true;\n            }\n        }\n</new_str>"
+  }
+]
+```
+```php
 <?php
 
 defined('BASEPATH') or exit('No direct script access allowed');
@@ -43,6 +51,32 @@ class Timesheet extends AdminController
         $approval_status = $this->timesheet_model->get_week_approval_status(get_staff_user_id(), $week_start);
         $data['approval_status'] = $approval_status;
         $data['can_edit'] = !$approval_status || in_array($approval_status->status, ['rejected', 'draft']);
+
+        // Determinar se há tarefas editáveis (para mostrar o botão de submissão)
+        $has_editable_tasks = false;
+
+        // Se há entradas na semana atual, verificar se alguma é editável
+        if (!empty($entries)) {
+            foreach ($entries as $entry) {
+                if ($this->timesheet_model->can_edit_task($staff_id, $week_start, $entry->task_id)) {
+                    $has_editable_tasks = true;
+                    break;
+                }
+            }
+        } else {
+            // Se não há entradas mas é uma semana editável (não futura), mostrar o botão
+            // para permitir que o usuário adicione projetos e submeta
+            $current_week_start = date('Y-m-d', strtotime('monday this week'));
+            $selected_week_start = date('Y-m-d', strtotime($week_start));
+
+            // Permitir submissão se for semana atual ou passada
+            if ($selected_week_start <= $current_week_start) {
+                $has_editable_tasks = true;
+            }
+        }
+        
+        $data['can_submit_week'] = $data['can_edit'] && $has_editable_tasks;
+
         $data['title'] = _l('timesheet_my_timesheet');
         $this->load->view('timesheet/my_timesheet', $data);
     }
@@ -59,7 +93,7 @@ class Timesheet extends AdminController
         $tasks = timesheet_get_staff_project_tasks(get_staff_user_id(), $project_id);
         echo json_encode($tasks);
     }
-    
+
     /**
      * Save timesheet entry via AJAX (CORRIGIDO com verificação por tarefa)
      */
@@ -80,7 +114,7 @@ class Timesheet extends AdminController
             echo json_encode(['success' => true, 'message' => 'Nenhuma tarefa selecionada para salvar']);
             return;
         }
-        
+
         // ** A CORREÇÃO ESTÁ AQUI: Usando a nova verificação por tarefa **
         if (!$this->timesheet_model->can_edit_task($staff_id, $week_start, $task_id)) {
             echo json_encode(['success' => false, 'message' => 'Não é possível editar uma tarefa que está pendente ou já foi aprovada.']);
@@ -313,7 +347,7 @@ class Timesheet extends AdminController
             $daily_totals = $this->timesheet_model->get_week_daily_totals($staff_id, $week_start_date, $manager_id);
             $week_total = $this->timesheet_model->get_week_total_hours($staff_id, $week_start_date, $manager_id);
             $task_approvals = $this->timesheet_model->get_week_task_approvals($staff_id, $week_start_date);
-            
+
             $approvals_map = [];
             foreach ($task_approvals as $approval) {
                 $key = $approval->project_id . '_' . $approval->task_id;
@@ -337,7 +371,579 @@ class Timesheet extends AdminController
                 $html .= '<tr>';
                 $approval_key = $entry['project_id'] . '_' . $entry['task_id'];
                 $task_approval = isset($approvals_map[$approval_key]) ? $approvals_map[$approval_key] : null;
-                
+
+                // Lógica do Checkbox
+                if ($task_approval && $task_approval->status == 'pending') {
+                    $checkbox = '<input type="checkbox" class="task-checkbox" value="' . $task_approval->id . '" data-status="pending" data-user-id="' . $staff_id . '">';
+                } else if ($task_approval && $task_approval->status == 'approved') {
+                    $checkbox = '<i class="fa fa-check-circle text-success" title="Aprovado"></i>';
+                } else {
+                    $checkbox = '-';
+                }
+
+                // Lógica da Coluna de Ações
+                $actions_cell = '';
+                if ($task_approval && $task_approval->status == 'approved') {
+                    $actions_cell = '<button class="btn btn-danger btn-xs cancel-task-btn" data-approval-id="' . $task_approval->id . '" title="Cancelar Aprovação da Tarefa"><i class="fa fa-times"></i></button>';
+                }
+
+                $html .= '<td class="text-center">' . $checkbox . '</td>';
+                $html .= '<td><strong>' . $entry['project_name'] . '</strong>';
+                if ($entry['task_name']) {
+                    $html .= '<br><small class="text-muted">' . $entry['task_name'] . '</small>';
+                }
+                $html .= '</td>';
+                for ($day = 1; $day <= 7; $day++) {
+                    $hours = $entry['days'][$day]['hours'];
+                    $html .= '<td class="text-center">' . ($hours > 0 ? number_format($hours, 1) . 'h' : '-') . '</td>';
+                }
+                $html .= '<td class="text-center"><strong>' . number_format($entry['total_hours'], 1) . 'h</strong></td>';
+                $html .= '<td class="text-center">' . $actions_cell . '</td>'; // <-- CÉLULA DA NOVA COLUNA
+                $html .= '</tr>';
+            }
+
+            $html .= '<tr class="info"><td class="text-center"><strong>-</strong></td><td><strong>Total:</strong></td>';
+            for ($day = 1; $day <= 7; $day++) {
+                $html .= '<td class="text-center"><strong>' . ($daily_totals[$day] > 0 ? number_format($daily_totals[$day], 1) . 'h' : '-') . '</strong></td>';
+            }
+            $html .= '<td class="text-center"><strong>' . number_format($week_total, 1) . 'h</strong></td><td></td>'; // Célula vazia para a coluna de ações
+            $html .= '</tr>';
+            $html .= '</tbody></table></div>';
+
+            echo json_encode(['success' => true, 'html' => $html]);
+
+        } catch (Exception $e) {
+            log_activity('[Weekly AJAX ERROR] Erro ao carregar preview: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            return;
+        }
+    }
+
+    /**
+     * Approve or reject timesheet
+     */
+    public function approve_reject()
+    {
+        if (!has_permission('timesheet', '', 'approve') && !is_admin() && !timesheet_can_manage_any_project(get_staff_user_id())) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+
+        $approval_id = $this->input->post('approval_id');
+        $action = $this->input->post('action');
+        $reason = $this->input->post('reason');
+
+        if (empty($approval_id) || empty($action) || !in_array($action, ['approved', 'rejected'])) {
+            echo json_encode(['success' => false, 'message' => 'Invalid parameters']);
+            return;
+        }
+
+        if ($action === 'rejected' && empty($reason)) {
+            echo json_encode(['success' => false, 'message' => 'Rejection reason is required']);
+            return;
+        }
+
+        $result = $this->timesheet_model->approve_reject_timesheet($approval_id, $action, get_staff_user_id(), $reason);
+
+        if ($result) {
+            $message = $action == 'approved' ? _l('timesheet_approved_successfully') : _l('timesheet_rejected_successfully');
+            echo json_encode(['success' => true, 'message' => $message]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Error processing approval']);
+        }
+    }
+
+    /**
+     * Cancel an approved timesheet
+     */
+    public function cancel_approval()
+    {
+        if (!has_permission('timesheet', '', 'approve') && !is_admin() && !timesheet_can_manage_any_project(get_staff_user_id())) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+
+        $approval_id = $this->input->post('approval_id');
+
+        if (empty($approval_id)) {
+            echo json_encode(['success' => false, 'message' => 'Invalid parameters']);
+            return;
+        }
+
+        $result = $this->timesheet_model->cancel_approval($approval_id, get_staff_user_id());
+
+        if ($result) {
+            echo json_encode(['success' => true, 'message' => 'Aprovação cancelada com sucesso. Timesheet voltou para rascunho.']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Erro ao cancelar aprovação']);
+        }
+    }
+
+    /**
+     * Batch approve/reject multiple tasks
+     */
+    public function batch_approve_reject()
+    {
+        if (!has_permission('timesheet', '', 'approve') && !is_admin() && !timesheet_can_manage_any_project(get_staff_user_id())) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+
+        $task_ids = $this->input->post('task_ids'); // Array de task_approval_ids
+        $action = $this->input->post('action'); // 'approved' ou 'rejected'
+        $reason = $this->input->post('reason'); // Obrigatório para rejeição
+
+        if (empty($task_ids) || !is_array($task_ids) || empty($action) || !in_array($action, ['approved', 'rejected'])) {
+            echo json_encode(['success' => false, 'message' => 'Parâmetros inválidos']);
+            return;
+        }
+
+        if ($action === 'rejected' && empty($reason)) {
+            echo json_encode(['success' => false, 'message' => 'Motivo da rejeição é obrigatório']);
+            return;
+        }
+
+        $result = $this->timesheet_model->batch_approve_reject_tasks($task_ids, $action, get_staff_user_id(), $reason);
+
+        if ($result['success']) {
+            $message = $action == 'approved' ? 
+                'Tarefas aprovadas com sucesso (' . $result['processed'] . ' processadas)' : 
+                'Tarefas rejeitadas com sucesso (' . $result['processed'] . ' processadas)';
+            echo json_encode(['success' => true, 'message' => $message, 'processed' => $result['processed']]);
+        } else {
+            echo json_encode(['success' => false, 'message' => $result['message']]);
+        }
+    }
+
+
+
+    /**
+     * FUNCIONALIDADE REMOVIDA - VERSÃO 1.4.0
+     * Endpoint de sincronização AJAX não é mais necessário no modo unidirecional.
+     */
+
+    /**
+     * Função para corrigir registros sem status
+     */
+    public function fix_missing_status() {
+        if (!is_admin()) {
+            echo json_encode(['error' => 'Apenas administradores podem usar esta função']);
+            return;
+        }
+
+        // Buscar entradas sem status ou com status vazio
+        $this->db->where('(status IS NULL OR status = "")');
+        $entries_without_status = $this->db->get(db_prefix() . 'timesheet_entries')->result();
+
+        $fixed_count = 0;
+        foreach ($entries_without_status as $entry) {
+            $this->db->where('id', $entry->id);
+            $this->db->update(db_prefix() . 'timesheet_entries', ['status' => 'draft']);
+            $fixed_count++;
+            log_activity('[Timesheet Fix] Entrada ID ' . $entry->id . ' corrigida - status definido como draft');
+        }
+
+        echo json_encode([
+            'success' => true, 
+            'message' => 'Corrigidas ' . $fixed_count . ' entradas sem status',
+            'fixed_count' => $fixed_count
+        ]);
+    }
+
+    /**
+     * Endpoint de debug para testar sincronização manualmente
+     */
+    public function debug_sync() {
+        if (!is_admin()) {
+            echo json_encode(['error' => 'Apenas administradores podem usar esta função']);
+            return;
+        }
+
+        $action = $this->input->get('action');
+
+        switch ($action) {
+            case 'list_timers':
+                $timers = $this->timesheet_model->debug_list_perfex_timers(20);
+                echo json_encode(['success' => true, 'timers' => $timers]);
+                break;
+
+            case 'test_unidirectional':
+                log_activity('[Timesheet Debug v1.4.0] Módulo operando em modo UNIDIRECIONAL - Timesheet → Quadro apenas');
+                echo json_encode(['success' => true, 'message' => 'Módulo v1.4.0 - Modo unidirecional ativo']);
+                break;
+
+            case 'fix_status':
+                $this->fix_missing_status();
+                return;
+
+            case 'check_entries':
+                $staff_id = $this->input->get('staff_id') ?: get_staff_user_id();
+                $week_start = $this->input->get('week_start') ?: timesheet_get_week_start();
+
+                $this->db->where('staff_id', $staff_id);
+                $this->db->where('week_start_date', $week_start);
+                $entries = $this->db->get(db_prefix() . 'timesheet_entries')->result();
+
+                echo json_encode([
+                    'success' => true, 
+                    'entries' => $entries,
+                    'count' => count($entries),
+                    'staff_id' => $staff_id,
+                    'week_start' => $week_start
+                ]);
+                break;
+
+            default:
+                echo json_encode(['error' => 'Ação não reconhecida. Use: list_timers, test_unidirectional, fix_status, check_entries']);
+        }
+    }
+
+    public function view_approval($approval_id)
+    {
+        if (!has_permission('timesheet', '', 'view')) {
+            access_denied('timesheet');
+        }
+
+        $approval = $this->timesheet_model->get_approval_details($approval_id);
+
+        if (!$approval) {
+            show_404();
+        }
+
+        $data['approval'] = $approval;
+        $data['entries'] = $this->timesheet_model->get_week_entries_grouped($approval->staff_id, $approval->week_start_date);
+        $data['week_dates'] = timesheet_get_week_dates($approval->week_start_date);
+        $data['daily_totals'] = $this->timesheet_model->get_week_daily_totals($approval->staff_id, $approval->week_start_date);
+        $data['week_total'] = $this->timesheet_model->get_week_total_hours($approval->staff_id, $approval->week_start_date);
+
+        $data['title'] = _l('timesheet_approvals') . ' - ' . $approval->firstname . ' ' . $approval->lastname;
+
+        $this->load->view('timesheet/view_approval', $data);
+    }
+
+    /**
+     * Cancel a single task approval via AJAX
+     */
+    public function cancel_task_approval()
+    {
+        $manager_id = get_staff_user_id();
+        if (!has_permission('timesheet', '', 'approve') && !is_admin($manager_id)) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+
+        $approval_id = $this->input->post('approval_id');
+        if (empty($approval_id)) {
+            echo json_encode(['success' => false, 'message' => 'Invalid parameters']);
+            return;
+        }
+
+        $result = $this->timesheet_model->cancel_individual_task_approval($approval_id, $manager_id);
+
+        if ($result) {
+            echo json_encode(['success' => true, 'message' => 'Aprovação da tarefa cancelada com sucesso.']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Erro ao cancelar a aprovação da tarefa.']);
+        }
+    }
+}
+```$data['can_submit_week'] = $data['can_edit'] && $has_editable_tasks;
+
+        $data['title'] = _l('timesheet_my_timesheet');
+        $this->load->view('timesheet/my_timesheet', $data);
+    }
+
+    /**
+     * Get tasks for a project via AJAX
+     */
+    public function get_project_tasks($project_id)
+    {
+        if (!has_permission('timesheet', '', 'view')) {
+            echo json_encode(['error' => 'Access denied']);
+            return;
+        }
+        $tasks = timesheet_get_staff_project_tasks(get_staff_user_id(), $project_id);
+        echo json_encode($tasks);
+    }
+
+    /**
+     * Save timesheet entry via AJAX (CORRIGIDO com verificação por tarefa)
+     */
+    public function save_entry()
+    {
+        if (!has_permission('timesheet', '', 'view')) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+        $staff_id = get_staff_user_id();
+        $project_id = $this->input->post('project_id');
+        $task_id = $this->input->post('task_id');
+        $week_start = $this->input->post('week_start');
+        $day_of_week = $this->input->post('day_of_week');
+        $hours = (float)$this->input->post('hours');
+
+        if (empty($task_id) || !is_numeric($task_id)) {
+            echo json_encode(['success' => true, 'message' => 'Nenhuma tarefa selecionada para salvar']);
+            return;
+        }
+
+        // ** A CORREÇÃO ESTÁ AQUI: Usando a nova verificação por tarefa **
+        if (!$this->timesheet_model->can_edit_task($staff_id, $week_start, $task_id)) {
+            echo json_encode(['success' => false, 'message' => 'Não é possível editar uma tarefa que está pendente ou já foi aprovada.']);
+            return;
+        }
+
+        $data = [
+            'staff_id'        => $staff_id,
+            'project_id'      => $project_id,
+            'task_id'         => $task_id,
+            'week_start_date' => $week_start,
+            'day_of_week'     => $day_of_week,
+            'hours'           => $hours,
+            'status'          => 'draft'
+        ];
+
+        if ($this->timesheet_model->save_entry($data)) {
+            echo json_encode(['success' => true, 'message' => _l('timesheet_saved_successfully')]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Falha ao salvar a entrada.']);
+        }
+    }
+
+
+    /**
+     * Submit week for approval
+     */
+    public function submit_week()
+    {
+        if (!has_permission('timesheet', '', 'view')) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+
+        $staff_id = get_staff_user_id();
+        $week_start = $this->input->post('week_start');
+
+        // Usar validação específica para submissão (mais permissiva)
+        if (!$this->timesheet_model->can_submit_week($staff_id, $week_start)) {
+            echo json_encode(['success' => false, 'message' => _l('timesheet_cannot_submit_approved')]);
+            return;
+        }
+
+        if ($this->timesheet_model->submit_week($staff_id, $week_start)) {
+            echo json_encode([
+                'success' => true,
+                'message' => _l('timesheet_submitted_successfully')
+            ]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Error submitting timesheet']);
+        }
+    }
+
+    /**
+     * Cancel week submission
+     */
+    public function cancel_submission()
+    {
+        if (!is_staff_logged_in()) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+
+        $week_start = $this->input->post('week_start');
+        $staff_id = get_staff_user_id();
+
+        if ($this->timesheet_model->cancel_week_submission($staff_id, $week_start)) {
+            echo json_encode([
+                'success' => true,
+                'message' => _l('timesheet_submission_cancelled')
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'message' => _l('timesheet_cannot_cancel_submission')
+            ]);
+        }
+    }
+
+    /**
+     * Manage timesheets (for managers/admins)
+     */
+    public function manage()
+    {
+        if (!has_permission('timesheet', '', 'approve') && !is_admin() && !timesheet_can_manage_any_project(get_staff_user_id())) {
+            access_denied('timesheet');
+        }
+
+        $data['pending_approvals'] = $this->timesheet_model->get_pending_approvals(get_staff_user_id());
+        $data['title'] = _l('timesheet_manage');
+
+        $this->load->view('timesheet/manage', $data);
+    }
+
+    /**
+     * Manage weekly timesheets (for managers/admins) - Weekly View
+     */
+    public function manage_weekly()
+    {
+        log_activity('[WEEKLY START] Função manage_weekly iniciada em ' . date('Y-m-d H:i:s'));
+
+        try {
+            $staff_id = get_staff_user_id();
+
+            // Verificar permissões
+            $has_approve = has_permission('timesheet', '', 'approve');
+            $is_admin_user = is_admin();
+            $can_manage_projects = timesheet_can_manage_any_project($staff_id);
+
+            if (!$has_approve && !$is_admin_user && !$can_manage_projects) {
+                access_denied('timesheet');
+                return;
+            }
+
+            // Obter dados da semana
+            $week_start = $this->input->get('week') ?: timesheet_get_week_start();
+            $data['week_start'] = $week_start;
+            $data['week_end'] = timesheet_get_week_end($week_start);
+            $data['week_dates'] = timesheet_get_week_dates($week_start);
+
+            // ** MUDANÇA PRINCIPAL AQUI **
+            // Passamos o ID do gerente logado para o model filtrar os projetos
+            $manager_id = get_staff_user_id();
+            $data['weekly_approvals'] = $this->timesheet_model->get_weekly_all_approvals($week_start, $manager_id);
+
+            $data['title'] = _l('timesheet_weekly_approvals');
+            $this->load->view('manage_weekly', $data);
+
+        } catch (Exception $e) {
+            log_activity('[Weekly Debug FATAL ERROR] ERRO FATAL na função manage_weekly: ' . $e->getMessage());
+            show_error('Erro fatal ao carregar tela semanal. Verifique os logs.');
+        }
+    }
+
+    /**
+     * Get individual task approvals for a specific week/staff (AJAX)
+     */
+    public function get_week_task_approvals()
+    {
+        $staff_id = $this->input->get('staff_id');
+        $week_start_date = $this->input->get('week_start_date');
+
+        if (!$staff_id || !$week_start_date) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => 'Parâmetros obrigatórios não informados'
+            ]);
+            return;
+        }
+
+        $tasks = $this->timesheet_model->get_week_task_approvals($staff_id, $week_start_date);
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'tasks' => $tasks
+        ]);
+    }
+
+    /**
+     * Get week total hours via AJAX for manager view
+     */
+    public function get_week_total()
+    {
+        $manager_id = get_staff_user_id(); // Identifica o gerente logado
+        if (!has_permission('timesheet', '', 'approve') && !is_admin($manager_id) && !timesheet_can_manage_any_project($manager_id)) {
+            log_activity('[Weekly AJAX ERROR] Acesso negado ao get_week_total');
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+
+        $staff_id = $this->input->get('staff_id');
+        $week_start_date = $this->input->get('week_start_date');
+
+        log_activity('[Weekly AJAX Debug] get_week_total - Staff ID: ' . $staff_id . ', Week: ' . $week_start_date);
+
+        try {
+            // Passa o ID do gerente para o Model para filtrar o cálculo
+            $total_hours = $this->timesheet_model->get_week_total_hours($staff_id, $week_start_date, $manager_id);
+            log_activity('[Weekly AJAX Debug] Total de horas calculado: ' . $total_hours);
+            echo json_encode(['success' => true, 'total_hours' => $total_hours]);
+        } catch (Exception $e) {
+            log_activity('[Weekly AJAX ERROR] Erro ao buscar total de horas: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Get task total hours via AJAX for manager view
+     * VERSÃO 2.0: Busca horas de uma tarefa específica
+     */
+    public function get_task_total()
+    {
+        $staff_id = $this->input->get('staff_id');
+        $week_start_date = $this->input->get('week_start_date');
+        $task_id = $this->input->get('task_id');
+
+        if (!$task_id) {
+            echo json_encode(['success' => false, 'message' => 'Task ID required']);
+            return;
+        }
+
+        $total_hours = $this->timesheet_model->get_task_total_hours($staff_id, $week_start_date, $task_id);
+        echo json_encode(['success' => true, 'total_hours' => $total_hours]);
+    }
+
+    /**
+     * Get timesheet preview for weekly approval view (ATUALIZADO COM BOTÃO DE CANCELAR TAREFA)
+     */
+    public function get_timesheet_preview()
+    {
+        $manager_id = get_staff_user_id();
+        if (!has_permission('timesheet', '', 'approve') && !is_admin($manager_id) && !timesheet_can_manage_any_project($manager_id)) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+
+        $staff_id = $this->input->get('staff_id');
+        $week_start_date = $this->input->get('week_start_date');
+
+        try {
+            $entries = $this->timesheet_model->get_week_entries_grouped($staff_id, $week_start_date, $manager_id);
+            if (empty($entries)) {
+                echo json_encode(['success' => true, 'html' => '<div class="text-center text-muted">Nenhuma entrada encontrada para os projetos que você gerencia.</div>']);
+                return;
+            }
+
+            $week_dates = timesheet_get_week_dates($week_start_date);
+            $daily_totals = $this->timesheet_model->get_week_daily_totals($staff_id, $week_start_date, $manager_id);
+            $week_total = $this->timesheet_model->get_week_total_hours($staff_id, $week_start_date, $manager_id);
+            $task_approvals = $this->timesheet_model->get_week_task_approvals($staff_id, $week_start_date);
+
+            $approvals_map = [];
+            foreach ($task_approvals as $approval) {
+                $key = $approval->project_id . '_' . $approval->task_id;
+                $approvals_map[$key] = $approval;
+            }
+
+            // Geração do HTML da tabela
+            $html = '<div class="table-responsive"><table class="table table-bordered table-condensed">';
+            $html .= '<thead><tr>';
+            $html .= '<th width="40" class="text-center"><input type="checkbox" class="select-user-tasks-header" data-user-id="' . $staff_id . '" title="Selecionar todas as tarefas deste usuário"></th>';
+            $html .= '<th width="200">Projeto/Tarefa</th>';
+            $day_names = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+            for ($i = 0; $i < 7; $i++) {
+                $html .= '<th class="text-center" width="60">' . $day_names[$i] . '<br><small>' . date('d/m', strtotime($week_dates[$i])) . '</small></th>';
+            }
+            $html .= '<th class="text-center" width="60">Total</th>';
+            $html .= '<th class="text-center" width="80">Ações</th>'; // <-- NOVA COLUNA
+            $html .= '</tr></thead><tbody>';
+
+            foreach ($entries as $entry) {
+                $html .= '<tr>';
+                $approval_key = $entry['project_id'] . '_' . $entry['task_id'];
+                $task_approval = isset($approvals_map[$approval_key]) ? $approvals_map[$approval_key] : null;
+
                 // Lógica do Checkbox
                 if ($task_approval && $task_approval->status == 'pending') {
                     $checkbox = '<input type="checkbox" class="task-checkbox" value="' . $task_approval->id . '" data-status="pending" data-user-id="' . $staff_id . '">';

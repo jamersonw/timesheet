@@ -44,7 +44,7 @@ $(document).ready(function() {
 
         saveEntry($input).then(function(response) {
             pendingChanges.delete(inputId);
-            
+
             // Se há mais itens na fila, continuar processando
             if (saveQueue.length > 0) {
                 setTimeout(function() {
@@ -63,7 +63,7 @@ $(document).ready(function() {
             isProcessingQueue = false;
             $saveIndicator.html('<i class="fa fa-times text-danger"></i> Erro ao salvar');
             setTimeout(function() { $saveIndicator.html(''); }, 3000);
-            
+
             // Continuar com próximo item mesmo se este falhou
             if (saveQueue.length > 0) {
                 setTimeout(function() {
@@ -76,7 +76,7 @@ $(document).ready(function() {
     // Adicionar à fila de salvamento
     function addToSaveQueue($input) {
         var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
-        
+
         // Remover duplicatas da fila (manter apenas a última alteração)
         saveQueue = saveQueue.filter(function(item) {
             var itemId = item.data('input-id') || (item.data('day') + '_' + item.closest('tr').data('task-id'));
@@ -86,7 +86,7 @@ $(document).ready(function() {
         // Adicionar à fila
         saveQueue.push($input);
         pendingChanges.add(inputId);
-        
+
         // Iniciar processamento se não estiver em andamento
         processQueue();
     }
@@ -96,7 +96,7 @@ $(document).ready(function() {
         $('.hours-input').each(function() {
             var $input = $(this);
             var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
-            
+
             if (pendingChanges.has(inputId)) {
                 addToSaveQueue($input.clone());
             }
@@ -209,7 +209,7 @@ $(document).ready(function() {
     function saveAllEntries() {
         return new Promise(function(resolve, reject) {
             $saveIndicator.html('<i class="fa fa-spinner fa-spin text-warning"></i> Salvamento forçado em andamento...');
-            
+
             // Limpar fila atual e timeout
             clearTimeout(saveTimeout);
             saveQueue = [];
@@ -227,10 +227,10 @@ $(document).ready(function() {
                 var promise = saveEntry($input).then(function(response) {
                     pendingChanges.delete(inputId);
                     processedInputs++;
-                    
+
                     // Atualizar progresso
                     $saveIndicator.html('<i class="fa fa-spinner fa-spin text-warning"></i> Salvando ' + processedInputs + '/' + totalInputs + '...');
-                    
+
                     return response;
                 }).catch(function(error) {
                     processedInputs++;
@@ -268,13 +268,13 @@ $(document).ready(function() {
 
     $('#submit-timesheet').on('click', function() {
         var $btn = $(this);
-        
+
         // Validar se existe pelo menos uma linha de projeto/tarefa
         if ($('#timesheet-entries tr').length === 0) {
             TimesheetModals.warning('Você deve adicionar pelo menos um projeto/tarefa antes de enviar o timesheet.', 'Nenhuma Atividade Selecionada');
             return;
         }
-        
+
         $btn.prop('disabled', true); 
 
         // Executar salvamento forçado antes da submissão
@@ -289,9 +289,9 @@ $(document).ready(function() {
                 $('.hours-input').each(function() {
                     totalHours += parseHours($(this).val());
                 });
-                
+
                 var confirmMessage = timesheet_data.confirm_submit || 'Tem certeza que deseja enviar este timesheet para aprovação? Esta ação não pode ser desfeita.';
-                
+
                 if (totalHours === 0) {
                     confirmMessage += '<br><br><strong class="text-warning"><i class="fa fa-exclamation-triangle"></i> Atenção:</strong> Você está enviando um timesheet sem nenhuma hora lançada (todos os dias estão zerados).';
                 }
@@ -432,6 +432,7 @@ $(document).ready(function() {
         $('#project-modal').modal('hide');
 
         $('#project-select').val('').trigger('change');
+        updateSubmitButtonVisibility(); // Atualiza a visibilidade do botão após adicionar uma linha
     });
 
     $(document).on('click', '.remove-row', function(){
@@ -447,6 +448,7 @@ $(document).ready(function() {
             if (confirmed) {
                 $row.remove();
                 updateTotals();
+                updateSubmitButtonVisibility(); // Atualiza a visibilidade do botão após remover uma linha
             }
         });
     });
@@ -473,29 +475,52 @@ $(document).ready(function() {
         $('.week-total').text(formatHours(weekTotal));
     }
 
+    // ================== FUNÇÃO PARA ATUALIZAR VISIBILIDADE DO BOTÃO DE SUBMISSÃO ==================
+    function updateSubmitButtonVisibility() {
+        var hasRows = $('#timesheet-entries tr').length > 0;
+        var $submitBtn = $('#submit-timesheet');
+
+        // Se há linhas de projeto/tarefa e o botão não existe, criar
+        if (hasRows && $submitBtn.length === 0) {
+            var submitBtnHtml = '<button type="button" class="btn btn-success" id="submit-timesheet">' +
+                               '<i class="fa fa-paper-plane"></i> Submeter para Aprovação' +
+                               '</button>';
+            // Encontrar o local correto para inserir o botão, geralmente alinhado à direita
+            // Assumindo que há um contêiner como .text-right ou similar
+            $('.text-right').append(submitBtnHtml); 
+        } 
+        // Se não há linhas e o botão existe, remover
+        else if (!hasRows && $submitBtn.length > 0) {
+            $submitBtn.remove();
+        }
+    }
+
     updateTotals();
-    
+
     // Inicializar sistema de backup automático
     initBackupSave();
-    
+
+    // Atualizar visibilidade do botão de submissão ao carregar a página
+    updateSubmitButtonVisibility();
+
     // Limpeza quando a página for fechada
     $(window).on('beforeunload', function() {
         clearInterval(backupSaveInterval);
-        
+
         // Se há alterações pendentes, avisar o usuário
         if (pendingChanges.size > 0) {
             return 'Você tem alterações não salvas. Tem certeza que deseja sair?';
         }
     });
-    
+
     // Salvamento forçado ao navegar para outra página
     $(document).on('click', 'a[href], button[type="submit"]', function(e) {
         if (pendingChanges.size > 0 && !$(this).hasClass('hours-input') && !$(this).hasClass('remove-row')) {
             e.preventDefault();
             var originalTarget = this;
-            
+
             $saveIndicator.html('<i class="fa fa-spinner fa-spin text-info"></i> Salvando antes de navegar...');
-            
+
             saveAllEntries().then(function() {
                 // Continuar com a navegação
                 if (originalTarget.href) {
