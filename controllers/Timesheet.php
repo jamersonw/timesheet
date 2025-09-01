@@ -43,6 +43,10 @@ class Timesheet extends AdminController
         $approval_status = $this->timesheet_model->get_week_approval_status(get_staff_user_id(), $week_start);
         $data['approval_status'] = $approval_status;
         $data['can_edit'] = !$approval_status || in_array($approval_status->status, ['rejected', 'draft']);
+        
+        // Verificar se há tarefas editáveis para mostrar o botão de submissão
+        $data['has_editable_tasks'] = $data['can_edit'] && (empty($data['entries']) || count($data['entries']) > 0);
+        
         $data['title'] = _l('timesheet_my_timesheet');
         $this->load->view('timesheet/my_timesheet', $data);
     }

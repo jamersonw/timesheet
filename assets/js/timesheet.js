@@ -142,7 +142,11 @@ $(document).ready(function() {
 
         // VALIDAÇÃO FRONT-END: Previne chamadas AJAX desnecessárias se a tarefa não estiver definida.
         if (!taskId || !projectId) {
-            console.warn("⚠️ [SAVE-ENTRY] Salvamento abortado: task-id ou project-id não encontrado na linha da tabela (TR).", { 'task-id': taskId, 'project-id': projectId });
+            console.warn("⚠️ [SAVE-ENTRY] Salvamento abortado: task-id ou project-id não encontrado na linha da tabela (TR).", { 
+                'task-id': taskId, 
+                'project-id': projectId,
+                'row-html': $row[0].outerHTML.substring(0, 200) + '...'
+            });
             return Promise.resolve({ success: true, message: 'Nenhuma tarefa selecionada para salvar' });
         }
 
@@ -422,7 +426,7 @@ $(document).ready(function() {
         var row_html = '<tr data-project-id="'+projectId+'" data-task-id="'+taskId+'">' +
             '<td><strong>'+projectName+'</strong><br><small class="text-muted">'+taskName+'</small></td>';
         for (var i = 1; i <= 7; i++) {
-            row_html += '<td class="text-center"><input type="text" class="form-control hours-input text-center" data-day="'+i+'" placeholder="0,00"></td>';
+            row_html += '<td class="text-center"><input type="text" class="form-control hours-input text-center" data-day="'+i+'" data-input-id="'+taskId+'_'+i+'" placeholder="0,00"></td>';
         }
         row_html += '<td class="text-center total-hours"><strong>0,00</strong></td>' + 
                     '<td class="text-center"><button type="button" class="btn btn-danger btn-xs remove-row"><i class="fa fa-trash"></i></button></td>' +
@@ -430,6 +434,9 @@ $(document).ready(function() {
 
         $('#timesheet-entries').append(row_html);
         $('#project-modal').modal('hide');
+
+        // Verificar se deve mostrar o botão de submissão
+        checkSubmitButtonVisibility();
 
         $('#project-select').val('').trigger('change');
     });
@@ -447,6 +454,7 @@ $(document).ready(function() {
             if (confirmed) {
                 $row.remove();
                 updateTotals();
+                checkSubmitButtonVisibility();
             }
         });
     });
@@ -477,6 +485,21 @@ $(document).ready(function() {
 
     // Inicializar sistema de backup automático
     initBackupSave();
+
+    // Função para verificar se deve mostrar o botão de submissão
+    function checkSubmitButtonVisibility() {
+        var hasEntries = $('#timesheet-entries tr').length > 0;
+        var $submitBtn = $('#submit-timesheet');
+        
+        if (hasEntries) {
+            $submitBtn.show();
+        } else {
+            $submitBtn.hide();
+        }
+    }
+
+    // Verificar visibilidade inicial do botão
+    checkSubmitButtonVisibility();
 
     // Limpeza quando a página for fechada
     $(window).on('beforeunload', function() {
