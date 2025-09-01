@@ -103,7 +103,7 @@ $(document).ready(function() {
         });
     }
 
-    // Auto-save melhorado com debounce reduzido para resposta mais rápida
+    // Auto-save melhorado com debounce de 1.5 segundos
     $(document).on('blur', '.hours-input', function() {
         var $input = $(this);
         var value = $input.val().trim();
@@ -116,11 +116,11 @@ $(document).ready(function() {
         var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
         pendingChanges.add(inputId);
 
-        // Limpar timeout anterior e definir novo com tempo reduzido
+        // Limpar timeout anterior e definir novo com 1.5 segundos
         clearTimeout(saveTimeout);
         saveTimeout = setTimeout(function() {
             addToSaveQueue($input);
-        }, 800); // Reduzido para 800ms para resposta mais rápida
+        }, 1500); // Aumentado de 300ms para 1.5 segundos
     });
 
     // Limpar indicador e reformatar para edição
@@ -132,36 +132,6 @@ $(document).ready(function() {
         } else {
             $input.val('');
         }
-    });
-
-    // Salvamento também no evento keyup para capturar mudanças enquanto digita
-    $(document).on('keyup', '.hours-input', function(e) {
-        var $input = $(this);
-        
-        // Não processar teclas de navegação
-        if ([9, 16, 17, 18, 37, 38, 39, 40].indexOf(e.keyCode) !== -1) {
-            return;
-        }
-        
-        // Se for Enter, forçar salvamento imediato
-        if (e.keyCode === 13) {
-            $input.blur(); // Trigger blur event que salva
-            return;
-        }
-        
-        // Marcar como alteração pendente
-        var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
-        pendingChanges.add(inputId);
-        
-        // Limpar timeout anterior e definir novo
-        clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(function() {
-            // Formatar e salvar
-            var value = $input.val().trim();
-            var formattedValue = formatHours(value);
-            $input.val(formattedValue);
-            addToSaveQueue($input);
-        }, 2000); // 2 segundos para keyup (mais tempo para evitar muitas chamadas)
     });
 
     // ================== FUNÇÃO SAVEENTRY COM LOGS DETALHADOS ==================
@@ -462,10 +432,7 @@ $(document).ready(function() {
         $('#project-modal').modal('hide');
 
         $('#project-select').val('').trigger('change');
-        
-        console.log('✅ [ADD-PROJECT] Projeto/tarefa adicionado - atualizando botão de submissão');
         updateSubmitButtonVisibility(); // Atualiza a visibilidade do botão após adicionar uma linha
-        updateTotals(); // Atualiza os totais também
     });
 
     $(document).on('click', '.remove-row', function(){
@@ -512,70 +479,29 @@ $(document).ready(function() {
     function updateSubmitButtonVisibility() {
         var hasRows = $('#timesheet-entries tr').length > 0;
         var $submitBtn = $('#submit-timesheet');
-        var $submitContainer = $('.timesheet-submit-container');
-
-        console.log('🔍 [SUBMIT-BTN] Verificando visibilidade - Linhas:', hasRows, 'Botão existe:', $submitBtn.length > 0);
 
         // Se há linhas de projeto/tarefa e o botão não existe, criar
         if (hasRows && $submitBtn.length === 0) {
             var submitBtnHtml = '<button type="button" class="btn btn-success" id="submit-timesheet">' +
-                               '<i class="fa fa-paper-plane"></i> ' + timesheet_lang.submit +
+                               '<i class="fa fa-paper-plane"></i> Submeter para Aprovação' +
                                '</button>';
-            
-            // Tentar inserir no contêiner específico primeiro
-            if ($submitContainer.length > 0) {
-                $submitContainer.append(submitBtnHtml);
-                console.log('✅ [SUBMIT-BTN] Botão adicionado ao container específico');
-            } 
-            // Fallback: procurar por .panel-footer, .text-right ou .timesheet-actions
-            else if ($('.panel-footer').length > 0) {
-                $('.panel-footer').append(submitBtnHtml);
-                console.log('✅ [SUBMIT-BTN] Botão adicionado ao panel-footer');
-            } 
-            else if ($('.text-right').length > 0) {
-                $('.text-right').append(submitBtnHtml);
-                console.log('✅ [SUBMIT-BTN] Botão adicionado ao text-right');
-            } 
-            else if ($('.timesheet-actions').length > 0) {
-                $('.timesheet-actions').append(submitBtnHtml);
-                console.log('✅ [SUBMIT-BTN] Botão adicionado ao timesheet-actions');
-            } 
-            // Último recurso: adicionar após a tabela
-            else {
-                $('#timesheet-table').after('<div class="text-right mt-3">' + submitBtnHtml + '</div>');
-                console.log('✅ [SUBMIT-BTN] Botão criado em novo container após a tabela');
-            }
+            // Encontrar o local correto para inserir o botão, geralmente alinhado à direita
+            // Assumindo que há um contêiner como .text-right ou similar
+            $('.text-right').append(submitBtnHtml); 
         } 
         // Se não há linhas e o botão existe, remover
         else if (!hasRows && $submitBtn.length > 0) {
             $submitBtn.remove();
-            console.log('🗑️ [SUBMIT-BTN] Botão removido - sem linhas');
-        }
-        // Se há linhas e o botão existe, garantir que está visível
-        else if (hasRows && $submitBtn.length > 0) {
-            $submitBtn.show();
-            console.log('👁️ [SUBMIT-BTN] Botão já existe e está visível');
         }
     }
 
-    // Inicialização
-    console.log('🚀 [INIT] Inicializando timesheet.js');
-    console.log('🚀 [INIT] Linhas existentes na tabela:', $('#timesheet-entries tr').length);
-    
     updateTotals();
-    
+
     // Inicializar sistema de backup automático
     initBackupSave();
 
     // Atualizar visibilidade do botão de submissão ao carregar a página
-    console.log('🚀 [INIT] Chamando updateSubmitButtonVisibility na inicialização');
     updateSubmitButtonVisibility();
-    
-    // Forçar verificação após pequeno delay para garantir que DOM esteja completamente carregado
-    setTimeout(function() {
-        console.log('🚀 [INIT] Verificação tardia do botão de submissão');
-        updateSubmitButtonVisibility();
-    }, 500);
 
     // Limpeza quando a página for fechada
     $(window).on('beforeunload', function() {
