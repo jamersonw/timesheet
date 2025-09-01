@@ -140,6 +140,9 @@ $lang['timesheet_confirm_cancel_submission'] = 'Are you sure you want to cancel 
 $lang['timesheet_pending_message'] = 'Your hours have been submitted and are awaiting manager approval.';
 $lang['timesheet_approved_message'] = 'Your hours have been approved by the manager.';
 $lang['timesheet_rejected_message'] = 'Your hours have been rejected. Please contact your manager for more details.';
+$lang['timesheet_approved'] = 'Your hours have been approved by the manager.';
+$lang['timesheet_rejected'] = 'Your hours have been rejected. Please contact your manager for more details.';
+$lang['timesheet_pending'] = 'Your hours have been submitted and are awaiting manager approval.';
 
 // Common UI elements
 $lang['submitted_at'] = 'Submitted at';
