@@ -98,12 +98,13 @@ $(document).ready(function() {
             var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
 
             if (pendingChanges.has(inputId)) {
-                addToSaveQueue($input.clone());
+                // Não clonar, usar o elemento original para evitar problemas de referência
+                addToSaveQueue($input);
             }
         });
     }
 
-    // Auto-save melhorado com debounce de 1.5 segundos
+    // Auto-save melhorado com salvamento imediato no blur
     $(document).on('blur', '.hours-input', function() {
         var $input = $(this);
         var value = $input.val().trim();
@@ -116,11 +117,16 @@ $(document).ready(function() {
         var inputId = $input.data('input-id') || ($input.data('day') + '_' + $input.closest('tr').data('task-id'));
         pendingChanges.add(inputId);
 
-        // Limpar timeout anterior e definir novo com 1.5 segundos
-        clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(function() {
-            addToSaveQueue($input);
-        }, 1500); // Aumentado de 300ms para 1.5 segundos
+        // Salvar IMEDIATAMENTE quando o campo perde o foco
+        console.log('🎯 [BLUR-SAVE] Salvamento imediato no blur do campo dia:', $input.data('day'));
+        addToSaveQueue($input);
+    });
+
+    // Salvar também no keypress da tecla Enter
+    $(document).on('keypress', '.hours-input', function(e) {
+        if (e.which === 13) { // Enter key
+            $(this).blur(); // Aciona o evento blur que faz o salvamento
+        }
     });
 
     // Limpar indicador e reformatar para edição
@@ -149,11 +155,21 @@ $(document).ready(function() {
 
         // VALIDAÇÃO FRONT-END: Previne chamadas AJAX desnecessárias se a tarefa não estiver definida.
         if (!taskId || !projectId) {
-            var rowInfo = $row.length > 0 && $row[0] ? $row[0].outerHTML.substring(0, 200) + '...' : 'Linha não encontrada';
+            var rowInfo = 'Dados indisponíveis';
+            try {
+                if ($row.length > 0 && $row[0] && $row[0].outerHTML) {
+                    rowInfo = $row[0].outerHTML.substring(0, 200) + '...';
+                }
+            } catch (e) {
+                rowInfo = 'Erro ao acessar HTML da linha: ' + e.message;
+            }
+            
             console.warn("⚠️ [SAVE-ENTRY] Salvamento abortado: task-id ou project-id não encontrado na linha da tabela (TR).", { 
                 'task-id': taskId, 
                 'project-id': projectId,
-                'row-html': rowInfo
+                'row-html': rowInfo,
+                'input-day': $input.data('day'),
+                'input-id': $input.data('input-id')
             });
             return Promise.resolve({ success: true, message: 'Nenhuma tarefa selecionada para salvar' });
         }
@@ -443,8 +459,13 @@ $(document).ready(function() {
         $('#timesheet-entries').append(row_html);
         $('#project-modal').modal('hide');
 
-        // Verificar se deve mostrar o botão de submissão
+        // Verificar se deve mostrar o botão de submissão IMEDIATAMENTE
         checkSubmitButtonVisibility();
+        
+        // Forçar uma segunda verificação após um pequeno delay
+        setTimeout(function() {
+            checkSubmitButtonVisibility();
+        }, 100);
 
         $('#project-select').val('').trigger('change');
     });
@@ -499,15 +520,25 @@ $(document).ready(function() {
         var hasEntries = $('#timesheet-entries tr').length > 0;
         var $submitBtn = $('#submit-timesheet');
         
+        console.log('🔍 [SUBMIT-BTN] Verificando visibilidade. Linhas encontradas:', hasEntries, 'Total:', $('#timesheet-entries tr').length);
+        
         if (hasEntries) {
             $submitBtn.show();
+            console.log('✅ [SUBMIT-BTN] Botão de submissão EXIBIDO');
         } else {
             $submitBtn.hide();
+            console.log('❌ [SUBMIT-BTN] Botão de submissão OCULTO');
         }
     }
 
     // Verificar visibilidade inicial do botão
     checkSubmitButtonVisibility();
+    
+    // Verificar novamente após o carregamento completo da página
+    setTimeout(function() {
+        console.log('🔄 [SUBMIT-BTN] Verificação adicional após carregamento');
+        checkSubmitButtonVisibility();
+    }, 500);
 
     // Limpeza quando a página for fechada
     $(window).on('beforeunload', function() {
