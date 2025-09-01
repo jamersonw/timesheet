@@ -100,7 +100,7 @@
                                                 <?php if ($approval->status == 'approved'): ?>
                                                     <span class="label label-success"><i class="fa fa-check"></i> <?php echo _l('timesheet_approved'); ?></span>
                                                 <?php elseif ($approval->status == 'pending'): ?>
-                                                    <span class="label label-warning"><i class="fa fa-clock-o"></i> <?php echo _l('timesheet_pending'); ?></span>
+                                                    <span class="label label-warning"><i class="fa fa-clock-o"></i> <?php echo _l('timesheet_status_pending'); ?></span>
                                                 <?php endif; ?>
                                                 <br><small class="text-muted"><?php echo $approval->email; ?></small>
                                             </h4>
