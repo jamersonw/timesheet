@@ -345,8 +345,8 @@ function timesheet_disable_timer_globally()
             console.log("Timesheet Module: Timer globalmente desabilitado para usuário não-admin ID " + ' . $current_staff_id . ');
         }
     </script>';
-} segura, pois não modifica os arquivos do núcleo do Perfex.
- */
+}
+
 function timesheet_hide_native_log_time_elements()
 {
     // A verificação esconde os elementos apenas se o usuário NÃO for admin.
