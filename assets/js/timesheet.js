@@ -419,16 +419,20 @@ $(document).ready(function() {
             return;
         }
 
-        var row_html = '<tr data-project-id="'+projectId+'" data-task-id="'+taskId+'">' +
-            '<td><strong>'+projectName+'</strong><br><small class="text-muted">'+taskName+'</small></td>';
+        var $newRow = $('<tr>').attr({
+            'data-project-id': projectId,
+            'data-task-id': taskId
+        });
+
+        var row_html = '<td><strong>'+projectName+'</strong><br><small class="text-muted">'+taskName+'</small></td>';
         for (var i = 1; i <= 7; i++) {
             row_html += '<td class="text-center"><input type="text" class="form-control hours-input text-center" data-day="'+i+'" placeholder="0,00"></td>';
         }
         row_html += '<td class="text-center total-hours"><strong>0,00</strong></td>' + 
-                    '<td class="text-center"><button type="button" class="btn btn-danger btn-xs remove-row"><i class="fa fa-trash"></i></button></td>' +
-                    '</tr>';
+                    '<td class="text-center"><button type="button" class="btn btn-danger btn-xs remove-row"><i class="fa fa-trash"></i></button></td>';
 
-        $('#timesheet-entries').append(row_html);
+        $newRow.html(row_html);
+        $('#timesheet-entries').append($newRow);
         $('#project-modal').modal('hide');
 
         $('#project-select').val('').trigger('change');
