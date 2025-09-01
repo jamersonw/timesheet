@@ -7,7 +7,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 /*
 Module Name: Timesheet
 Description: Sistema de apontamento de horas com aprovação para profissionais e gerentes de projeto - Versão Simplificada
-Version: 1.4.8
+Version: 1.4.9
 Requires at least: 2.3.*
 Author: Perfex CRM Module Developer
 */
@@ -26,7 +26,7 @@ function timesheet_activation_hook()
         if (function_exists('log_activity')) {
             log_activity('[Timesheet Activation] Iniciando hook de ativação do módulo v1.4.4');
         }
-        
+
         $CI = &get_instance();
         if (!$CI) {
             if (function_exists('log_activity')) {
@@ -34,21 +34,21 @@ function timesheet_activation_hook()
             }
             throw new Exception('CodeIgniter instance not available');
         }
-        
+
         if (function_exists('log_activity')) {
             log_activity('[Timesheet Activation] CodeIgniter instance obtida com sucesso');
             log_activity('[Timesheet Activation] Executando install.php...');
         }
-        
+
         // Verificar se o arquivo existe antes de incluir
         $install_file = __DIR__ . '/install.php';
         if (!file_exists($install_file)) {
             throw new Exception('Install file not found: ' . $install_file);
         }
-        
+
         // Include com verificação de retorno
         $result = include_once($install_file);
-        
+
         if (function_exists('log_activity')) {
             if ($result === false) {
                 log_activity('[Timesheet Activation WARNING] Install.php retornou false');
@@ -56,19 +56,19 @@ function timesheet_activation_hook()
                 log_activity('[Timesheet Activation] Hook de ativação concluído com sucesso');
             }
         }
-        
+
         // Sempre retornar true para não quebrar a ativação
         return true;
-        
+
     } catch (Exception $e) {
         if (function_exists('log_activity')) {
             log_activity('[Timesheet Activation ERROR] ' . $e->getMessage());
             log_activity('[Timesheet Activation ERROR] File: ' . $e->getFile() . ' Line: ' . $e->getLine());
         }
-        
+
         // Log no error_log do PHP como backup
         error_log('[Timesheet Activation] ERROR: ' . $e->getMessage());
-        
+
         // Não re-throw para evitar quebrar completamente a ativação
         return false;
     }
@@ -120,7 +120,7 @@ function timesheet_init_menu_and_permissions()
     // Verificar permissões simplificadas
     $can_view = has_permission('timesheet', '', 'view') || is_admin();
     $can_approve = has_permission('timesheet', '', 'approve') || is_admin() || timesheet_can_manage_any_project(get_staff_user_id());
-    
+
     // Mostrar menu se tiver pelo menos uma das permissões
     $has_any_permission = $can_view || $can_approve;
 
