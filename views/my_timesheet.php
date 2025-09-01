@@ -162,11 +162,9 @@
                                     </button>
                                 <?php endif; ?>
                                 
-                                <?php if ($has_editable_tasks) : ?>
-                                    <button type="button" class="btn btn-success" id="submit-timesheet">
-                                        <i class="fa fa-paper-plane"></i> Submeter para Aprovação
-                                    </button>
-                                <?php endif; ?>
+                                <button type="button" class="btn btn-success" id="submit-timesheet" style="display: none;">
+                                    <i class="fa fa-paper-plane"></i> Submeter para Aprovação
+                                </button>
                             </div>
                         </div>
                     </div>

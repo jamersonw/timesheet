@@ -459,6 +459,15 @@ $(document).ready(function() {
         $('#timesheet-entries').append(row_html);
         $('#project-modal').modal('hide');
 
+        // FORÇAR exibição do botão IMEDIATAMENTE após adicionar linha
+        var $submitBtn = $('#submit-timesheet');
+        $submitBtn.removeAttr('style').css({
+            'display': 'inline-block !important',
+            'visibility': 'visible !important',
+            'opacity': '1 !important'
+        }).show();
+        console.log('🚀 [ADD-PROJECT] Botão FORÇADO a aparecer após adicionar projeto');
+
         // Verificar se deve mostrar o botão de submissão IMEDIATAMENTE
         checkSubmitButtonVisibility();
         
@@ -531,11 +540,15 @@ $(document).ready(function() {
         console.log('🔍 [SUBMIT-BTN] Verificando visibilidade. Linhas encontradas:', hasEntries, 'Total:', $('#timesheet-entries tr').length);
         
         if (hasEntries) {
-            // Forçar exibição com CSS inline para garantir que apareça
-            $submitBtn.css('display', 'inline-block').show();
-            console.log('✅ [SUBMIT-BTN] Botão de submissão EXIBIDO (forçado)');
+            // Remover qualquer estilo inline conflitante e forçar exibição
+            $submitBtn.removeAttr('style').css({
+                'display': 'inline-block',
+                'visibility': 'visible',
+                'opacity': '1'
+            }).show();
+            console.log('✅ [SUBMIT-BTN] Botão de submissão EXIBIDO (forçado com CSS)');
         } else {
-            $submitBtn.hide();
+            $submitBtn.css('display', 'none').hide();
             console.log('❌ [SUBMIT-BTN] Botão de submissão OCULTO');
         }
     }
