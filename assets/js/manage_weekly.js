@@ -3,6 +3,11 @@ $(document).ready(function () {
 
     // Debug inicial
     console.log("[Weekly JS Debug] Manage Weekly carregado e pronto.");
+    
+    // CORREÇÃO: Remover qualquer botão de submissão que possa ter aparecido incorretamente
+    $('#submit-timesheet').remove();
+    console.log("🚫 [WEEKLY-MANAGE] Botão de submissão removido da tela de aprovação semanal");
+    
     if (typeof manage_weekly_data === "undefined" || !manage_weekly_data.weekly_approvals) {
         console.error("[Weekly JS Debug] ERRO: Dados da página (manage_weekly_data) não foram carregados corretamente.");
         alert("ERRO: Dados da página não foram carregados. Verifique os logs do servidor.");

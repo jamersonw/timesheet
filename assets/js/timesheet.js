@@ -523,6 +523,18 @@ $(document).ready(function() {
 
     // ================== FUNÇÃO PARA ATUALIZAR VISIBILIDADE DO BOTÃO DE SUBMISSÃO ==================
     function updateSubmitButtonVisibility() {
+        // VALIDAÇÃO: Não criar botão de submissão em telas administrativas
+        var isManagementPage = window.location.href.indexOf('/manage') !== -1 || 
+                              window.location.href.indexOf('/approve') !== -1 ||
+                              $('body').hasClass('manage-timesheet-page') ||
+                              $('.approval-panel').length > 0; // Detecta presença de painéis de aprovação
+
+        if (isManagementPage) {
+            console.log('🚫 [SUBMIT-BTN] Botão de submissão desabilitado - tela administrativa detectada');
+            $('#submit-timesheet').remove(); // Remove qualquer botão existente
+            return;
+        }
+
         var hasRows = $('#timesheet-entries tr').length > 0;
         var $submitBtn = $('#submit-timesheet');
 
